@@ -26,13 +26,13 @@ DataLink开发时间从2016年12月开始，第一版于2017年5月份上线，�
 * Zookeeper：Manager的高可用需要依赖于zookeeper，另外，Task会将运行时信息注册到zookeeper
 * Mysql：Datalink的运行需要依赖各种配置信息、以及在运行过程中会动态产生监控和统计数据，统一保存到Mysql中
 # Introduction
-See the page for introduction:
+See the page for introduction: Introduction
 # QuickStart
-See the page for quick start:
+See the page for quick start: QuickStart
 # 相关文档
-See the page for document:
+See the page for document: 文档
 # 常见问题
-See the page for FAQ:
+See the page for FAQ: FAQ
 # 版本说明
 建议版本：2.0.0 (DataLink开源版本从内部演变而来，所以初始版本直接从2.x开始)<br>
 下载发布包：download<br>
