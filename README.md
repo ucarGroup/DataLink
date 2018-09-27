@@ -37,8 +37,8 @@ See the page for FAQ: [FAQ]()
 下载发布包：[download]()<br>
 maven依赖 ： 暂无
 # 相关开源
-阿里巴巴mysql数据库binlog的增量订阅&消费组件：http://github.com/alibaba/canal<br>
-阿里巴巴基于数据库增量日志解析的数据实时同步系统：https://github.com/alibaba/otter<br>
+canal：http://github.com/alibaba/canal<br>
+otter：https://github.com/alibaba/otter<br>
 Kafka-Connect：https://github.com/apache/kafka<br>
 DataBus：https://github.com/linkedin/databus
 # 问题反馈
