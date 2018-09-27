@@ -24,10 +24,10 @@ DataLink开发时间从2016年12月开始，第一版于2017年5月份上线，�
     b. worker核心功能是管理Task的生命周期，并配合Manager进行Re-Balance<br>
 * Zookeeper：Manager的高可用需要依赖于zookeeper，另外，Task会将运行时信息注册到zookeeper
 * Mysql：Datalink的运行需要依赖各种配置信息、以及在运行过程中会动态产生监控和统计数据，统一保存到Mysql中
-# Introduction
-See the page for introduction: [Introduction]()
 # QuickStart
 See the page for quick start: [QuickStart]()
+# 总体架构
+See the page for introduction: [总体架构](https://github.com/ucarGroup/DataLink/wiki/DataLink%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84)
 # 相关文档
 See the page for document: [文档]()
 # 常见问题
