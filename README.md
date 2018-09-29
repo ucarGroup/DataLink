@@ -45,5 +45,4 @@ DataBus：https://github.com/linkedin/databus
 目前有关DataLink的问题交流方式有如下几种，欢迎各位加入进行技术讨论。<br>
 qq交流群： 758937055<br>
 邮件交流： 845219359@qq.com<br>
-新浪微博： sqqlala<br>
-报告issue：[issues]()
+报告issue：[issues](https://github.com/ucarGroup/DataLink/issues)
