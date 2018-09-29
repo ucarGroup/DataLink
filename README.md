@@ -26,10 +26,8 @@ DataLink开发时间从2016年12月开始，第一版于2017年5月份上线，�
 * Mysql：Datalink的运行需要依赖各种配置信息、以及在运行过程中会动态产生监控和统计数据，统一保存到Mysql中
 # QuickStart
 See the page for quick start: [QuickStart](https://github.com/ucarGroup/DataLink/wiki/QuickStart)
-# 总体架构
-See the page for introduction: [总体架构](https://github.com/ucarGroup/DataLink/wiki/DataLink%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84)
-# 相关文档
-See the page for document: [文档](https://github.com/ucarGroup/DataLink/wiki/1.1_%E6%B7%B1%E5%85%A5Manager)
+# 架构&文档
+See the page for introduction: [架构&文档](https://github.com/ucarGroup/DataLink/wiki/DataLink%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84)
 # 常见问题
 See the page for FAQ: [FAQ](https://github.com/ucarGroup/DataLink/wiki/FAQ)
 # 相关开源
