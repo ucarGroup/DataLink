@@ -38,6 +38,27 @@ DataBus：https://github.com/linkedin/databus
 # 问题反馈
 目前有关DataLink的问题交流方式有如下几种，欢迎各位加入进行技术讨论。<br>
 qq交流群： 758937055<br>
-邮件交流： tech_plat_store@ucarinc.com<br>
+邮件交流： tech_plat_data@ucarinc.com<br>
 报告issue：[issues](https://github.com/ucarGroup/DataLink/issues)<br>
 ![](https://github.com/ucarGroup/DataLink/blob/master/img/DataLink%E4%BA%A4%E6%B5%81%E7%BE%A4%E7%BE%A4%E4%BA%8C%E7%BB%B4%E7%A0%81.png)
+<pre name="code" class="java">
+【招聘信息】
+优车集团大数据平台团队常年招人，欢迎投递简历
+投递邮箱:biao.lu@ucarinc.com
+QQ联系:634659517
+岗位职责
+	• 主要参与神州优车集团大数据平台相关产品的研发
+	• 按照需求，完成产品的设计、开发和维护工作，并根据规范编写产品设计和使用文档
+	• 持续梳理和优化系统，构建可扩展、高并发、高可用的产品，以适应公司业务的高速发展
+岗位要求
+	• 3年以上互联网服务端开发经验 
+	• 计算机基础扎实，熟悉常用的数据结构和算法，深入掌握操作系统、数据库、网络等基础知识
+	• Java基础扎实, 深入掌握IO、多线程、集合、jvm等基础知识，深入掌握MVC、IoC、ORM、RPC等主流框架
+	• 深入理解面向对象思想和常用设计模式，注重代码质量，有工匠精神和重构精神
+	• 热爱技术研发，具有快速学习能力，有良好的软件工程知识和编码规范意识
+	• 具有较好的沟通能力、思路清晰、善于思考、能独立分析和解决问题
+	• 对数据库分片及数据同步有实践经验者优先
+	• 有大数据平台(hadoop)研发经验者优先
+	• 有互联网大型系统开发经验优先 
+	• 有贡献或研读过开源代码者优先
+</pre>
