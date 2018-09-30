@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.TaskDelayTimeDAO">
+
+    <resultMap id="delayTimeResult" type="delaytime">
+        <result property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="delayTime" column="delay_time"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="allColumns">id,task_id,delay_time,create_time</sql>
+
+    <select id="getList" resultMap="delayTimeResult">
+        <![CDATA[
+        select id,task_id,delay_time,create_time
+        from t_dl_task_delaytime t inner join
+        (SELECT max(id) as maxid
+        FROM t_dl_task_delaytime group by task_id) m where t.id = m.maxid order by task_id
+      ]]>
+    </select>
+
+
+    <insert id="insert" parameterType="delaytime" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_task_delaytime
+        (task_id,delay_time,create_time)
+        VALUES
+        (#{taskId},#{delayTime}, now())
+    </insert>
+
+    <select id="getListByTaskIdForQuery" resultMap="delayTimeResult">
+        select *
+        from t_dl_task_delaytime
+        where task_id = #{taskId}
+        AND create_time BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+</mapper>

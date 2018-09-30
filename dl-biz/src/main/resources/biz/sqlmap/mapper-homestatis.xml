@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucar.datalink.biz.dal.HomeStatisticDAO">
+
+    <resultMap id="homeStatisticResult" type="homeStatistic">
+        <result property="taskId" column="taskId"/>
+        <result property="groupId" column="groupId"/>
+        <result property="workerId" column="workerId"/>
+        <result property="taskSizeStatistic" column="taskSizeStatistic"/>
+        <result property="taskRecordStatistic" column="taskRecordStatistic"/>
+        <result property="taskDelayStatistic" column="taskDelayStatistic"/>
+        <result property="workerJvmUsedStatistic" column="workerJvmUsedStatistic"/>
+    </resultMap>
+
+    <select id="taskSizeStatistic" resultMap="homeStatisticResult">
+        SELECT
+        s.task_id taskId,
+        t.task_name taskName,
+        t.group_id groupId,
+        AVG(s.size_per_minute) taskSizeStatistic
+        FROM t_dl_task_statistic s INNER JOIN t_dl_task t ON s.task_id = t.id
+        WHERE s.create_time BETWEEN #{startTime} AND #{endTime}
+        AND t.is_delete = 'false'
+        <if test="groupId != null">
+            AND t.group_id = #{groupId}
+        </if>
+        GROUP BY task_id
+        ORDER BY taskSizeStatistic DESC
+    </select>
+
+    <select id="taskRecordStatistic" resultMap="homeStatisticResult">
+        SELECT
+        s.task_id taskId,
+        t.task_name taskName,
+        t.group_id groupId,
+        AVG(s.records_per_minute) taskRecordStatistic
+        FROM t_dl_task_statistic s INNER JOIN t_dl_task t ON s.task_id = t.id
+        WHERE s.create_time BETWEEN #{startTime} AND #{endTime}
+        AND t.is_delete = 'false'
+        <if test="groupId != null">
+            AND t.group_id = #{groupId}
+        </if>
+        GROUP BY task_id
+        ORDER BY taskRecordStatistic DESC
+    </select>
+
+    <select id="taskDelayStatistic" resultMap="homeStatisticResult">
+        SELECT
+        s.task_id taskId,
+        t.task_name taskName,
+        t.group_id groupId,
+        AVG(s.delay_time) taskDelayStatistic
+        FROM t_dl_task_delaytime s INNER JOIN t_dl_task t ON s.task_id = t.id
+        WHERE s.create_time BETWEEN #{startTime} AND #{endTime}
+        AND t.is_delete = 'false'
+        <if test="groupId != null">
+            AND t.group_id = #{groupId}
+        </if>
+        GROUP BY task_id
+        ORDER BY taskDelayStatistic DESC
+    </select>
+
+    <select id="workerJvmUsedStatistic" resultMap="homeStatisticResult">
+        SELECT
+        s.worker_id workerId,
+        w.worker_name workerName,
+        w.group_id groupId,
+        AVG((s.young_mem_used+s.old_mem_used)*100/(s.young_mem_max+s.old_mem_max)) workerJvmUsedStatistic
+        FROM t_dl_worker_jvm_state s INNER JOIN t_dl_worker w ON s.worker_id = w.id
+        WHERE s.create_time BETWEEN #{startTime} AND #{endTime}
+        <if test="groupId != null">
+            AND w.group_id = #{groupId}
+        </if>
+        GROUP BY worker_id
+        ORDER BY workerJvmUsedStatistic DESC
+    </select>
+
+    <select id="workerYoungGCCountStatistic" resultMap="homeStatisticResult">
+        SELECT
+        s.worker_id workerId,
+        w.worker_name workerName,
+        w.group_id groupId,
+        AVG(s.interval_young_collection_count) workerYoungGCCountStatistic
+        FROM t_dl_worker_jvm_state s INNER JOIN t_dl_worker w ON s.worker_id = w.id
+        WHERE s.create_time BETWEEN #{startTime} AND #{endTime}
+        <if test="groupId != null">
+            AND w.group_id = #{groupId}
+        </if>
+        GROUP BY worker_id
+        ORDER BY workerYoungGCCountStatistic DESC
+    </select>
+
+    <select id="workerNetTrafficStatistic" resultMap="homeStatisticResult">
+        SELECT
+        s.worker_id workerId,
+        w.worker_name workerName,
+        w.group_id groupId,
+        AVG(s.incoming_network_traffic) incomingNetTrafficStatistic
+        FROM t_dl_worker_system_state s INNER JOIN t_dl_worker w ON s.worker_id = w.id
+        WHERE s.create_time BETWEEN #{startTime} AND #{endTime}
+        <if test="groupId != null">
+            AND w.group_id = #{groupId}
+        </if>
+        GROUP BY worker_id
+        ORDER BY incomingNetTrafficStatistic DESC
+    </select>
+
+</mapper>

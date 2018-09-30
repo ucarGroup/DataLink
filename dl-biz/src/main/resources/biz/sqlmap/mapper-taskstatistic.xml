@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.TaskStatisticDAO">
+
+    <resultMap id="statisticResult" type="taskStatistic">
+        <result property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="recordsPerMinute" column="records_per_minute"/>
+        <result property="sizePerMinute" column="size_per_minute"/>
+        <result property="writeTimePerRecord" column="write_time_per_record"/>
+        <result property="exceptionsPerMinute" column="exceptions_per_minute"/>
+        <result property="readWriteCountPerMinute" column="read_write_count_per_minute"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="taskStatistic" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_task_statistic
+        (task_id, records_per_minute, size_per_minute, write_time_per_record, exceptions_per_minute, read_write_count_per_minute, create_time)
+        VALUES
+        (#{taskId}, #{recordsPerMinute}, #{sizePerMinute}, #{writeTimePerRecord}, #{exceptionsPerMinute}, #{readWriteCountPerMinute}, now())
+    </insert>
+
+    <select id="getListByTaskIdForQuery" resultMap="statisticResult">
+        select *
+        from t_dl_task_statistic
+        where task_id = #{taskId}
+        AND create_time BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+</mapper>

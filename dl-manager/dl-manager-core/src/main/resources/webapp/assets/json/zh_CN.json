@@ -1,0 +1,14 @@
+﻿﻿{
+"sLengthMenu": "每页显示 _MENU_ 条记录",
+"sZeroRecords": "没有匹配的记录",
+"sInfo": "显示第 _START_ 至 _END_ 项记录，共 _TOTAL_ 项",
+"sInfoEmtpy": "没有数据",
+"sProcessing": "正在加载数据...",
+"oPaginate":
+{
+"sFirst": "首页",
+"sPrevious": "上页",
+"sNext": "下页",
+"sLast": "末页"
+}
+}

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.TaskExceptionDAO">
+
+    <resultMap id="exceptionResult" type="taskException">
+        <result property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="workerId" column="worker_id"/>
+        <result property="exceptionDetail" column="exception_detail"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="taskException" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_task_exception
+        (task_id, worker_id, exception_detail, create_time)
+        VALUES
+        (#{taskId}, #{workerId}, #{exceptionDetail}, now())
+    </insert>
+
+    <select id="getById" parameterType="long" resultMap="exceptionResult">
+        SELECT *
+        FROM t_dl_task_exception
+        WHERE id = #{id}
+    </select>
+
+    <select id="getListByTaskIdForQuery" resultMap="exceptionResult">
+        select *
+        from t_dl_task_exception
+        where task_id = #{taskId}
+        <if test="startTime != null">
+            <![CDATA[
+            AND create_time >= #{startTime}
+            ]]>
+        </if>
+        <if test="endTime != null">
+            <![CDATA[
+            AND create_time <= #{endTime}
+        ]]>
+        </if>
+        ORDER BY id DESC
+    </select>
+
+</mapper>

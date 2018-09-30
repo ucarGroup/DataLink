@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.SysPropertiesDAO">
+
+    <resultMap id="result" type="properties">
+        <result property="id" column="id"/>
+        <result property="propertiesKey" column="properties_key"/>
+        <result property="propertiesValue" column="properties_value"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <sql id="allColumns">id,properties_key,properties_value,create_time,modify_time</sql>
+
+    <insert id="insert" parameterType="properties" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_sys_properties
+        (properties_key,
+        properties_value,
+        create_time,
+        modify_time
+        )
+        VALUE
+        (#{propertiesKey},
+        #{propertiesValue},
+        now(),
+        now()
+        )
+    </insert>
+
+    <update id="update" parameterType="properties">
+        UPDATE t_dl_sys_properties
+        SET
+        properties_key=#{propertiesKey},
+        properties_value=#{propertiesValue},
+        modify_time=now()
+        WHERE id=#{id}
+    </update>
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM t_dl_sys_properties WHERE id = #{id}
+    </delete>
+
+    <select id="getSysPropertiesById" resultMap="result" parameterType="long">
+        SELECT
+        <include refid="allColumns"/>
+        FROM t_dl_sys_properties
+        WHERE id=#{id}
+    </select>
+
+    <select id="findSysPropertieList" resultMap="result">
+        SELECT
+        <include refid="allColumns"/>
+        FROM t_dl_sys_properties
+    </select>
+
+</mapper>

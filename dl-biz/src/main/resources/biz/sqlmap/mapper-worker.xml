@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.WorkerDAO">
+
+    <resultMap id="workerResult" type="com.ucar.datalink.domain.worker.WorkerInfo">
+        <result property="id" column="ID"/>
+        <result property="workerName" column="worker_name"/>
+        <result property="workerDesc" column="worker_desc"/>
+        <result property="workerAddress" column="worker_address"/>
+        <result property="groupId" column="group_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+        <result property="restPort" column="rest_port"/>
+        <result property="groupName" column="group_name"/>
+    </resultMap>
+
+    <!-- all columns -->
+    <sql id="allWorkerColumns">id,worker_name,worker_desc,worker_address,group_id,create_time,modify_time,rest_port</sql>
+
+    <select id="getList" resultMap="workerResult">
+        select
+          w.id as id,
+          w.worker_name as worker_name,
+          w.worker_desc as worker_desc,
+          w.worker_address as worker_address,
+          w.group_id as group_id,
+          w.create_time as create_time,
+          w.modify_time as modify_time,
+          w.rest_port as rest_port,
+          g.group_name as group_name
+        from t_dl_worker w left join t_dl_group g on w.group_id=g.id
+    </select>
+
+
+    <select id="getById" resultMap="workerResult">
+        select
+        <include refid="allWorkerColumns"/>
+        from t_dl_worker where id=#{id}
+    </select>
+
+    <select id="listByGroupId" resultMap="workerResult">
+        select
+        <include refid="allWorkerColumns"/>
+        from t_dl_worker where group_id=#{groupId}
+    </select>
+
+    <select id="getByAddress" resultMap="workerResult">
+        select
+        <include refid="allWorkerColumns"/>
+        from t_dl_worker where worker_address=#{address}
+    </select>
+
+    <insert id="insert" parameterType="com.ucar.datalink.domain.worker.WorkerInfo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_worker
+        (worker_name,worker_desc,worker_address,group_id,create_time,modify_time,rest_port)
+        VALUES
+        (#{workerName}, #{workerDesc}, #{workerAddress},#{groupId}, now(), now(),#{restPort})
+    </insert>
+
+    <delete id="delete" parameterType="long">
+        delete from t_dl_worker where id = #{id}
+    </delete>
+
+    <update id="update" parameterType="com.ucar.datalink.domain.worker.WorkerInfo">
+        update t_dl_worker
+        set
+        worker_name=#{workerName},
+        worker_desc=#{workerDesc},
+        worker_address=#{workerAddress},
+        group_id=#{groupId},
+        rest_port=#{restPort},
+        modify_time = now()
+        where id = #{id}
+    </update>
+
+    <select id="workerCount" resultType="Integer">
+        SELECT
+        COUNT(1)
+        FROM t_dl_worker
+    </select>
+
+    <select id="getCountByGroup" resultType="com.ucar.datalink.domain.statis.StatisDetail">
+        SELECT
+        g.group_name AS type,
+        COUNT(1) AS countByType
+        FROM t_dl_worker w
+        INNER JOIN t_dl_group g ON w.group_id=g.id
+        GROUP BY w.group_id
+    </select>
+
+    <select id="getListForQuery" resultMap="workerResult" parameterType="Long">
+        select
+        w.id as id,
+        w.worker_name as worker_name,
+        w.worker_desc as worker_desc,
+        w.worker_address as worker_address,
+        w.group_id as group_id,
+        w.create_time as create_time,
+        w.modify_time as modify_time,
+        w.rest_port as rest_port,
+        g.group_name as group_name
+        from t_dl_worker w left join t_dl_group g on w.group_id=g.id
+        WHERE 1=1
+        <if test="groupId != null">
+            and w.group_id = #{groupId}
+        </if>
+    </select>
+</mapper>

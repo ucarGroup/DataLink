@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.WorkerJvmStateDAO">
+
+    <resultMap id="WorkerJvmStateResult" type="workerJvmState">
+        <result property="id" column="id"/>
+        <result property="workerId" column="worker_id"/>
+        <result property="host" column="host"/>
+        <result property="oldMemUsed" column="old_mem_used"/>
+        <result property="oldMemMax" column="old_mem_max"/>
+        <result property="youngMemMax" column="young_mem_max"/>
+        <result property="youngMemUsed" column="young_mem_used"/>
+        <result property="createTime" column="create_time"/>
+        <result property="intervalOldCollectionCount" column="interval_old_collection_count"/>
+        <result property="intervalYoungCollectionCount" column="interval_young_collection_count"/>
+        <result property="intervalOldCollectionTime" column="interval_old_collection_time"/>
+        <result property="intervalYoungCollectionTime" column="interval_young_collection_time"/>
+        <result property="currentThreadCount" column="current_thread_count"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="workerJvmState" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_worker_jvm_state
+        (worker_id, host, old_mem_used, old_mem_max, young_mem_max, young_mem_used, create_time, interval_old_collection_count, interval_young_collection_count, interval_old_collection_time, interval_young_collection_time, current_thread_count)
+        VALUE
+        (#{workerId}, #{host}, #{oldMemUsed}, #{oldMemMax}, #{youngMemMax}, #{youngMemUsed}, now(), #{intervalOldCollectionCount}, #{intervalYoungCollectionCount}, #{intervalOldCollectionTime}, #{intervalYoungCollectionTime}, #{currentThreadCount})
+    </insert>
+
+    <select id="getLatestList" resultMap="WorkerJvmStateResult">
+        <![CDATA[
+        select *
+        from t_dl_worker_jvm_state t inner join
+        (SELECT max(id) as maxid
+        FROM t_dl_worker_jvm_state group by worker_id) m where t.id = m.maxid order by worker_id
+        ]]>
+    </select>
+
+    <select id="getLatestByWorkerId" resultMap="WorkerJvmStateResult" parameterType="long">
+        <![CDATA[
+        select *
+        from t_dl_worker_jvm_state t inner join
+        (SELECT max(id) as maxid
+        FROM t_dl_worker_jvm_state group by worker_id) m where t.id = m.maxid AND t.worker_id = #{workerId}
+        ]]>
+    </select>
+
+    <select id="getListByWorkerIdForQuery" resultMap="WorkerJvmStateResult">
+        select *
+        from t_dl_worker_jvm_state
+        where worker_id = #{workerId}
+        AND create_time BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+</mapper>

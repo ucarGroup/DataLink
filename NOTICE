@@ -1,0 +1,13 @@
+UCAR Datalink
+Copyright (C) 2018-2118 UCAR Inc
+
+* com.ucar.datalink.worker.api.compile.* 中的代码参考自Alibaba-Otter的com.alibaba.otter.shared.common.extension.*
+* com.ucar.datalink.worker.core.runtime.coordinate.*中的部分代码参考自Kafka-Connect(0.10.1.0)的org.apache.kafka.connect.runtime.distributed.*,具体如下
+   WorkerCoordinator       <->         WorkerCoordinator
+   WorkerGroupMember       <->         WorkerGroupMember
+   WorkerKeeper            <->         DistributedHerder
+* com.ucar.datalink.worker.core.rutime.*中的部分代码参考自Kafka-Connect(0.10.1.0)的org.apache.kafka.connect.runtime.*,具体如下
+   Worker                  <->         Worker
+   WorkerConfig            <->         WorkerConfig
+   WorkerTask              <->         WorkerTask
+

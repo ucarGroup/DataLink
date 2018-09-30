@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper  namespace="com.ucar.datalink.biz.dal.GroupDAO">
+
+    <resultMap id="groupResult" type="com.ucar.datalink.domain.group.GroupInfo">
+        <result property="id" column="id"/>
+        <result property="groupName" column="group_name"/>
+        <result property="groupDesc" column="group_desc"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <!-- all columns -->
+    <sql id="allGroupColumns">id,group_name,group_desc,create_time,modify_time</sql>
+
+    <select id="listAllGroups" resultMap="groupResult">
+        select
+        <include refid="allGroupColumns"/>
+        from t_dl_group
+    </select>
+
+    <select id="getById" resultMap="groupResult">
+        select
+        <include refid="allGroupColumns"/>
+        from t_dl_group where id=#{id}
+    </select>
+
+    <insert id="insert" parameterType="com.ucar.datalink.domain.group.GroupInfo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_group
+          (group_name,group_desc,create_time,modify_time)
+        VALUES
+          (#{groupName}, #{groupDesc}, now(), now())
+    </insert>
+
+    <delete id="delete" parameterType="long">
+        delete from t_dl_group where id = #{id}
+    </delete>
+
+    <update id="update" parameterType="com.ucar.datalink.domain.group.GroupInfo">
+        update t_dl_group
+          set
+            group_name=#{groupName},
+            group_desc=#{groupDesc},
+            modify_time = now()
+          where id = #{id}
+    </update>
+
+    <select id="groupCount" resultType="Integer">
+        SELECT
+        COUNT(1)
+        FROM t_dl_group
+    </select>
+
+    <select id="getCountByName" resultType="com.ucar.datalink.domain.statis.StatisDetail">
+        SELECT
+        group_name AS type,
+        COUNT(1) AS countByType
+        FROM t_dl_group
+        GROUP BY group_name
+    </select>
+</mapper>

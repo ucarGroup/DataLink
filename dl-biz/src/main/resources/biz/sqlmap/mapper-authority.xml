@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.AuthorityDAO">
+
+    <resultMap id="authorityResult" type="authority">
+        <result property="id" column="id"/>
+        <result property="roleId" column="role_id"/>
+        <result property="menuId" column="menu_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <sql id="allAuthorityColumns">id,role_id,menu_id,create_time,modify_time</sql>
+
+    <insert id="insert" parameterType="authority" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_role_authority
+        (role_id,
+        menu_id,
+        create_time,
+        modify_time
+        )
+        VALUE
+        (#{roleId},
+        #{menuId},
+        now(),
+        now()
+        )
+    </insert>
+
+    <delete id="delete" parameterType="authority">
+        DELETE FROM t_dl_role_authority
+        WHERE 1=1
+        <if test="roleId != null">
+            and role_id = #{roleId}
+        </if>
+        <if test="menuId != null">
+            and menu_id = #{menuId}
+        </if>
+    </delete>
+
+    <select id="getListByRoleId" resultMap="authorityResult" parameterType="long">
+        SELECT
+        r.id,
+        r.role_id,
+        r.menu_id,
+        r.create_time,
+        r.modify_time,
+        m.code code
+        FROM t_dl_role_authority r LEFT JOIN t_dl_menu m ON r.menu_id = m.id
+        WHERE r.role_id=#{roleId}
+    </select>
+
+    <select id="checkExist" resultType="Integer" parameterType="authority">
+        SELECT
+        COUNT(1)
+        FROM t_dl_role_authority
+        WHERE 1=1
+        <if test="roleId != null">
+            and role_id = #{roleId}
+        </if>
+        <if test="menuId != null">
+            and menu_id = #{menuId}
+        </if>
+    </select>
+</mapper>

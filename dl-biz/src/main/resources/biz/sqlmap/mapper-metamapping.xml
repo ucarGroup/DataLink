@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.MetaMappingDAO">
+
+    <resultMap id="metaMapping" type="metaMapping">
+        <result property="srcMediaSourceType" column="src_media_source_type" />
+        <result property="targetMediaSourceType" column="target_media_source_type" />
+        <result property="srcMappingType" column="src_mapping_type" />
+        <result property="targetMappingType" column="target_mapping_type" />
+    </resultMap>
+
+
+    <sql id="allMetaMappingColumns">id,src_media_source_type,target_media_source_type,src_mapping_type,target_mapping_type</sql>
+
+    <select id="selectAllMetaMapping" resultMap="metaMapping">
+        SELECT
+        <include refid="allMetaMappingColumns"/>
+        FROM `t_dl_meta_mapping`
+    </select>
+
+    <select id="selectMetaMappingById" resultType="metaMapping">
+        SELECT
+        <include refid="allMetaMappingColumns"/>
+        FROM `t_dl_meta_mapping` WHERE id=#{0}
+    </select>
+
+    <insert id="addMetaMapping" parameterType="metaMapping" >
+        INSERT INTO `t_dl_meta_mapping`
+        (
+        src_media_source_type,target_media_source_type,src_mapping_type,target_mapping_type
+        )
+        VALUES(
+        #{srcMediaSourceType},
+        #{targetMediaSourceType},
+        #{srcMappingType},
+        #{targetMappingType}
+        )
+    </insert>
+
+    <update id="updateMetaMapping" parameterType="metaMapping">
+        UPDATE `t_dl_meta_mapping`
+        SET src_media_source_type={srcMediaSourceType},target_media_source_type=#{targetMediaSourceType},
+          src_mapping_type=#{srcMappingType},target_mapping_type=#{targetMappingType}
+        WHERE id=#{id}
+    </update>
+
+    <delete id="deleteMetaMapping">
+        DELETE FROM `t_dl_meta_mapping`
+        WHERE id=#{0}
+    </delete>
+
+    <select id="selectAllMetaMappingByType" resultMap="metaMapping">
+        SELECT
+        <include refid="allMetaMappingColumns"/>
+        FROM `t_dl_meta_mapping` WHERE 1=1
+        <if test="srcMediaSourceType!=null">
+            AND src_media_source_type=#{srcMediaSourceType}
+        </if>
+        <if test="targetMediaSourceType!=null">
+            AND target_media_source_type=#{targetMediaSourceType}
+        </if>
+    </select>
+
+</mapper>

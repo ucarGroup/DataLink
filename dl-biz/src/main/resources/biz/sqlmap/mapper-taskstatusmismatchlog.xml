@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.TaskStatusMismatchLogDAO">
+
+    <resultMap id="taskStatusMismatchLogResult" type="taskStatusMismatchLog">
+        <result property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="workerId" column="worker_id"/>
+        <result property="actionType" column="action_type"/>
+        <result property="localStatus" column="local_status"/>
+        <result property="remoteStatus" column="remote_status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <sql id="allColumns">id,task_id,worker_id,local_status,action_type,remote_status,create_time,modify_time</sql>
+
+    <insert id="insert" parameterType="taskStatusMismatchLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_taskstatus_mismatch_log
+        (task_id,
+        worker_id,
+        action_type,
+        local_status,
+        remote_status,
+        create_time,
+        modify_time
+        )
+        VALUE
+        (#{taskId},
+        #{workerId},
+        #{actionType},
+        #{localStatus},
+        #{remoteStatus},
+        now(),
+        now()
+        )
+    </insert>
+
+    <select id="getLatestList" resultMap="taskStatusMismatchLogResult">
+        <![CDATA[
+        select *
+        from t_dl_taskstatus_mismatch_log t inner join
+        (SELECT max(id) as maxid
+        FROM t_dl_taskstatus_mismatch_log group by task_id) m where t.id = m.maxid order by task_id
+        ]]>
+    </select>
+</mapper>

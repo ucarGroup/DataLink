@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.MonitorDAO">
+
+    <resultMap id="monitorResult" type="monitor">
+        <result property="id" column="id"/>
+        <result property="isEffective" column="is_effective"/>
+        <result property="resourceId" column="resource_id"/>
+        <result property="taskName" column="task_name"/>
+        <result property="threshold" column="threshold"/>
+        <result property="intervalTime" column="interval_time"/>
+        <result property="monitorType" column="monitor_type"/>
+        <result property="monitorCat" column="monitor_cat"/>
+        <result property="receivePeople" column="receive_people"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+        <result property="monitorRange" column="monitor_range"/>
+    </resultMap>
+
+    <sql id="allColumns">id,monitor_type,monitor_cat,receive_people,is_effective,resource_id,threshold,interval_time,create_time,modify_time,monitor_range</sql>
+
+    <select id="getList" resultMap="monitorResult" parameterType="long">
+        SELECT
+        m.id,
+        m.monitor_type,
+        m.monitor_cat,
+        m.receive_people,
+        m.is_effective,
+        m.resource_id,
+        m.threshold,
+        m.interval_time,
+        m.create_time,
+        m.modify_time,
+        m.monitor_range,
+        t.task_name
+        FROM t_dl_monitor m left join t_dl_task t on m.resource_id = t.id
+    </select>
+
+    <select id="getListForQueryPage" resultMap="monitorResult">
+        SELECT * FROM
+        (SELECT
+        m.id,
+        m.monitor_type,
+        m.monitor_cat,
+        m.receive_people,
+        m.is_effective,
+        m.resource_id,
+        m.threshold,
+        m.interval_time,
+        m.create_time,
+        m.modify_time,
+        m.monitor_range,
+        t.task_name AS resourceName
+        FROM t_dl_monitor m left join t_dl_task t on m.resource_id = t.id
+        WHERE monitor_cat = 1
+        UNION ALL
+        SELECT
+        m.id,
+        m.monitor_type,
+        m.monitor_cat,
+        m.receive_people,
+        m.is_effective,
+        m.resource_id,
+        m.threshold,
+        m.interval_time,
+        m.create_time,
+        m.modify_time,
+        m.monitor_range,
+        w.worker_name AS resourceName
+        FROM t_dl_monitor m left join t_dl_worker w on m.resource_id = w.id
+        WHERE monitor_cat = 2) total
+        WHERE 1=1
+        <if test="resourceId != null">
+            AND total.resource_id = #{resourceId}
+        </if>
+        <if test="isEffective != null">
+            AND total.is_effective = #{isEffective}
+        </if>
+        <if test="monitorType != null">
+            AND total.monitor_type = #{monitorType}
+        </if>
+        <if test="monitorCat != null">
+            AND total.monitor_cat = #{monitorCat}
+        </if>
+        ORDER BY total.id
+    </select>
+
+    <select id="getById" resultMap="monitorResult" parameterType="long">
+        SELECT * FROM
+        (SELECT
+        m.id,
+        m.monitor_type,
+        m.monitor_cat,
+        m.receive_people,
+        m.is_effective,
+        m.resource_id,
+        m.threshold,
+        m.interval_time,
+        m.create_time,
+        m.modify_time,
+        m.monitor_range,
+        t.task_name AS resourceName
+        FROM t_dl_monitor m left join t_dl_task t on m.resource_id = t.id
+        WHERE monitor_cat = 1
+        UNION ALL
+        SELECT
+        m.id,
+        m.monitor_type,
+        m.monitor_cat,
+        m.receive_people,
+        m.is_effective,
+        m.resource_id,
+        m.threshold,
+        m.interval_time,
+        m.create_time,
+        m.modify_time,
+        m.monitor_range,
+        w.worker_name AS resourceName
+        FROM t_dl_monitor m left join t_dl_worker w on m.resource_id = w.id
+        WHERE monitor_cat = 2) total
+        WHERE total.id=#{id}
+    </select>
+
+    <select id="getListByResourceAndCat" resultMap="monitorResult">
+        SELECT * FROM
+        (SELECT
+        m.id,
+        m.monitor_type,
+        m.monitor_cat,
+        m.receive_people,
+        m.is_effective,
+        m.resource_id,
+        m.threshold,
+        m.interval_time,
+        m.create_time,
+        m.modify_time,
+        m.monitor_range,
+        t.task_name AS resourceName
+        FROM t_dl_monitor m left join t_dl_task t on m.resource_id = t.id
+        WHERE monitor_cat = 1
+        UNION ALL
+        SELECT
+        m.id,
+        m.monitor_type,
+        m.monitor_cat,
+        m.receive_people,
+        m.is_effective,
+        m.resource_id,
+        m.threshold,
+        m.interval_time,
+        m.create_time,
+        m.modify_time,
+        m.monitor_range,
+        w.worker_name AS resourceName
+        FROM t_dl_monitor m left join t_dl_worker w on m.resource_id = w.id
+        WHERE monitor_cat = 2) total
+        WHERE total.resource_id = #{resourceId} AND total.monitor_cat = #{monitorCat}
+    </select>
+
+    <insert id="insert" parameterType="monitor" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_monitor
+        (monitor_type,monitor_cat,receive_people,is_effective,resource_id,threshold,interval_time,create_time,modify_time,monitor_range)
+        VALUES
+        (#{monitorType},#{monitorCat},#{receivePeople},#{isEffective}, #{resourceId},#{threshold},#{intervalTime}, now(), now(),#{monitorRange})
+    </insert>
+
+    <update id="update" parameterType="monitor">
+        UPDATE t_dl_monitor
+        <set>
+            <if test="isEffective!=null">
+                is_effective=#{isEffective},
+            </if>
+            <if test="resourceId!=null">
+                resource_id=#{resourceId},
+            </if>
+            <if test="threshold!=null">
+                threshold=#{threshold},
+            </if>
+            <if test="intervalTime!=null">
+                interval_time=#{intervalTime},
+            </if>
+            <if test="monitorType!=null">
+                monitor_type=#{monitorType},
+            </if>
+            <if test="monitorCat!=null">
+                monitor_cat=#{monitorCat},
+            </if>
+            <if test="monitorRange!=null">
+                monitor_range=#{monitorRange},
+            </if>
+            receive_people=#{receivePeople},
+            MODIFY_TIME=now(),
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="delete" parameterType="long">
+        delete from t_dl_monitor where id = #{id}
+    </delete>
+
+    <delete id="deleteByResourceIdAndCat">
+        DELETE from t_dl_monitor where resource_id = #{resourceId} AND monitor_cat = #{monitorCat}
+    </delete>
+
+    <update id="updateIsAlarm" parameterType="int">
+        UPDATE t_dl_monitor set is_effective=#{isEffective}
+    </update>
+</mapper>

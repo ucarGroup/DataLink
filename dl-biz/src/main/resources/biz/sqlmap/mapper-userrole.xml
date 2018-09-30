@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.UserRoleDAO">
+
+    <resultMap id="resultMap" type="userRole">
+        <result property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="roleId" column="role_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <sql id="allColumns">id,user_id,role_id,create_time,modify_time</sql>
+
+    <insert id="insert" parameterType="userRole" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_user_role
+        (user_id,
+        role_id,
+        create_time,
+        modify_time
+        )
+        VALUE
+        (#{userId},
+        #{roleId},
+        now(),
+        now()
+        )
+    </insert>
+
+    <select id="checkExist" resultType="Integer" parameterType="userRole">
+        SELECT
+        COUNT(1)
+        FROM t_dl_user_role
+        WHERE 1=1
+        <if test="userId != null">
+            and user_id = #{userId}
+        </if>
+        <if test="roleId != null">
+            and role_id = #{roleId}
+        </if>
+    </select>
+
+    <select id="findListByUserId" resultMap="resultMap" parameterType="long">
+        SELECT
+        r.id,
+        r.user_id,
+        r.role_id,
+        r.create_time,
+        r.modify_time
+        FROM t_dl_user_role r
+        WHERE r.user_id=#{userId}
+    </select>
+
+    <delete id="delete" parameterType="userRole">
+        DELETE FROM t_dl_user_role
+        WHERE 1=1
+        <if test="userId != null">
+            and user_id = #{userId}
+        </if>
+        <if test="roleId != null">
+            and role_id = #{roleId}
+        </if>
+    </delete>
+
+</mapper>

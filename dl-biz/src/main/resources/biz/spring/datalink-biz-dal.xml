@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd">
+
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:biz/sqlmap/sqlmap.xml" />
+		<property name="mapperLocations" value="classpath*:biz/sqlmap/mapper-*.xml"/>
+		<property name="typeAliasesPackage" value="com.ucar.datalink.domain"/>
+		<property name="typeAliasesSuperType" value="com.ucar.datalink.domain.Storable"/>
+		<!-- 分页拦截器 -->
+		<property name="plugins">
+			<array>
+				<bean class="com.github.pagehelper.PageInterceptor">
+					<property name="properties">
+						<!--使用下面的方式配置参数，一行配置一个 -->
+						<value>
+						</value>
+					</property>
+				</bean>
+			</array>
+		</property>
+	</bean>
+
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer"
+		  p:basePackage="com.ucar.datalink.biz.dal"
+		  p:sqlSessionFactoryBeanName="sqlSessionFactory" />
+</beans>

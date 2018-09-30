@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.MediaDAO">
+
+    <resultMap id="mediaMappingMap" type="mediaMapping">
+        <result property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="sourceMediaId" column="source_media_id"/>
+        <result property="targetMediaSourceId" column="target_media_source_id"/>
+        <result property="targetMediaNamespace" column="target_media_namespace"/>
+        <result property="targetMediaName" column="target_media_name"/>
+        <result property="parameter" column="parameter"/>
+        <result property="columnMappingMode" column="column_mapping_mode"/>
+        <result property="writePriority" column="write_weight"/>
+        <result property="valid" column="is_valid"/>
+        <result property="interceptorId" column="interceptor_id"/>
+        <result property="joinColumn" column="join_column"/>
+        <result property="esUsePrefix" column="es_use_prefix"/>
+        <result property="geoPositionConf" column="geo_position_conf"/>
+        <result property="skipIds" column="skip_ids"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+        <association property="sourceMedia" column="SOURCE_MEDIA_ID" select="findMediaById"/>
+        <association property="targetMediaSource" column="TARGET_MEDIA_SOURCE_ID" select="findMediaSourceById"/>
+        <association property="taskInfo" column="task_id" select="findTaskById"/>
+        <collection property="columnMappings" column="id" select="findMediaColumnByMappingId"/>
+    </resultMap>
+
+    <resultMap id="mediaMap" type="media">
+        <result property="id" column="id"/>
+        <result property="namespace" column="media_namespace"/>
+        <result property="name" column="media_name"/>
+        <result property="mediaSourceId" column="media_source_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+        <association property="mediaSource" column="media_source_id" select="findMediaSourceById"/>
+    </resultMap>
+
+    <resultMap id="mediaSourceMap" type="mediaSource">
+        <result property="id" column="id"/>
+        <result property="name" column="ms_name"/>
+        <result property="type" column="ms_type"/>
+        <result property="desc" column="ms_desc"/>
+        <result property="parameter" column="ms_parameter"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <resultMap id="mediaColumnMappingMap" type="mediaColumnMapping">
+        <result property="id" column="id"/>
+        <result property="sourceColumn" column="source_column"/>
+        <result property="targetColumn" column="target_column"/>
+        <result property="mediaMappingId" column="media_mapping_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <resultMap id="taskMap" type="task">
+        <result property="id" column="ID"/>
+        <result property="taskName" column="TASK_NAME"/>
+        <result property="taskDesc" column="TASK_DESC"/>
+        <result property="taskType" column="TASK_TYPE"/>
+        <result property="readerMediaSourceId" column="READER_MEDIA_SOURCE_ID"/>
+        <result property="taskParameter" column="TASK_PARAMETER"/>
+        <result property="taskReaderParameter" column="TASK_READER_PARAMETER"/>
+        <result property="taskWriterParameter" column="TASK_WRITER_PARAMETER"/>
+        <result property="targetState" column="TARGET_STATE"/>
+        <result property="groupId" column="GROUP_ID"/>
+        <result property="isDelete" column="IS_DELETE"/>
+        <result property="createTime" column="CREATE_TIME"/>
+        <result property="modifyTime" column="MODIFY_TIME"/>
+    </resultMap>
+
+    <insert id="mediaInsert" parameterType="com.ucar.datalink.domain.media.MediaInfo">
+        INSERT INTO t_dl_media
+        (media_namespace,media_name,media_source_id,create_time,modify_time)
+        VALUES
+        (#{namespace}, #{name},#{mediaSourceId}, now(), now())
+        <selectKey resultType="long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+    </insert>
+
+    <insert id="mediaMappingInsert" parameterType="com.ucar.datalink.domain.media.MediaMappingInfo">
+        INSERT INTO t_dl_media_mapping
+        (task_id,
+        source_media_id,
+        target_media_source_id,
+        target_media_namespace,
+        target_media_name,
+        parameter,
+        column_mapping_mode,
+        write_weight,
+        is_valid,
+        interceptor_id,
+        join_column,
+        es_use_prefix,
+        geo_position_conf,
+        skip_ids,
+        create_time,
+        modify_time)
+        VALUES
+        (#{taskId},
+        #{sourceMediaId},
+        #{targetMediaSourceId},
+        #{targetMediaNamespace},
+        #{targetMediaName},
+        #{parameter},
+        #{columnMappingMode},
+        #{writePriority},
+        #{valid},
+        <if test="interceptorId==-1">
+            NULL,
+        </if>
+        <if test="interceptorId!=-1">
+            #{interceptorId},
+        </if>
+        #{joinColumn},
+        #{esUsePrefix},
+        #{geoPositionConf},
+        #{skipIds},
+        now(),
+        now())
+        <selectKey resultType="long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+    </insert>
+
+    <insert id="mediaColumnInsert" parameterType="com.ucar.datalink.domain.media.MediaColumnMappingInfo">
+        INSERT INTO t_dl_media_mapping_column
+        (source_column,target_column,media_mapping_id,create_time,modify_time)
+        VALUES
+        (#{sourceColumn}, #{targetColumn},#{mediaMappingId}, now(), now())
+        <selectKey resultType="long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+    </insert>
+
+    <delete id="deleteMediaById" parameterType="long">
+        delete from t_dl_media where id = #{id}
+    </delete>
+
+    <delete id="deleteMediaByMediaSourceId" parameterType="long">
+        DELETE from t_dl_media where media_source_id=#{mediaSourceId}
+    </delete>
+
+    <delete id="deleteMediaMappingById" parameterType="long">
+        delete from t_dl_media_mapping where id = #{id}
+    </delete>
+
+    <delete id="deleteMediaMappingByTaskId" parameterType="long">
+        delete from t_dl_media_mapping where task_id = #{taskid}
+    </delete>
+
+    <delete id="deleteMediaMappingColumnByMappingId" parameterType="long">
+        delete from t_dl_media_mapping_column where media_mapping_id = #{id}
+    </delete>
+
+    <delete id="deleteMediaMappingColumnByTaskId" parameterType="long">
+        delete from t_dl_media_mapping_column where media_mapping_id in (select id from t_dl_media_mapping where task_id=#{taskid})
+    </delete>
+
+    <select id="findMediaMappingsById" parameterType="long" resultMap="mediaMappingMap">
+        select * from t_dl_media_mapping where id = #{id}
+    </select>
+
+    <select id="findMediaMappingsByTaskIdAndTargetMediaSourceId" parameterType="java.util.HashMap"
+            resultMap="mediaMappingMap">
+        SELECT * from t_dl_media_mapping m1 where m1.task_id = #{taskId} and m1.target_media_source_id=#{targetMediaSourceId}
+    </select>
+
+    <select id="findMediaMappingsByTargetMediaSourceId" parameterType="java.lang.Long"
+            resultMap="mediaMappingMap">
+        SELECT * from t_dl_media_mapping m1 where m1.target_media_source_id=#{targetMediaSourceId}
+    </select>
+
+    <select id="findMediaMappingsBySrcMediaSourceId" parameterType="java.lang.Long"
+            resultMap="mediaMappingMap">
+        SELECT * FROM t_dl_media_mapping m1,t_dl_media m2 WHERE m1.source_media_id = m2.id AND m2.media_source_id = #{srcMediaSourceId}
+    </select>
+
+    <select id="findMediaMappingsByTaskId" parameterType="long" resultMap="mediaMappingMap">
+        select * from t_dl_media_mapping where task_id = #{id}
+    </select>
+
+    <select id="findMediaMappingsByInterceptorId" parameterType="long" resultMap="mediaMappingMap">
+        select * from t_dl_media_mapping where interceptor_id = #{id}
+    </select>
+
+    <select id="findMediaById" parameterType="long" resultMap="mediaMap">
+        select * from t_dl_media where id =#{id}
+    </select>
+
+    <select id="findTaskById" parameterType="long" resultMap="taskMap">
+        select * from t_dl_task where id =#{id}
+    </select>
+
+    <select id="findMediaColumnByMappingId" parameterType="long" resultMap="mediaColumnMappingMap">
+        select * from t_dl_media_mapping_column where media_mapping_id =#{mappingId}
+    </select>
+
+    <select id="getMediaByMediaSourceAndMediaName" parameterType="java.util.HashMap" resultMap="mediaMap">
+        select * from t_dl_media where media_source_id =#{mediaSourceId} and media_name=#{mediaName}
+    </select>
+
+    <select id="findMediaSourceById" parameterType="long" resultMap="mediaSourceMap">
+        select * from t_dl_media_source where id = #{id}
+    </select>
+
+    <select id="findMediaSourcesByTypes" resultMap="mediaSourceMap">
+        select * from t_dl_media_source where ms_type in
+        <foreach collection="array" item="type" index="index" open="(" close=")" separator=",">
+            #{type}
+        </foreach>
+    </select>
+
+    <select id="getAllMediaMappings" resultMap="mediaMappingMap">
+        select * from t_dl_media_mapping
+    </select>
+
+    <update id="updateMediaMapping" parameterType="com.ucar.datalink.domain.media.MediaMappingInfo">
+        UPDATE t_dl_media_mapping
+        <set>
+            <if test="interceptorId!=null and interceptorId!=-1">
+                interceptor_id=#{interceptorId},
+            </if>
+            <if test="interceptorId==-1">
+                interceptor_id=NULL,
+            </if>
+            target_media_name=#{targetMediaName},
+            column_mapping_mode=#{columnMappingMode},
+            write_weight=#{writePriority},
+            is_valid=#{valid},
+            parameter=#{parameter},
+            join_column=#{joinColumn},
+            es_use_prefix=#{esUsePrefix},
+            geo_position_conf=#{geoPositionConf},
+            skip_ids=#{skipIds},
+            MODIFY_TIME=now(),
+        </set>
+        where id = #{id}
+    </update>
+
+    <update id="updateMediaColumnMapping" parameterType="com.ucar.datalink.domain.media.MediaColumnMappingInfo">
+        UPDATE t_dl_media_mapping_column
+        <set>
+            <if test="sourceColumn!=null">
+                source_column=#{sourceColumn},
+            </if>
+            <if test="targetColumn!=null">
+                target_column=#{targetColumn},
+            </if>
+            MODIFY_TIME=now(),
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="mappingListsForQueryPage" resultMap="mediaMappingMap"
+            parameterType="com.ucar.datalink.domain.media.MediaMappingInfo">
+        SELECT mapping.*
+        from t_dl_media_mapping mapping
+        LEFT JOIN t_dl_media media ON mapping.source_media_id = media.id
+        where 1=1
+        <if test="sourceMedia.mediaSourceId != null">
+            and media.media_source_id = #{sourceMedia.mediaSourceId}
+        </if>
+        <if test="targetMediaSourceId != null">
+            and mapping.target_media_source_id = #{targetMediaSourceId}
+        </if>
+        <if test="taskId != null">
+            and mapping.task_id = #{taskId}
+        </if>
+        <if test="sourceMedia.name != null">
+            and media.media_name LIKE concat(concat('%',#{sourceMedia.name}),'%')
+        </if>
+    </select>
+
+    <select id="mappingCount" resultType="Integer">
+        SELECT
+        COUNT(1)
+        FROM t_dl_media_mapping
+    </select>
+
+    <select id="getCountByType" resultType="com.ucar.datalink.domain.statis.StatisDetail">
+        SELECT
+        ms.ms_type AS type,
+        COUNT(1) AS countByType
+        FROM t_dl_media_mapping mm
+        INNER JOIN t_dl_media m ON mm.source_media_id=m.id
+        INNER JOIN t_dl_media_source ms ON m.media_source_id=ms.id
+        GROUP BY ms.ms_type
+    </select>
+    
+    <select id="findTaskIdsByMediaSourceId" parameterType="Long" resultType="Long">
+        SELECT
+        DISTINCT task_id
+        FROM t_dl_media_mapping mapping
+        LEFT JOIN t_dl_media media ON mapping.source_media_id = media.id
+        WHERE media.media_source_id = #{mediaSourceId} OR mapping.target_media_source_id = #{targetMediaSourceId}
+    </select>
+</mapper>

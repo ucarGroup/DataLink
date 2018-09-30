@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.MediaSourceDAO">
+
+    <resultMap id="mediaSourceResult" type="com.ucar.datalink.domain.media.MediaSourceInfo">
+        <result property="id" column="id"/>
+        <result property="name" column="ms_name"/>
+        <result property="type" column="ms_type"/>
+        <result property="desc" column="ms_desc"/>
+        <result property="parameter" column="ms_parameter"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <!-- all columns -->
+    <sql id="allMediaSourceColumns">id,ms_name,ms_type,ms_desc,ms_parameter,create_time,modify_time</sql>
+
+    <select id="getList" resultMap="mediaSourceResult">
+        select
+          id,
+          ms_name,
+          ms_type,
+          ms_desc,
+          ms_parameter,
+          create_time,
+          modify_time
+        from t_dl_media_source
+    </select>
+
+    <select id="getListByType" resultMap="mediaSourceResult">
+        select
+        id,
+        ms_name,
+        ms_type,
+        ms_desc,
+        ms_parameter,
+        create_time,
+        modify_time
+        from t_dl_media_source
+        where 1=1
+        <if test="mediaSourceType != null">
+            and ms_type in
+            <foreach collection="mediaSourceType" close=")" open="(" separator="," item="i">
+                #{i}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getListForQueryPage" resultMap="mediaSourceResult" >
+        select
+        id,
+        ms_name,
+        ms_type,
+        ms_desc,
+        ms_parameter,
+        create_time,
+        modify_time
+        from t_dl_media_source
+        where 1=1
+        <if test="mediaSourceType != null">
+            and ms_type in
+            <foreach collection="mediaSourceType" close=")" open="(" separator="," item="i">
+                #{i}
+            </foreach>
+        </if>
+        <if test="mediaSourceName != null">
+            and ms_name LIKE concat(concat('%',#{mediaSourceName}),'%')
+        </if>
+    </select>
+
+    <select id="getById" resultMap="mediaSourceResult">
+        select
+        <include refid="allMediaSourceColumns"/>
+        from t_dl_media_source where id=#{id}
+    </select>
+
+    <insert id="insert" parameterType="com.ucar.datalink.domain.media.MediaSourceInfo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_media_source
+        (ms_name,ms_type,ms_desc,ms_parameter,create_time,modify_time)
+        VALUES
+        (#{name}, #{type}, #{desc},#{parameter}, now(), now())
+    </insert>
+
+    <delete id="delete" parameterType="long">
+        delete from t_dl_media_source where id = #{id}
+    </delete>
+
+    <update id="update" parameterType="com.ucar.datalink.domain.media.MediaSourceInfo">
+        update t_dl_media_source
+        set
+        ms_name=#{name},
+        ms_type=#{type},
+        ms_desc=#{desc},
+        ms_parameter=#{parameter},
+        modify_time = now()
+        where id = #{id}
+    </update>
+
+    <select id="msCount" resultType="Integer">
+        SELECT
+        COUNT(1)
+        FROM t_dl_media_source
+    </select>
+
+    <select id="getCountByType" resultType="com.ucar.datalink.domain.statis.StatisDetail">
+        SELECT
+        ms_type AS type,
+        COUNT(1) AS countByType
+        FROM t_dl_media_source
+        GROUP BY ms_type
+    </select>
+</mapper>

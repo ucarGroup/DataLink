@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.TaskDAO">
+
+    <resultMap id="taskResult" type="task">
+        <result property="id" column="ID"/>
+        <result property="taskName" column="TASK_NAME"/>
+        <result property="taskDesc" column="TASK_DESC"/>
+        <result property="taskType" column="TASK_TYPE"/>
+        <result property="readerMediaSourceId" column="READER_MEDIA_SOURCE_ID"/>
+        <result property="taskParameter" column="TASK_PARAMETER"/>
+        <result property="taskReaderParameter" column="TASK_READER_PARAMETER"/>
+        <result property="taskWriterParameter" column="TASK_WRITER_PARAMETER"/>
+        <result property="targetState" column="TARGET_STATE"/>
+        <result property="groupId" column="GROUP_ID"/>
+        <result property="isDelete" column="IS_DELETE"/>
+        <result property="leaderTaskId" column="LEADER_TASK_ID"/>
+        <result property="isLeaderTask" column="IS_LEADER_TASK"/>
+        <result property="createTime" column="CREATE_TIME"/>
+        <result property="modifyTime" column="MODIFY_TIME"/>
+    </resultMap>
+
+    <!-- all columns -->
+    <sql id="allTaskColumns">ID,TASK_NAME,TASK_DESC,TASK_TYPE,READER_MEDIA_SOURCE_ID,TASK_PARAMETER,TASK_READER_PARAMETER,TASK_WRITER_PARAMETER,TARGET_STATE,GROUP_ID,IS_DELETE,LEADER_TASK_ID,IS_LEADER_TASK,CREATE_TIME,MODIFY_TIME</sql>
+
+    <insert id="insert" parameterType="task" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_task
+         (TASK_NAME,TASK_DESC,TASK_TYPE,READER_MEDIA_SOURCE_ID,TASK_PARAMETER,TASK_READER_PARAMETER,TASK_WRITER_PARAMETER,TARGET_STATE,GROUP_ID,LEADER_TASK_ID,IS_LEADER_TASK,CREATE_TIME,MODIFY_TIME)
+        VALUES
+         (#{taskName},#{taskDesc},#{taskType},#{readerMediaSourceId},#{taskParameter},#{taskReaderParameter},#{taskWriterParameter},#{targetState},#{groupId},#{leaderTaskId},#{isLeaderTask},now(),now())
+    </insert>
+
+    <update id="delete" parameterType="long">
+        UPDATE t_dl_task set IS_DELETE='true',MODIFY_TIME=now() where id=#{id}
+    </update>
+
+    <update id="migrateGroup">
+        UPDATE t_dl_task set IS_DELETE='false', GROUP_ID=#{groupId},MODIFY_TIME=now() where id=#{id}
+    </update>
+
+    <update id="update" parameterType="task">
+        UPDATE t_dl_task
+        <set>
+            <if test="taskName!=null and taskName!=''">
+                TASK_NAME=#{taskName},
+            </if>
+            <if test="taskDesc!=null and taskDesc!=''">
+                TASK_DESC=#{taskDesc},
+            </if>
+            <if test="readerMediaSourceId!=null">
+                READER_MEDIA_SOURCE_ID=#{readerMediaSourceId},
+            </if>
+            <if test="taskParameter!=null and taskParameter!=''">
+                TASK_PARAMETER=#{taskParameter},
+            </if>
+            <if test="taskReaderParameter!=null and taskReaderParameter!=''">
+                TASK_READER_PARAMETER=#{taskReaderParameter},
+            </if>
+            <if test="taskWriterParameter!=null and taskWriterParameter!=''">
+                TASK_WRITER_PARAMETER=#{taskWriterParameter},
+            </if>
+            <if test="targetState!=null">
+                TARGET_STATE=#{targetState},
+            </if>
+            <if test="groupId!=null and groupId!=0">
+                GROUP_ID=#{groupId},
+            </if>
+            <if test="leaderTaskId!=null">
+                LEADER_TASK_ID=#{leaderTaskId},
+            </if>
+            <if test="isLeaderTask!=null">
+                IS_LEADER_TASK=#{isLeaderTask},
+            </if>
+            MODIFY_TIME=now(),
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="getList" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        FROM t_dl_task where is_delete='false'
+    </select>
+
+    <select id="getListWithDeleted" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        FROM t_dl_task
+    </select>
+
+    <select id="getTasksByReaderMediaSourceId" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        FROM t_dl_task where reader_media_source_id = #{readerMediaSourceId} and is_delete = 'false'
+    </select>
+
+    <select id="findById" parameterType="long" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        FROM t_dl_task where id=#{id}
+    </select>
+
+    <select id="listByLeaderTaskId" parameterType="long" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        FROM t_dl_task where leader_task_id = #{leaderTaskId} and is_delete = 'false'
+    </select>
+
+    <select id="listAllLeaderTasks" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        FROM t_dl_task where is_leader_task = 'true' and is_delete = 'false'
+    </select>
+
+    <select id="listByGroupId" resultMap="taskResult" parameterType="long">
+        select
+        <include refid="allTaskColumns"/>
+        from t_dl_task where GROUP_ID= #{groupId} and is_delete='false'
+    </select>
+
+    <select id="findMaxModifyTime" resultType="java.util.Date">
+        select max(MODIFY_TIME) from t_dl_task
+    </select>
+
+    <select id="listByCondition" resultMap="taskResult" parameterType="task">
+        SELECT
+        <include refid="allTaskColumns"/>
+        from t_dl_task where is_delete='false'
+        <if test="groupId != null">
+            and GROUP_ID = #{groupId}
+        </if>
+        <if test="id != null">
+            and ID = #{id}
+        </if>
+        <if test="taskType != null">
+            and TASK_TYPE = #{taskType}
+        </if>
+        <if test="readerMediaSourceId!=null">
+            and READER_MEDIA_SOURCE_ID=#{readerMediaSourceId}
+        </if>
+    </select>
+
+    <select id="taskCount" resultType="Integer">
+        SELECT
+        COUNT(1)
+        FROM t_dl_task
+        WHERE is_delete='false'
+    </select>
+
+    <select id="getCountByType" resultType="com.ucar.datalink.domain.statis.StatisDetail">
+        SELECT
+        task_type AS type,
+        COUNT(1) AS countByType
+        FROM t_dl_task
+        WHERE is_delete='false'
+        GROUP BY task_type
+    </select>
+
+    <select id="getTasksByType" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        from t_dl_task where is_delete='false' and task_type = #{taskType}
+    </select>
+
+    <select id="getTaskMonitorInfoList" resultType="com.ucar.datalink.domain.monitor.TaskMonitorInfo">
+        SELECT
+        t.id taskId,
+        t.task_name taskName,
+        t.group_id groupId,
+        t.target_state targetState,
+        dt.delay_time delayTime,
+        ex.exception_detail exception,
+        ex.id exceptionId
+        FROM t_dl_task t
+        LEFT JOIN (SELECT * FROM t_dl_task_delaytime d INNER JOIN (SELECT max(id) AS maxid FROM t_dl_task_delaytime GROUP BY task_id) m ON d.id= m.maxid) dt ON dt.task_id=t.id
+        LEFT JOIN (SELECT * FROM t_dl_task_exception e INNER JOIN (SELECT max(id) AS maxid FROM t_dl_task_exception GROUP BY task_id) m ON e.id = m.maxid WHERE e.create_time BETWEEN #{startTime} AND #{endTime}) ex ON ex.task_id = t.id
+        WHERE t.is_delete='false'
+        <if test="taskId != null">
+            AND t.id = #{taskId}
+        </if>
+        <if test="groupId != null">
+            AND t.group_id = #{groupId}
+        </if>
+        ORDER BY exception DESC
+    </select>
+
+    <select id="getTaskListByGroupId" resultMap="taskResult" parameterType="long">
+        SELECT
+        <include refid="allTaskColumns"/>
+        FROM t_dl_task where is_delete='false' AND group_id = #{groupId}
+    </select>
+</mapper>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.TaskPositionDAO">
+
+    <resultMap id="taskPositionResult" type="taskPosition">
+        <result property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="taskPosition" column="task_position"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <insert id="updateTaskPosition" parameterType="taskPosition" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_task_position
+        (task_id, task_position,create_time,modify_time)
+        VALUES
+        (#{taskId}, #{taskPosition}, now(), now())
+        ON DUPLICATE KEY UPDATE
+        task_position=VALUES (task_position),
+        modify_time = now()
+    </insert>
+
+    <select id="getByTaskId" parameterType="long" resultMap="taskPositionResult">
+        SELECT id,task_id,task_position,create_time,modify_time from t_dl_task_position WHERE task_id = #{taskId}
+    </select>
+
+</mapper>

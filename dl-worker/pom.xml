@@ -1,0 +1,26 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.ucar.datalink</groupId>
+		<artifactId>datalink</artifactId>
+		<version>0.0.1</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>dl-worker</artifactId>
+	<packaging>pom</packaging>
+	<name>worker module for datalink</name>
+
+	<modules>
+		<module>dl-worker-core</module>
+		<module>dl-worker-reader-mysql</module>
+		<module>dl-worker-writer-dummy</module>
+		<module>dl-worker-writer-rdbms</module>
+		<module>dl-worker-reader-dummy</module>
+		<module>dl-worker-api</module>
+		<module>dl-worker-writer-es</module>
+		<module>dl-worker-reader-hbase</module>
+		<module>dl-worker-writer-hdfs</module>
+		<module>dl-worker-writer-hbase</module>
+	</modules>
+</project>

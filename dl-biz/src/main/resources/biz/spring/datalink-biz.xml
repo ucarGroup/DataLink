@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd">
+
+    <import resource="datalink-biz-dal.xml"/>
+    <import resource="datalink-biz-datasource.xml"/>
+
+    <context:annotation-config/>
+    <context:component-scan base-package="com.ucar.datalink"/>
+
+    <bean id="configReader" class="org.springframework.beans.factory.config.PreferencesPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <!--两种路径配置方式，带conf的在开发环境有效，不带conf的在发布环境有效-->
+                <value>classpath:conf/datasource.properties</value>
+                <value>classpath:conf/biz.properties</value>
+                <value>classpath:conf/extend.properties</value>
+                <value>classpath:datasource.properties</value>
+                <value>classpath:biz.properties</value>
+                <value>classpath:extend.properties</value>
+            </list>
+        </property>
+        <property name="propertiesPersister">
+            <bean class="com.ucar.datalink.biz.utils.DLPropertiesPersister"/>
+        </property>
+        <property name="ignoreResourceNotFound" value="true"/>
+    </bean>
+
+</beans>
