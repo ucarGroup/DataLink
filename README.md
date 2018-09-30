@@ -38,6 +38,6 @@ DataBus：https://github.com/linkedin/databus
 # 问题反馈
 目前有关DataLink的问题交流方式有如下几种，欢迎各位加入进行技术讨论。<br>
 qq交流群： 758937055<br>
-邮件交流： tech_plat_store@ucarinc.com<br>
+邮件交流： tech_plat_data@ucarinc.com<br>
 报告issue：[issues](https://github.com/ucarGroup/DataLink/issues)<br>
 ![](https://github.com/ucarGroup/DataLink/blob/master/img/DataLink%E4%BA%A4%E6%B5%81%E7%BE%A4%E7%BE%A4%E4%BA%8C%E7%BB%B4%E7%A0%81.png)
