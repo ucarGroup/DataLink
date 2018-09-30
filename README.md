@@ -17,7 +17,7 @@ DataLink开发时间从2016年12月开始，第一版于2017年5月份上线，�
 语言： 纯java开发<br><br>
 定位： 完成各种异构数据源之间的实时增量同步，一个分布式、可扩展的数据库同步系统
 # 工作原理
-![]()
+![基础架构](https://github.com/ucarGroup/DataLink/blob/master/img/0-0.%E6%9E%B6%E6%9E%84%E5%8E%9F%E7%90%86.png)
 原理描述：
 * 典型管理系统架构，manager(web管理)+worker(工作节点)<br>
     a. manager负责worker的负载均衡、集群的配置管理和系统监控<br>
