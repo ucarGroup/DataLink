@@ -19,10 +19,10 @@ DataLink开发时间从2016年12月开始，第一版于2017年5月份上线，�
 # 工作原理
 ![基础架构](https://github.com/ucarGroup/DataLink/blob/master/img/0-0.%E6%9E%B6%E6%9E%84%E5%8E%9F%E7%90%86.png)
 原理描述：
-* 典型管理系统架构，manager(web管理)+worker(工作节点)<br>
-    a. manager负责worker的负载均衡、集群的配置管理和系统监控<br>
-    b. worker核心功能是管理Task的生命周期，并配合Manager进行Re-Balance<br>
-* Zookeeper：Manager的高可用需要依赖于zookeeper，另外，Task会将运行时信息注册到zookeeper
+* 典型管理系统架构，Manager(Web管理)+Worker(工作节点)<br>
+    a. Manager负责worker的负载均衡、集群的配置管理和系统监控<br>
+    b. Worker核心功能是管理Task的生命周期，并配合Manager进行Re-Balance<br>
+* Zookeeper：Manager的高可用需要依赖于Zookeeper，另外，Task会将运行时信息注册到Zookeeper
 * Mysql：Datalink的运行需要依赖各种配置信息、以及在运行过程中会动态产生监控和统计数据，统一保存到Mysql中
 # QuickStart
 See the page for quick start: [QuickStart](https://github.com/ucarGroup/DataLink/wiki/0.0_QuickStart)
