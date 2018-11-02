@@ -1,6 +1,8 @@
 #!/bin/bash
 
-source /etc/profile
+if [ -f "/etc/profile" ];then
+    source /etc/profile
+fi
 current_path=`pwd`
 case "`uname`" in
     Linux)
@@ -114,7 +116,7 @@ if [ $? -ne 0 ];then
    cron_asterisk="* * * * *"
    cron_content="$base/bin/startup.sh"
    echo "$cron_asterisk sh $cron_content" >> /var/spool/cron/root
-   if [ ! -f "/etc/init.d/crond" ];then
+   if [ -f "/etc/init.d/crond" ];then
        /etc/init.d/crond restart
    fi
 fi
