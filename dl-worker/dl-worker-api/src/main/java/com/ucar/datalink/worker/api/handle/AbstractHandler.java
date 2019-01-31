@@ -108,16 +108,18 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
         );
 
 
+        // 对于该线程池来说,不能使用CallerRunsPolicy，会导致Future.get方法一直阻塞，进而导致Task始终无法关闭
+        // 相关原因可参考该链接：https://blog.csdn.net/zero__007/article/details/78915354
+        // 针对我们的场景，使用固定线程数+无界队列即可，所以把之前的CallerRunsPolicy去掉
         executorService = new ThreadPoolExecutor(
                 parameter.getPoolSize(),
                 parameter.getPoolSize(),
                 0L,
                 TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(parameter.getPoolSize() * 4),
+                new LinkedBlockingQueue<>(),
                 new NamedThreadFactory(
                         MessageFormat.format("Task-{0}-Writer-{1}-load", context.taskId(), parameter.getPluginName())
-                ),
-                new ThreadPoolExecutor.CallerRunsPolicy());
+                ));
     }
 
     @Override

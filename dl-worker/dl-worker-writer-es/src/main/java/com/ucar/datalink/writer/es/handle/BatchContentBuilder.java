@@ -108,7 +108,8 @@ public class BatchContentBuilder {
     private static void fillActionAndContent(BatchContentVo contentVo, RdbEventRecord record) {
         // 因为涉及到多表合并操作，所以不管原始操作是插入还是更新，Action都设置为Update
         // 当报404错误，更新失败的时候，再转为Index操作
-        contentVo.setBatchActionEnum(ESEnum.BatchActionEnum.UPDATE);
+//        contentVo.setBatchActionEnum(ESEnum.BatchActionEnum.UPDATE);
+        contentVo.setBatchActionEnum(ESEnum.BatchActionEnum.UPSERT);
 
         if (record.getEventType() == EventType.INSERT) {
             contentVo.setContent(buildData(record, false));
@@ -130,8 +131,8 @@ public class BatchContentBuilder {
         }
 
         //joinColumn列必须同步
-        String joinColumn = RecordMeta.mediaMapping(record).getJoinColumn();
-        for (EventColumn column : record.getColumns()) {
+//        String joinColumn = RecordMeta.mediaMapping(record).getJoinColumn();
+/*        for (EventColumn column : record.getColumns()) {
             boolean isJoinColumn = column.getColumnName().equals(joinColumn);
             if (justUpdated && !column.isUpdate() && !isJoinColumn) {
                 continue;
@@ -144,7 +145,18 @@ public class BatchContentBuilder {
             } else {
                 data.put(fieldNamePrefix + column.getColumnName(), column.isNull() ? null : column.getColumnValue());
             }
+        }*/
+
+        //将变更后当前行所有的值全部更新
+        for (EventColumn column : record.getColumns()) {
+            if (isDate(column)) {
+                data.put(fieldNamePrefix + column.getColumnName(), column.isNull() ? null : normalizeDate(column.getColumnValue()));
+            } else {
+                data.put(fieldNamePrefix + column.getColumnName(), column.isNull() ? null : column.getColumnValue());
+            }
         }
+
+
 
         buildGeoPosition(record, data, fieldNamePrefix);
         return data;

@@ -195,7 +195,7 @@ public class HBaseMediaSourceController {
                 return "success";
             }
             for (ClusterState.MemberData mem : memberDatas) {
-                String url = "http://" + mem.getWorkerState().url() + "/flush/reloadMediaSource/" + mediaSourceId;
+                String url = "http://" + mem.getWorkerState().url() + "/flush/reloadHBase/" + mediaSourceId;
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 HttpEntity request = new HttpEntity(null, headers);

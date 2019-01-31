@@ -8,6 +8,7 @@ import com.ucar.datalink.biz.utils.DataSourceFactory;
 import com.ucar.datalink.common.event.EventBusFactory;
 import com.ucar.datalink.common.utils.FutureCallback;
 import com.ucar.datalink.domain.event.EsConfigClearEvent;
+import com.ucar.datalink.domain.event.HBaseConfigClearEvent;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
@@ -74,6 +75,19 @@ public class FlushResource {
         EsConfigClearEvent event = new EsConfigClearEvent(new FutureCallback(), mediaSourceInfo);
         eventBus.post(event);
         event.getCallback().get();
+    }
+
+    @POST
+    @Path("/reloadHBase/{mediaSourceId}")
+    public void reloadHBase(@PathParam("mediaSourceId") String mediaSourceId) throws Throwable {
+        logger.info("Receive a request for reload hbase-media-source,with id " + mediaSourceId);
+
+        MediaSourceInfo mediaSourceInfo = DataLinkFactory.getObject(MediaSourceService.class).getById(Long.valueOf(mediaSourceId));
+        EventBus eventBus = EventBusFactory.getEventBus();
+        HBaseConfigClearEvent event = new HBaseConfigClearEvent(new FutureCallback(), mediaSourceInfo);
+        eventBus.post(event);
+        event.getCallback().get();
+
     }
 
     public Boolean msPreCloseAction(MediaSourceInfo mediaSourceInfo) {

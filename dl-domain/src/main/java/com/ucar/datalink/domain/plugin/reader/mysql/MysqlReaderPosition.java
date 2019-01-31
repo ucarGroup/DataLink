@@ -17,6 +17,8 @@ public class MysqlReaderPosition extends Position {
     private InetSocketAddress sourceAddress;
     private Long slaveId;
     protected Long timestamp;
+    private String latestEffectSyncLogFileName;
+    private Long latestEffectSyncLogFileOffset;
 
     public Long getSlaveId() {
         return slaveId;
@@ -72,5 +74,21 @@ public class MysqlReaderPosition extends Position {
 
     public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getLatestEffectSyncLogFileName() {
+        return latestEffectSyncLogFileName;
+    }
+
+    public void setLatestEffectSyncLogFileName(String latestEffectSyncLogFileName) {
+        this.latestEffectSyncLogFileName = latestEffectSyncLogFileName;
+    }
+
+    public Long getLatestEffectSyncLogFileOffset() {
+        return latestEffectSyncLogFileOffset;
+    }
+
+    public void setLatestEffectSyncLogFileOffset(Long latestEffectSyncLogFileOffset) {
+        this.latestEffectSyncLogFileOffset = latestEffectSyncLogFileOffset;
     }
 }

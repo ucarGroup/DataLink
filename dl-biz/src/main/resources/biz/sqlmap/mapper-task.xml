@@ -70,9 +70,6 @@
             <if test="leaderTaskId!=null">
                 LEADER_TASK_ID=#{leaderTaskId},
             </if>
-            <if test="isLeaderTask!=null">
-                IS_LEADER_TASK=#{isLeaderTask},
-            </if>
             MODIFY_TIME=now(),
         </set>
         where id = #{id}

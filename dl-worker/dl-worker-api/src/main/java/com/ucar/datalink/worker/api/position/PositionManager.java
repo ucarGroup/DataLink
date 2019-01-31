@@ -50,4 +50,10 @@ public interface PositionManager {
      * @return
      */
     <T extends Position> T getPosition(String taskId);
+
+    /**
+     * 如果存在的话，将某个任务的Position信息废弃，即：停止进行位点更新操作，避免因并发update导致的数据一致性问题
+     * @param taskId
+     */
+    void discardPosition(String taskId);
 }

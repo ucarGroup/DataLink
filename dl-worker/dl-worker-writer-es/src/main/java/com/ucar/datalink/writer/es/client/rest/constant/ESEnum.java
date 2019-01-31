@@ -16,9 +16,9 @@ public class ESEnum {
 	    GREATER("gt"),
 	    /** contain */
 	    CONTAIN("ct");
-	    
+
 	    private String acronym;
-	    
+
 	    ComparisonEnum(String acronym) {
 	    	this.acronym = acronym;
 	    }
@@ -30,15 +30,15 @@ public class ESEnum {
 		public void setAcronym(String acronym) {
 			this.acronym = acronym;
 		}
-	    
+
 	}
-	
+
 	public interface DSLEnum {
 		public String getName() ;
 		public void setName(String name) ;
 	}
 	/**
-	 * 
+	 *
 	 * Description: es结点关键字枚举
 	 * All Rights Reserved.
 	 * Created on 2016-6-16 下午4:46:35
@@ -63,7 +63,7 @@ public class ESEnum {
         MATCH_PHRASE_PREFIX("match_phrase_prefix"),
         PREFIX("prefix"),
         QUERY_STRING("query_string");
-		
+
 		/**
 		 * 名称
 		 */
@@ -72,16 +72,16 @@ public class ESEnum {
 		 * 子节点是否为数组
 		 */
 		boolean isArray = false;
-		
+
 		DSLKeyEnum(String name , boolean isArray){
 			this.name = name;
 			this.isArray = isArray;
 		}
-		
+
 		DSLKeyEnum(String name){
 			this.name = name;
 		}
-		
+
 		public String getName() {
 			return name;
 		}
@@ -96,12 +96,12 @@ public class ESEnum {
 		public void setArray(boolean isArray) {
 			this.isArray = isArray;
 		}
-		
+
 	}
-	
-	
+
+
 	/**
-	 * 
+	 *
 	 * Description: es域关键字枚举
 	 * All Rights Reserved.
 	 * Created on 2016-6-16 下午4:46:35
@@ -115,7 +115,7 @@ public class ESEnum {
 		BOOST("boost"),//用于文档得分的加权值
 		MINIMUM_MATCH("minimum_match"),//用于指定至少匹配数
 		CUTOFF_FREQUENCY("cutoff_frequency"),//用于构建高低频词组 0.01（1%）
-        LOW_FREQ_OPERATOR("low_freq_operator"),//用于指定低频词组的逻辑运算符 （or（默认）、and）		
+        LOW_FREQ_OPERATOR("low_freq_operator"),//用于指定低频词组的逻辑运算符 （or（默认）、and）
 		HIGH_FREQ_OPERATOR("high_freq_operator"),//用于指定高频词组的逻辑运算符 （or（默认）、and）
 		ANALYZER("analyzer"),//用于定义分析查询文本时用到的分析器名称
 		DISABLE_COORD("disable_coord"),//是否禁用分数因子的计算，默认为false
@@ -132,11 +132,11 @@ public class ESEnum {
 		 * 名称
 		 */
 		String name;
-		
+
 		DSLFieldKeyEnum(String name){
 			this.name = name;
 		}
-		
+
 		public String getName() {
 			return name;
 		}
@@ -145,15 +145,16 @@ public class ESEnum {
 		}
 
 	}
-	
+
 	public static enum BatchActionEnum {
 		INDEX("index"),
 	    CREATE("create"),
 	    UPDATE("update"),
-	    DELETE("delete");
-	    
+	    DELETE("delete"),
+		UPSERT("upsert");
+
 	    private String name;
-	    
+
 	    BatchActionEnum(String name) {
 	    	this.name = name;
 	    }
@@ -168,7 +169,7 @@ public class ESEnum {
 
 	}
 	/**
-	 * 
+	 *
 	 * Description: 返回结果解析器枚举
 	 * All Rights Reserved.
 	 * Created on 2016-7-20 下午2:44:53
@@ -183,9 +184,9 @@ public class ESEnum {
 	    DELETE(new DeleteParseHandler()),
 	    BULK(new BulkParseHandler()),
 		SINGLE(new SingleSearchParseHandler());
-	    
+
 	    private ParseHandler parseHandler;
-	    
+
 	    ParseEnum(ParseHandler parseHandler) {
 	    	this.parseHandler = parseHandler;
 	    }
@@ -199,7 +200,7 @@ public class ESEnum {
 		}
 	}
 	/**
-	 * 
+	 *
 	 * Description: 操作类型
 	 * All Rights Reserved.
 	 * Created on 2016-8-11 下午3:55:12
@@ -210,5 +211,5 @@ public class ESEnum {
 	    ALLUPDATE,
 	    UPDATE,
 	    DELETE;
-	} 
+	}
 }

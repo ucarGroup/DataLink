@@ -28,9 +28,14 @@ public class CanalTaskMetaManager extends MemoryMetaManager implements CanalMeta
 
     private String filter;
     private PositionManager positionManager;
+    private MysqlTaskReader mysqlTaskReader;
 
     private final Position nullCursor = new Position() {
     };
+
+    public CanalTaskMetaManager(MysqlTaskReader mysqlTaskReader) {
+        this.mysqlTaskReader = mysqlTaskReader;
+    }
 
     @Override
     public void start() {
@@ -73,7 +78,17 @@ public class CanalTaskMetaManager extends MemoryMetaManager implements CanalMeta
     @Override
     public void updateCursor(ClientIdentity clientIdentity, Position position) throws CanalMetaManagerException {
         super.updateCursor(clientIdentity, position);
-        positionManager.updatePosition(clientIdentity.getDestination(), CanalPositionTranslator.translateToMysqlReaderPosition((LogPosition) position));
+        positionManager.updatePosition(clientIdentity.getDestination(), buildPosition(position));
+    }
+
+    private MysqlReaderPosition buildPosition(Position position) {
+        MysqlReaderPosition mysqlReaderPosition = CanalPositionTranslator.translateToMysqlReaderPosition((LogPosition) position);
+        EffectSyncPosition effectSyncPosition = mysqlTaskReader.getEffectSyncPosition();
+        if (effectSyncPosition != null) {
+            mysqlReaderPosition.setLatestEffectSyncLogFileName(effectSyncPosition.getLatestEffectSyncLogFileName());
+            mysqlReaderPosition.setLatestEffectSyncLogFileOffset(effectSyncPosition.getLatestEffectSyncLogFileOffset());
+        }
+        return mysqlReaderPosition;
     }
 
     public String getFilter() {

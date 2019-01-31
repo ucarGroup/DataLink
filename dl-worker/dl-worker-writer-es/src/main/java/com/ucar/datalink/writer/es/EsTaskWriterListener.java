@@ -21,7 +21,7 @@ public class EsTaskWriterListener implements PluginListener {
         eventBus.register(new Object() {
             @Subscribe
             public void listener(EsConfigClearEvent event) {
-                logger.info("Receive an event with media-source-id " + event.getMediaSourceInfo().getId());
+                logger.info("Receive an event for clear es-config with media-source-id " + event.getMediaSourceInfo().getId());
                 try {
                     EsConfigManager.invalidate(event.getMediaSourceInfo());
                     event.getCallback().onCompletion(null, null);

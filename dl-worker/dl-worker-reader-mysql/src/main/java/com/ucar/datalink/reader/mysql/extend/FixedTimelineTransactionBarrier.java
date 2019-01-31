@@ -1,4 +1,4 @@
-package com.ucar.datalink.reader.mysql;
+package com.ucar.datalink.reader.mysql.extend;
 
 import com.alibaba.otter.canal.protocol.CanalEntry;
 import com.alibaba.otter.canal.sink.entry.group.TimelineBarrier;

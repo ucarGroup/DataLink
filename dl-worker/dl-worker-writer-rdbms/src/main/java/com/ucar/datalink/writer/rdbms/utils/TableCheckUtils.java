@@ -41,7 +41,7 @@ public class TableCheckUtils {
         Long rowNum = Long.valueOf(tableResult.get("Rows").toString());
         if (rowNum > 5000000L) {
             logger.info("the row count of table {} is {}, please handle the ddl sql manually.", targetTableName, rowNum);
-            sendMail(record, columnNameInfo, rowNum);
+//            sendMail(record, columnNameInfo, rowNum);
             return true;
         }
         return false;

@@ -1,4 +1,4 @@
-package com.ucar.datalink.reader.mysql;
+package com.ucar.datalink.reader.mysql.extend;
 
 import com.alibaba.otter.canal.sink.entry.EntryEventSink;
 import com.alibaba.otter.canal.sink.entry.group.GroupBarrier;
@@ -10,7 +10,8 @@ import java.util.List;
 
 /**
  * 1. copy自com.alibaba.otter.canal.sink.entry.group.GroupEventSink(版本：1.0.24)
- * 2. 唯一的不同在于start方法，使用了FixedTimelineTransactionBarrier类，而不是canal自带的TimelineTransactionBarrier
+ * 2. 不同点一：使用了FixedTimelineTransactionBarrier类，而不是canal自带的TimelineTransactionBarrier
+ * 3. 不同点二：修复了doSink里的一个bug，bug描述参见 https://github.com/alibaba/canal/issues/1478
  *
  * Created by lubiao on 2017/10/10.
  */
@@ -45,7 +46,7 @@ public class FixedGroupEventSink extends EntryEventSink {
             try {
                 barrier.await(event);// 进行timeline的归并调度处理
                 if (filterTransactionEntry) {
-                    return super.doSink(Arrays.asList(event));
+                    super.doSink(Arrays.asList(event));
                 } else if (i == size - 1) {
                     // 针对事务数据，只有到最后一条数据都通过后，才进行sink操作，保证原子性
                     // 同时批量sink，也要保证在最后一条数据释放状态之前写出数据，否则就有并发问题

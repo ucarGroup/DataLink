@@ -120,7 +120,7 @@ public class RdbEventRecordLoader extends RecordLoader<RdbEventRecord> {
                         break;
 
                     case Types.BLOB:
-                        lobCreator.setBlobAsBytes(ps, paramIndex, (byte[]) param);
+                        lobCreator.setBlobAsBytes(ps, paramIndex, param instanceof String ? ((String) param).getBytes() : (byte[]) param);
                         break;
                     case Types.TIME:
                     case Types.TIMESTAMP:

@@ -1,8 +1,6 @@
 package com.ucar.datalink.biz.utils;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.google.common.cache.*;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
@@ -17,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -30,7 +29,20 @@ public class DataSourceFactory {
     private static final LoadingCache<MediaSourceInfo, DataSource> dataSources;
 
     static {
-        dataSources = CacheBuilder.newBuilder().build(new CacheLoader<MediaSourceInfo, DataSource>() {
+        dataSources = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).removalListener(new RemovalListener<MediaSourceInfo, DataSource>() {
+            @Override
+            public void onRemoval(RemovalNotification<MediaSourceInfo, DataSource> notification) {
+                DataSource ds = notification.getValue();
+                if (ds instanceof org.apache.tomcat.jdbc.pool.DataSource) {
+                    try {
+                        ((org.apache.tomcat.jdbc.pool.DataSource) ds).close();
+                        logger.info("RemovalListener close datasource succeeded.");
+                    } catch (Exception e) {
+                        logger.error("RemovalListener close datasource failed, DataSource is " + ds, e);
+                    }
+                }
+            }
+        }).build(new CacheLoader<MediaSourceInfo, DataSource>() {
             @Override
             public DataSource load(MediaSourceInfo sourceInfo) throws Exception {
                 MediaSrcParameter parameter = sourceInfo.getParameterObj();

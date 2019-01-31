@@ -7,6 +7,7 @@ import com.alibaba.otter.canal.instance.manager.model.Canal;
 import com.alibaba.otter.canal.instance.manager.model.CanalParameter;
 import com.alibaba.otter.canal.parse.CanalEventParser;
 import com.alibaba.otter.canal.parse.inbound.mysql.MysqlEventParser;
+import com.alibaba.otter.canal.protocol.CanalEntry;
 import com.alibaba.otter.canal.protocol.ClientIdentity;
 import com.alibaba.otter.canal.protocol.Message;
 import com.alibaba.otter.canal.server.embedded.CanalServerWithEmbedded;
@@ -16,6 +17,8 @@ import com.alibaba.otter.canal.sink.entry.EntryEventSink;
 import com.ucar.datalink.domain.plugin.reader.mysql.GroupSinkMode;
 import com.ucar.datalink.domain.plugin.reader.mysql.MysqlReaderParameter;
 import com.ucar.datalink.contract.log.rdbms.RdbEventRecord;
+import com.ucar.datalink.reader.mysql.extend.CustomCanalInstanceWithManager;
+import com.ucar.datalink.reader.mysql.extend.FixedGroupEventSink;
 import com.ucar.datalink.reader.mysql.utils.Constants;
 import com.ucar.datalink.reader.mysql.utils.StatisticKey;
 import com.ucar.datalink.worker.api.task.RecordChunk;
@@ -53,6 +56,7 @@ public class MysqlTaskReader extends TaskReader<MysqlReaderParameter, RdbEventRe
     private ClientIdentity clientIdentity;
     private CanalDownStreamHandler handler;
     private MessageParser messageParser;
+    private volatile EffectSyncPosition effectSyncPosition;
 
     @Override
     public void start() {
@@ -81,11 +85,11 @@ public class MysqlTaskReader extends TaskReader<MysqlReaderParameter, RdbEventRe
                 canal.getCanalParameter().setSlaveId(slaveId + Long.valueOf(context.taskId()));//动态生成slaveid，避免重复
                 canal.getCanalParameter().setFilterTableError(filterTableError);
 
-                CanalInstanceWithManager instance = new CanalInstanceWithManager(canal, filter) {
+                CanalInstanceWithManager instance = new CustomCanalInstanceWithManager(canal, filter) {
 
                     @Override
                     protected void initMetaManager() {
-                        CanalTaskMetaManager canalTaskMetaManager = new CanalTaskMetaManager();
+                        CanalTaskMetaManager canalTaskMetaManager = new CanalTaskMetaManager(MysqlTaskReader.this);
                         canalTaskMetaManager.setPositionManager(context.positionManager());
                         canalTaskMetaManager.setFilter(MysqlTaskReader.this.filter);
                         metaManager = canalTaskMetaManager;
@@ -173,13 +177,22 @@ public class MysqlTaskReader extends TaskReader<MysqlReaderParameter, RdbEventRe
             handler = null;
         }
 
-        canalServer.stop(destination);
-        canalServer.stop();
+        //停止的时候可能task从来没有启动过，所以加非空校验
+        if (canalServer != null) {
+            canalServer.stop(destination);
+            canalServer.stop();
+        }
+
     }
 
     @Override
     public void commit(RecordChunk<RdbEventRecord> recordChunk) throws InterruptedException {
         canalServer.ack(clientIdentity, recordChunk.getMetaData(Constants.BATCH_ID));
+        if (!recordChunk.getRecords().isEmpty()) {
+            this.effectSyncPosition = new EffectSyncPosition(
+                    recordChunk.getMetaData(Constants.LOG_FILE_NAME),
+                    recordChunk.getMetaData(Constants.LOG_FILE_OFFSET));
+        }
     }
 
     @Override
@@ -232,11 +245,13 @@ public class MysqlTaskReader extends TaskReader<MysqlReaderParameter, RdbEventRe
 
         // 获取第一个的entry时间，包括被过滤的数据
         // 获取该批次数据对应的binlog日志大小
-        long firstEntryTime = 0;
         long payloadSize = 0;
+        String logFileName = null;
+        long logFileOffset = 0;
         if (!org.springframework.util.CollectionUtils.isEmpty(message.getEntries())) {
-            firstEntryTime = message.getEntries().get(0).getHeader().getExecuteTime();
             payloadSize = message.getEntries().stream().mapToLong(i -> i.getHeader().getEventLength()).summaryStatistics().getSum();
+            logFileName = message.getEntries().get(0).getHeader().getLogfileName();
+            logFileOffset = message.getEntries().get(0).getHeader().getLogfileOffset();
         }
 
         if (parameter.isDump()) {
@@ -248,10 +263,12 @@ public class MysqlTaskReader extends TaskReader<MysqlReaderParameter, RdbEventRe
                         .stream()
                         .filter(r -> !parameter.getFilteredEventTypes().contains(r.getEventType()))
                         .collect(Collectors.toList()),
-                firstEntryTime,
+                calcFirstEntryTime(message),
                 payloadSize
         );
         result.putMetaData(Constants.BATCH_ID, message.getId());
+        result.putMetaData(Constants.LOG_FILE_NAME, logFileName);
+        result.putMetaData(Constants.LOG_FILE_OFFSET, logFileOffset);
         return result;
     }
 
@@ -283,5 +300,45 @@ public class MysqlTaskReader extends TaskReader<MysqlReaderParameter, RdbEventRe
         } else { // 超过3次，最多只sleep 10ms
             LockSupport.parkNanos(1000 * 1000L * newEmptyTimes);
         }
+    }
+
+    /**
+     * <p>
+     *     设计之初，firstEntryTime的获取方式为：message.getEntries().get(0).getHeader().getExecuteTime()
+     *     这样获取不够精确，在有大事务或者长事务时，按此取到的firstEntryTime和事务最终提交的时间会有比较大的差距，
+     *     此时，我们通过firstEntryTime去计算延迟时间的时候，算出来的值就会比较大而触发报警。
+     *
+     *     为什么按此取到的firstEntryTime和事务最终提交的时间会有比较大的差距呢？是因为mysql对于每个操作事件，
+     *     以其真正发生的时间作为ExecuteTime，不会因为在一个事务里，而以提交时间为准，如下所示：
+     *     TRANSACTIONBEGIN   2018-01-01 10:00:00
+     *     INSERT             2018-01-01 10:01:00
+     *     UPDATE             2018-01-01 10:02:00
+     *     TRANSACTIONEND     2018-01-01 10:03:00
+     * </p>
+     *
+     * <p>
+     *     而应该以第一个TRANSACTIONEND的时间为准，因为TRANSACTIONEND对应的是最终的commit，代表了实际发生
+     *     如果此批次没有TRANSACTIONEND，说明该批次所有数据都在一个事务里，则以最后一条的时间为准
+     *     这么改，主要是解决了长事务的问题，此处所说的长事务，是指一个事务从begin到end的跨度比较长，但中间不一定
+     *     有非常多的操做，并且这些操作的间隔时间比较长。
+     * </p>
+     *
+     * @param message
+     * @return
+     */
+    private long calcFirstEntryTime(Message message) {
+        CanalEntry.Entry lastEntry = null;
+        for (CanalEntry.Entry entry : message.getEntries()) {
+            lastEntry = entry;
+            if(entry.getEntryType() == CanalEntry.EntryType.TRANSACTIONEND){
+                break;
+            }
+        }
+
+        return lastEntry.getHeader().getExecuteTime();
+    }
+
+    public EffectSyncPosition getEffectSyncPosition() {
+        return effectSyncPosition;
     }
 }

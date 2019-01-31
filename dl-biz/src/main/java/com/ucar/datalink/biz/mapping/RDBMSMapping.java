@@ -42,7 +42,7 @@ public class RDBMSMapping extends AbstractMapping {
         toHDFS.put("double", "double");
         toHDFS.put("text", "string");
         toHDFS.put("clob", "string");
-        toHDFS.put("blob", "string");
+        toHDFS.put("blob", "binary");
         toHDFS.put("decimal", "decimal");
         toHDFS.put("bigint identity", "bigint");
         toHDFS.put("bigint unsigned", "bigint");
@@ -90,7 +90,6 @@ public class RDBMSMapping extends AbstractMapping {
         toES.put("date", "date");
         toES.put("mediumtext","string");
         toES.put("integer", "integer");
-        toES.put("decimal","string");
         toES.put("longvarchar","string");
         toES.put("datetime2","date");
         toES.put("nvarchar","string");

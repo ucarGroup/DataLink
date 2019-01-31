@@ -92,9 +92,11 @@ public class SessionHandler extends SimpleChannelHandler {
 
         Node activeNode = coordinator.getActiveGroupCoordinator();
         if (activeNode == null) {
+            logger.trace("Coordinator不存在");
             sendResponse(ctx,
                     new Response(responseHeader, new GroupCoordinatorResponse(Errors.GROUP_COORDINATOR_NOT_AVAILABLE.code(), Node.noNode())));
         } else {
+            logger.trace("Coordinator存在,当前Coordinator是：{}", activeNode.toString());
             sendResponse(ctx,
                     new Response(responseHeader, new GroupCoordinatorResponse(Errors.NONE.code(), activeNode)));
         }
@@ -139,7 +141,12 @@ public class SessionHandler extends SimpleChannelHandler {
                     HeartbeatResponse response = new HeartbeatResponse(errorCode);
                     logger.trace(String.format("Sending heartbeat response %s for correlation id %d to client %s.",
                             response, request.getHeader().correlationId(), request.getHeader().clientId()));
-                    sendResponse(ctx, new Response(responseHeader, response));
+                    //当前manager不是active-manager，则结束和client的通信
+                    if(errorCode == Errors.NOT_COORDINATOR_FOR_GROUP.code()){
+                        ctx.getChannel().disconnect();
+                    }else {
+                        sendResponse(ctx, new Response(responseHeader, response));
+                    }
                 });
     }
 

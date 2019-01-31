@@ -1,6 +1,8 @@
 package com.ucar.datalink.worker.core.runtime;
 
-import com.google.common.collect.Maps;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.ucar.datalink.biz.service.TaskPositionService;
 import com.ucar.datalink.common.utils.NamedThreadFactory;
 import com.ucar.datalink.domain.Position;
@@ -26,7 +28,8 @@ public class TaskPositionManager implements PositionManager {
     private WorkerConfig workerConfig;
     private ScheduledExecutorService executor;
     private Set<String> updatePositionTasks;
-    private Map<String, Position> positions;
+    private LoadingCache<String, Position> updatedPositions;
+    private NullPosition nullPosition = new NullPosition();
 
     private long period = 1000;// 定时持久化频率，单位ms
     private volatile boolean running = false;
@@ -46,7 +49,17 @@ public class TaskPositionManager implements PositionManager {
         this.running = true;
         this.executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Task-Position-Manager"));
         this.updatePositionTasks = Collections.synchronizedSet(new HashSet<>());
-        this.positions = Maps.newConcurrentMap();
+        this.updatedPositions = CacheBuilder.newBuilder().build(new CacheLoader<String, Position>() {
+            @Override
+            public Position load(String taskId) throws Exception {
+                Position position = taskPositionService.getPosition(taskId);
+                if (position == null) {
+                    return nullPosition;
+                } else {
+                    return position;
+                }
+            }
+        });
         // 启动定时工作任务
         this.executor.scheduleAtFixedRate(() -> {
             synchronized (TaskPositionManager.this) {
@@ -68,7 +81,7 @@ public class TaskPositionManager implements PositionManager {
         running = false;
         executor.shutdownNow();
         updatePositionTasks.clear();
-        positions.clear();
+        updatedPositions.invalidateAll();
     }
 
     @Override
@@ -79,7 +92,7 @@ public class TaskPositionManager implements PositionManager {
     @Override
     public void updatePosition(String taskId, Position position) {
         if (running) {
-            positions.put(taskId, position);
+            updatedPositions.put(taskId, position);
             updatePositionTasks.add(taskId);
         }
     }
@@ -100,13 +113,40 @@ public class TaskPositionManager implements PositionManager {
         return (T) taskPositionService.getPosition(taskId);
     }
 
-    private void flush(String taskId) {
-        try {
-            taskPositionService.updatePosition(taskId, positions.get(taskId));
-            updatePositionTasks.remove(taskId);//概率上存在刚刚add，就被remove的情况，但从宏观上看没有任何问题
-        } catch (Throwable e) {
-            // ignore
-            logger.error("period update position for task " + taskId + " failed!", e);
+    @Override
+    public void discardPosition(String taskId) {
+        synchronized (this) {
+            updatePositionTasks.remove(taskId);
+            updatedPositions.invalidate(taskId);
+            logger.info("Position is discarded for task " + taskId);
         }
+    }
+
+    private void flush(String taskId) {
+        if (running) {
+            try {
+                Position position = getUpdatedPosition(taskId);
+                if (position != null) {
+                    taskPositionService.updatePosition(taskId, position);
+                }
+                updatePositionTasks.remove(taskId);//概率上存在刚刚add，就被remove的情况，但从宏观上看没有任何问题
+            } catch (Throwable e) {
+                // ignore
+                logger.error("period update position for task " + taskId + " failed!", e);
+            }
+        }
+    }
+
+    private <T extends Position> T getUpdatedPosition(String taskId) {
+        Position position = updatedPositions.getUnchecked(taskId);
+        if (position == nullPosition) {
+            return null;
+        } else {
+            return (T) position;
+        }
+    }
+
+    static class NullPosition extends Position {
+
     }
 }

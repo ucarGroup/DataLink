@@ -110,7 +110,10 @@ else
 fi
 
 
-echo "install cron"
+echo "append manager cron script"
+if [ ! -f "/var/spool/cron/root" ];then
+    touch /var/spool/cron/root
+fi
 grep "startup.sh" /var/spool/cron/root
 if [ $? -ne 0 ];then
    cron_asterisk="* * * * *"

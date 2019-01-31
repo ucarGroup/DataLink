@@ -48,6 +48,7 @@ public class ServerStatusMonitor {
             @Override
             public void handleDataChange(String dataPath, Object data) throws Exception {
                 //暂时不支持动态显示切换，so do nothing
+                logger.info("received manager active node data change event.");
             }
 
             @Override
@@ -61,6 +62,7 @@ public class ServerStatusMonitor {
         this.zkStateListener = new IZkStateListener() {
             @Override
             public void handleStateChanged(Watcher.Event.KeeperState state) throws Exception {
+                logger.info("received handle state change event , state is :" + state);
             }
 
             @Override

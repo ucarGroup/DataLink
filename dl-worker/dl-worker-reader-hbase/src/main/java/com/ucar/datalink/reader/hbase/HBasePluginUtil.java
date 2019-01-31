@@ -29,7 +29,10 @@ public class HBasePluginUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(HBasePluginUtil.class);
 
-
+    /**
+     * 一次抓取的最大数量，1000条，然后根据这些记录分析出表结构
+     */
+    private static final long MAX_FETCH_NUM = 1000;
     /**
      *  根据传入的MediaSourceInfo的id，检查对应的hbase集群是否连接正常
      * @param event
@@ -253,8 +256,8 @@ public class HBasePluginUtil {
             }
             Scan scan = new Scan();
             scan.addFamily(columnFamily.getBytes());
-            scan.setCaching(10);
-            scan.setFilter(new PageFilter(10));
+            scan.setCaching((int)MAX_FETCH_NUM);
+            scan.setFilter(new PageFilter(MAX_FETCH_NUM));
             rs = hTable.getScanner(scan);
             Result r = rs.next();
             if (r == null) {

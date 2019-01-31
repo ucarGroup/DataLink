@@ -75,9 +75,12 @@ public class WorkerTaskContainer extends WorkerTask {
             }
         }
 
-        //必须等待WorkerTaskReader和WorkerTaskWriter全部完成，这样才能确保task真正完成资源释放了
+        // 必须等待WorkerTaskReader和WorkerTaskWriter全部完成，这样才能确保task真正完成资源释放了
         this.workerTaskReader.awaitStop(Long.MAX_VALUE);
         this.workerCombinedTaskWriter.awaitStop(Long.MAX_VALUE);
+
+        // Task最后关闭的时候，需要把PositionManager中缓存的待刷新的Position信息清理掉，否则会导致Position出现脏数据更新
+        this.workerTaskReaderContext.positionManager().discardPosition(id());
     }
 
     @Override

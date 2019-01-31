@@ -11,19 +11,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BatchContentVo implements Serializable {
-	
+
 	private BatchActionEnum batchActionEnum;
-	
+
 	private String index;
-	
+
 	private String type;
-	
+
 	private String id;
 	//转化json串时，保留值为null的字段，使其能将值为null的字段传递到服务端,默认自动过滤掉值为null的字段
 	private boolean retainNullValue = false;
 	//指定其他支持的配置
 	private Map<String,Object> selfConfig = new HashMap<String, Object>();
-	
+
 	private Object content;
 
 	public BatchActionEnum getBatchActionEnum() {
@@ -33,7 +33,7 @@ public class BatchContentVo implements Serializable {
 	public void setBatchActionEnum(BatchActionEnum batchActionEnum) {
 		this.batchActionEnum = batchActionEnum;
 	}
-	
+
 	public String getIndex() {
 		return index;
 	}
@@ -65,7 +65,7 @@ public class BatchContentVo implements Serializable {
 	public void setContent(Object content) {
 		this.content = content;
 	}
-	
+
 	public boolean isRetainNullValue() {
 		return retainNullValue;
 	}
@@ -88,40 +88,48 @@ public class BatchContentVo implements Serializable {
 		StringBuilder sb = new StringBuilder();
 		JSONObject actionJson = new JSONObject();
 		JSONObject actionBodyJson =  new JSONObject();
-		
+
 		if(!StringUtils.isBlank(index)) {
 			actionBodyJson.put("_index", index);
 		}
-		
+
 		if(!StringUtils.isBlank(type)) {
 			actionBodyJson.put("_type", type);
 		}
-		
+
 		if(!StringUtils.isBlank(id)) {
 			actionBodyJson.put("_id", id);
 		}
-		
+
 		actionBodyJson.putAll(selfConfig);
-		
-		actionJson.put(batchActionEnum.getName(), actionBodyJson);
-		
+
+		if(batchActionEnum == BatchActionEnum.UPSERT){
+			actionJson.put(BatchActionEnum.UPDATE.getName(), actionBodyJson);
+		}else{
+			actionJson.put(batchActionEnum.getName(), actionBodyJson);
+		}
+
 		sb.append(actionJson.toJSONString()).append("\n");
 		if(content != null) {
-			
+
             String json = null;
             if(retainNullValue) {
             	json = JSONObject.toJSONString(content, SerializerFeature.WriteMapNullValue);
             }else {
 				json = JSONObject.toJSONString(content);
             }
-            
+
 			if(BatchActionEnum.UPDATE.equals(batchActionEnum)) {
-				json = "{ \"doc\" : " + json + " }"; 
+				json = "{ \"doc\" : " + json + " }";
 			}
-			
+
+			if(BatchActionEnum.UPSERT.equals(batchActionEnum)) {
+				json = "{ \"doc\" : " + json + " ,\"doc_as_upsert\" : true}";
+			}
+
 			sb.append(json).append("\n");
 		}
 		return sb.toString();
 	}
-	
+
 }

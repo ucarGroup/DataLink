@@ -91,7 +91,7 @@ public class SyncRelationServiceImpl implements SyncRelationService {
             realMediaSourceId = mediaSourceId;
         }
         List<SyncNode> list = treesCache.getUnchecked(mediaName);
-        return list.stream().filter(i -> isDbInNodeTree(realMediaSourceId, i)).collect(Collectors.toList());
+        return list.stream().filter(i -> isDbInNodeTree(realMediaSourceId, mediaName, i, true)).collect(Collectors.toList());
     }
 
     @Override
@@ -493,18 +493,22 @@ public class SyncRelationServiceImpl implements SyncRelationService {
         return null;
     }
 
-    private boolean isDbInNodeTree(Long mediaSourceId, SyncNode rootNode) {
+    private boolean isDbInNodeTree(Long mediaSourceId, String mediaName, SyncNode rootNode, Boolean isRootNode) {
         if (mediaSourceId == null) {
             return true;//如果没有指定具体数据源，则认为不需要过滤，直接返回true即可
         }
 
-        if (rootNode.getMediaSource().getId().equals(mediaSourceId)) {
+        if (isRootNode) {
+            if (rootNode.getMediaSource().getId().equals(mediaSourceId) && (rootNode.getMappingInfo().getSourceMedia().getName().equalsIgnoreCase(mediaName) || rootNode.getMappingInfo().getSourceMedia().getName().equals("(.*)"))) {
+                return true;
+            }
+        } else if (rootNode.getMediaSource().getId().equals(mediaSourceId) && rootNode.getMappingInfo().getTargetMediaName().equalsIgnoreCase(mediaName)) {
             return true;
         }
 
         if (rootNode.getChildren() != null && !rootNode.getChildren().isEmpty()) {
             for (SyncNode node : rootNode.getChildren()) {
-                if (isDbInNodeTree(mediaSourceId, node)) {
+                if (isDbInNodeTree(mediaSourceId, mediaName, node, false)) {
                     return true;
                 }
             }

@@ -17,6 +17,55 @@ public class SqlServerTemplate extends AbstractSqlTemplate {
 
     @Override
     public String getMergeSql(String schemaName, String tableName, String[] pkNames, String[] columnNames, String[] viewColumnNames) {
+
+        //判断是否有自增列且自增列不是主键
+        Table table = getDbDialect().findTable(schemaName, tableName);
+        Column[] columns = table.getAutoIncrementColumns();
+        Boolean flag = false;
+        if(columns != null){
+            for (Column column : columns){
+                if(!column.isPrimaryKey()){
+                    flag = true;
+                    break;
+                }
+            }
+        }
+        //有自增列，且不是主键
+        if(flag){
+            return getSpecialInsertSql(schemaName,tableName,pkNames,columnNames);
+        }
+        //正常
+        else {
+            return getMergeSql(schemaName,tableName,pkNames,columnNames);
+        }
+    }
+
+    //有自增列，且不是主键
+    public String getSpecialInsertSql(String schemaName, String tableName, String[] pkNames, String[] columnNames) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("set IDENTITY_INSERT ").append(tableName).append(" on; ");
+
+        sql.append("insert into " + getFullName(schemaName, tableName) + "(");
+        String[] allColumns = new String[pkNames.length + columnNames.length];
+        System.arraycopy(columnNames, 0, allColumns, 0, columnNames.length);
+        System.arraycopy(pkNames, 0, allColumns, columnNames.length, pkNames.length);
+
+        int size = allColumns.length;
+        for (int i = 0; i < size; i++) {
+            sql.append(appendEscape(allColumns[i])).append((i + 1 < size) ? "," : "");
+        }
+
+        sql.append(") values (");
+        appendColumnQuestions(sql, allColumns);
+        sql.append(");");
+
+        sql.append(" set IDENTITY_INSERT ").append(tableName).append(" off ;");
+
+        return sql.toString().intern();// intern优化，避免出现大量相同的字符串
+    }
+
+    //正常
+    public String getMergeSql(String schemaName, String tableName, String[] pkNames, String[] columnNames) {
         final String aliasA = "a";
         final String aliasB = "b";
         StringBuilder sql = new StringBuilder();

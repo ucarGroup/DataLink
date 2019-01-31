@@ -116,7 +116,10 @@ else
 	echo "worker conf("$worker_conf") OR log configration file($logback_configurationFile) is not exist,please create then first!"
 fi
 
-echo "install cron"
+echo "append worker cron script"
+if [ ! -f "/var/spool/cron/root" ];then
+    touch /var/spool/cron/root
+fi
 grep "startup.sh" /var/spool/cron/root
 if [ $? -ne 0 ];then
 	cron_asterisk="* * * * *"
