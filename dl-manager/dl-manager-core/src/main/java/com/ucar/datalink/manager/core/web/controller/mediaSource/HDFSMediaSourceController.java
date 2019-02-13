@@ -67,7 +67,7 @@ public class HDFSMediaSourceController {
             view.getHdfsMediaSrcParameter().setNameNode2(((HDFSMediaSrcParameter) i.getParameterObj()).getNameNode2());
             view.getHdfsMediaSrcParameter().setHadoopUser(((HDFSMediaSrcParameter) i.getParameterObj()).getHadoopUser());
             view.getHdfsMediaSrcParameter().setZkMediaSourceId(((HDFSMediaSrcParameter) i.getParameterObj()).getZkMediaSourceId());
-            view.getHdfsMediaSrcParameter().setSparkcubeAddress(((HDFSMediaSrcParameter) i.getParameterObj()).getSparkcubeAddress());
+//            view.getHdfsMediaSrcParameter().setSparkcubeAddress(((HDFSMediaSrcParameter) i.getParameterObj()).getSparkcubeAddress());
             MediaSourceInfo zk = mediaSourceService.getById(view.getHdfsMediaSrcParameter().getZkMediaSourceId());
             if (zk != null) {
                 view.setZkMediaSourceName(zk.getName());

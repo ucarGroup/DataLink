@@ -87,13 +87,13 @@
                     </div>
                 </div>
 
-                <div class="form-group">
+                <%--<div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-spark_cube_meta">Spark cube地址</label>
                     <div class="col-sm-9">
                         <input type="text" id="form-add-spark_cube_meta" name="hdfsMediaSrcParameter.sparkcubeAddress" value="${hdfsMediaSrcParameter.sparkcubeAddress}"
                                class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50"/>
                     </div>
-                </div>
+                </div>--%>
 
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" for="form-update-desc">描述</label>
@@ -129,7 +129,7 @@
         var nameNode1 = $.trim($("#form-update-nameNode1").val());
         var nameNode2 = $.trim($("#form-update-nameNode2").val());
         var hadoopUser = $.trim($("#form-update-hadoopUser").val());
-        var spark_cube = $.trim($("#form-add-spark_cube_meta").val());
+//        var spark_cube = $.trim($("#form-add-spark_cube_meta").val());
         var desc = $.trim($("#form-update-desc").val());
 
         if (name == "") {
@@ -152,10 +152,10 @@
             alert("HadoopUser不能为空!");
             return false;
         }
-        if(spark_cube == "") {
+        /*if(spark_cube == "") {
             alert("Spark cube地址不能为空！");
             return false;
-        }
+        }*/
         if (desc == "") {
             alert("描述不能为空!");
             return false;

@@ -9,6 +9,7 @@ import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
 import com.ucar.datalink.domain.meta.ColumnMeta;
 import com.ucar.datalink.domain.meta.MediaMeta;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -49,9 +50,10 @@ public class MetaManager {
         }
         else if( info.getType()==MediaSourceType.HDFS ) {
             //处理HDFS类型的元数据
-            List<MediaMeta> tables = HDFSUtil.getTables(info);
-            updateMediaMetaDBType(tables,MediaSourceType.HDFS);
-            return tables;
+//            List<MediaMeta> tables = HDFSUtil.getTables(info);
+//            updateMediaMetaDBType(tables,MediaSourceType.HDFS);
+//            return tables;
+            return new ArrayList<>();
         }
         else if( info.getType()==MediaSourceType.SDDL ) {
             //处理SDDL类型的元数据
@@ -89,8 +91,9 @@ public class MetaManager {
         }
         else if( info.getType()==MediaSourceType.HDFS ) {
             //处理HDFS类型的元数据列
-            List<ColumnMeta> list = HDFSUtil.getColumns(info, tableName);
-            return list;
+//            List<ColumnMeta> list = HDFSUtil.getColumns(info, tableName);
+//            return list;
+            return new ArrayList<>();
         }
         else if( info.getType()==MediaSourceType.SDDL ) {
             SddlMediaSrcParameter sddl = (SddlMediaSrcParameter)info.getParameterObj();

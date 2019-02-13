@@ -28,7 +28,6 @@
                             <td>nameNode2</td>
                             <td>HadoopUser</td>
                             <td>所属Zk集群</td>
-                            <td>Spark cube地址</td>
                             <td>创建时间</td>
                             <td>操作</td>
                         </tr>
@@ -69,7 +68,6 @@
             {"data": "hdfsMediaSrcParameter.nameNode2"},
             {"data": "hdfsMediaSrcParameter.hadoopUser"},
             {"data": "zkMediaSourceName"},
-            {"data": "hdfsMediaSrcParameter.sparkcubeAddress"},
             {
                 "data": "createTime",
                 "bSortable": false,
