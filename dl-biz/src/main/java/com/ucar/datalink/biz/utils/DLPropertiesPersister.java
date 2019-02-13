@@ -19,7 +19,12 @@ public class DLPropertiesPersister extends DefaultPropertiesPersister {
         properties.load(is);
 
         if (properties.get(PASSWORD_KEY) != null) {
-            String password = DbConfigEncryption.decrypt(properties.getProperty(PASSWORD_KEY));
+            String password;
+            try {
+                password = DbConfigEncryption.decrypt(properties.getProperty(PASSWORD_KEY));
+            } catch (Exception e) {
+                password = properties.getProperty(PASSWORD_KEY);
+            }
             properties.setProperty(PASSWORD_KEY, password);
         }
         OutputStream outputStream = null;
