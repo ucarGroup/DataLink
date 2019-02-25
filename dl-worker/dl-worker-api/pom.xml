@@ -5,7 +5,7 @@
     <parent>
         <artifactId>dl-worker</artifactId>
         <groupId>com.ucar.datalink</groupId>
-        <version>0.0.1</version>
+        <version>0.0.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -15,22 +15,22 @@
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-common</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-domain</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-contract</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-biz</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
 
         <dependency>

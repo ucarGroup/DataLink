@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.ucar.datalink</groupId>
         <artifactId>dl-worker</artifactId>
-        <version>0.0.1</version>
+        <version>0.0.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-worker-api</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
     </dependencies>
 

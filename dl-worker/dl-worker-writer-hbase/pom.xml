@@ -5,7 +5,7 @@
     <parent>
         <artifactId>dl-worker</artifactId>
         <groupId>com.ucar.datalink</groupId>
-        <version>0.0.1</version>
+        <version>0.0.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -15,7 +15,7 @@
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-worker-api</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
 
         <!-- hbase -->

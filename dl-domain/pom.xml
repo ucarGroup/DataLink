@@ -6,7 +6,7 @@
     <parent>
         <artifactId>datalink</artifactId>
         <groupId>com.ucar.datalink</groupId>
-        <version>0.0.1</version>
+        <version>0.0.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,12 +18,12 @@
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-common</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-contract</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
 
         <dependency>
