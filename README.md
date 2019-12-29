@@ -5,6 +5,8 @@ DataLink是一个满足各种异构数据源之间的实时增量同步，分布
 https://mp.weixin.qq.com/s/BVuDbS-2Ra5pIJ7oV78FBA
 （神州优车）大数据平台建设经验分享 <br>
 https://www.cnblogs.com/ucarinc/p/12091053.html
+# 当前规划
+当前正在开发的功能，改造DataX，集成全量同步能力，实现增量全量的全覆盖
 # 项目背景
 着眼于未来，我们的目标是打造一个平台，满足各种异构数据源之间的实时增量同步，支撑公司业务的快速发展。在充分调研的基础之上，我们发现，没有任何一款开源产品能轻易的满足我们的目标，每个产品都有其明显的短板和局限性，所以最终的选项只有"自行设计"。但自行设计并不是凭空设计，现有的数据交换平台、已有的经验、大大小小的开源产品都是我们的设计根基，与其说是自行设计，倒不如说是站在巨人的肩膀上做了一次飞跃。由此诞生了DataLink这样一个产品：
 * 满足各种异构数据源之间的实时增量同步
@@ -41,6 +43,10 @@ canal：http://github.com/alibaba/canal<br>
 otter：https://github.com/alibaba/otter<br>
 Kafka-Connect：https://github.com/apache/kafka<br>
 DataBus：https://github.com/linkedin/databus
+# 版本历史
+当前最新版本1.0.0-beta<br>
+版本发布历史如下：<br>
+https://github.com/ucarGroup/DataLink/releases/
 # 问题反馈
 目前有关DataLink的问题交流方式有如下几种，欢迎各位加入进行技术讨论。<br>
 qq交流群： 758937055<br>
