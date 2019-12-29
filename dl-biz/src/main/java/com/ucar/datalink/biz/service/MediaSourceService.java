@@ -18,7 +18,7 @@ public interface MediaSourceService {
 
     List<MediaSourceInfo> getListByType(Set<MediaSourceType> mediaSourceType);
 
-    List<MediaSourceInfo> getListForQueryPage(@Param("mediaSourceType")Set<MediaSourceType> mediaSourceType, @Param("mediaSourceName")String mediaSourceName);
+    List<MediaSourceInfo> getListForQueryPage(@Param("mediaSourceType") Set<MediaSourceType> mediaSourceType, @Param("mediaSourceName") String mediaSourceName, @Param("mediaSourceIp") String mediaSourceIp);
 
     Boolean insert(MediaSourceInfo mediaSourceInfo);
 
@@ -28,9 +28,9 @@ public interface MediaSourceService {
 
     MediaSourceInfo getById(Long id);
 
-    List<String> getRdbTableName(MediaSourceInfo info);
+    List<String> getRdbTableNames(MediaSourceInfo info);
 
-    List<String> getRdbColumnName(MediaSourceInfo info,String tableName);
+    List<String> getRdbColumnNames(MediaSourceInfo info, String tableName);
 
     void checkDbConnection(RdbMediaSrcParameter rdbMediaSrcParameter) throws Exception;
 
@@ -38,5 +38,17 @@ public interface MediaSourceService {
 
     List<StatisDetail> getCountByType();
 
-    List<String> getHbaseTableName(MediaSourceInfo hbaseMediaSourceInfo);
+    List<String> getHbaseTableNames(MediaSourceInfo hbaseMediaSourceInfo);
+
+    List<String> getHbaseColumnNames(MediaSourceInfo info, String tableName);
+
+    List<MediaSourceInfo> getListByNameList(List<String> mediaSourceNameList);
+
+    /**
+     * 根据schema查询数据源
+     *
+     * @param targetNamespace
+     * @return
+     */
+    List<MediaSourceInfo> getMediaSourceLikeSchema(String targetNamespace);
 }

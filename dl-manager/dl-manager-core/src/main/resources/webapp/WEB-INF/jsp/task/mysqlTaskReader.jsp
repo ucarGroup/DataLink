@@ -99,6 +99,25 @@
                            value="${taskModel.mysqlReaderParameter.receiveBufferSize}"/>
                 </div>
             </div>
+
+            <div class="form-group">
+                <label class="col-sm-5 control-label no-padding-right"
+                       for="mysqlReader-gtidEnable">是否开启gtid</label>
+
+                <div class="col-sm-7">
+                    <select name="gtidEnable" id="mysqlReader-gtidEnable" class="col-sm-12">
+                        <c:if test="${taskModel.mysqlReaderParameter.gtidEnable==true}">
+                            <option value="false">否</option>
+                            <option selected="selected" value="true">是</option>
+                        </c:if>
+                        <c:if test="${taskModel.mysqlReaderParameter.gtidEnable==false}">
+                            <option selected="selected" value="false">否</option>
+                            <option value="true">是</option>
+                        </c:if>
+
+                    </select>
+                </div>
+            </div>
         </div>
 
         <div class="col-sm-4">
@@ -178,6 +197,25 @@
                     <input type="text" style="width:100%;" id="mysqlReader-blackFilter"
                            name="blackFilter" class="col-xs-10 col-sm-5"
                            value="${taskModel.mysqlReaderParameter.blackFilter}"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-5 control-label no-padding-right"
+                       for="mysqlReader-parallel">是否parallel</label>
+
+                <div class="col-sm-7">
+                    <select name="parallel" id="mysqlReader-parallel" class="col-sm-12">
+                        <c:if test="${taskModel.mysqlReaderParameter.parallel==true}">
+                            <option value="false">否</option>
+                            <option selected="selected" value="true">是</option>
+                        </c:if>
+                        <c:if test="${taskModel.mysqlReaderParameter.parallel==false}">
+                            <option selected="selected" value="false">否</option>
+                            <option value="true">是</option>
+                        </c:if>
+
+                    </select>
                 </div>
             </div>
         </div>
@@ -307,6 +345,25 @@
                     </select>
                 </div>
             </div>
+
+            <div class="form-group">
+                <label class="col-sm-5 control-label no-padding-right"
+                       for="mysqlReader-multiplexingRead">是否开启binlog复用</label>
+
+                <div class="col-sm-7">
+                    <select name="multiplexingRead" id="mysqlReader-multiplexingRead" class="col-sm-12">
+                        <c:if test="${taskModel.mysqlReaderParameter.multiplexingRead==true}">
+                            <option value="false">否</option>
+                            <option selected="selected" value="true">是</option>
+                        </c:if>
+                        <c:if test="${taskModel.mysqlReaderParameter.multiplexingRead==false}">
+                            <option selected="selected" value="false">否</option>
+                            <option value="true">是</option>
+                        </c:if>
+
+                    </select>
+                </div>
+            </div>
         </div>
     </form>
 </div>
@@ -343,7 +400,10 @@
             sendBufferSize: $("#mysqlReader-sendBufferSize").val(),
             groupSinkMode:$("#mysqlReader-groupSinkMode").val(),
             ddlSync:$("#mysqlReader-ddlSync").val(),
-            perfStatistic:$("#mysqlReader-perfStatistic").val()
+            perfStatistic:$("#mysqlReader-perfStatistic").val(),
+            parallel: $("#mysqlReader-parallel").val(),
+            gtidEnable: $("#mysqlReader-gtidEnable").val(),
+            multiplexingRead: $("#mysqlReader-multiplexingRead").val()
         };
         return obj;
     }

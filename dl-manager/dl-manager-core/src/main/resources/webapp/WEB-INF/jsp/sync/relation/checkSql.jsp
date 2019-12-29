@@ -162,6 +162,8 @@
                         //Title
                         var title = '';
                         title += "<p style=\"text-indent:0;font-size:16px;line-height:16px\">"
+                                + "【当前时间】- " + treeView.timeStamp + "</p><br/>";
+                        title += "<p style=\"text-indent:0;font-size:16px;line-height:16px\">"
                                 + "【SQL】- " + treeView.sqlString + "</p><br/>";
                         title += "<p style=\"text-indent:0;font-size:16px;line-height:16px\">"
                                 + "【Table】- " + treeView.tableName + "</p><br/>";

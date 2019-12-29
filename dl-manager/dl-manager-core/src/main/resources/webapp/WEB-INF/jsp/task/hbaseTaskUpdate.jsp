@@ -3,6 +3,10 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="basePath" value="${pageContext.servletContext.contextPath }"/>
 
+<script type="text/javascript">
+    var currentPageName = "hbase";
+</script>
+
 <div class="main-content-inner">
     <div class="page-content">
         <div class="row">
@@ -59,6 +63,7 @@
     function back2Main() {
         $("#hbaseTaskUpdate").empty();
         $("#main-container").show();
+        oTable.draw(false);
     }
 
     function add() {
@@ -66,10 +71,14 @@
         obj.taskBasicInfo = getBasicObj();
         obj.hbaseReaderParameter = getHbaseReaderObj();
         obj.writerParameterMap = getWritersObj();
+        var sync = "0";
+        if ('${taskModel.isLeaderTask}' == "1" && confirm("是否需要同步修改follower task?")) {
+            sync = "1";
+        }
 
         $.ajax({
             type: "post",
-            url: "${basePath}/hbaseTask/doUpdateHbaseTask",
+            url: "${basePath}/hbaseTask/doUpdateHbaseTask?sync=" + sync,
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             data: JSON.stringify(obj),
@@ -81,7 +90,6 @@
                 if (data == "success") {
                     alert("更新成功！");
                     back2Main();
-                    oTable.ajax.reload();
                 } else {
                     alert(data);
                 }

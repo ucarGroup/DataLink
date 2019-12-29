@@ -15,6 +15,7 @@ import com.ucar.datalink.domain.media.parameter.MediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.hdfs.HDFSMediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.rdb.RdbMediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.zk.ZkMediaSrcParameter;
+import com.ucar.datalink.domain.meta.ColumnMeta;
 import com.ucar.datalink.domain.statis.StatisDetail;
 import com.ucar.datalink.domain.task.TaskInfo;
 import org.apache.commons.lang.StringUtils;
@@ -26,10 +27,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -60,8 +58,8 @@ public class MediaSourceServiceImpl implements MediaSourceService {
     }
 
     @Override
-    public List<MediaSourceInfo> getListForQueryPage(@Param("mediaSourceType") Set<MediaSourceType> mediaSourceType, @Param("mediaSourceName") String mediaSourceName) {
-        return mediaSourceDAO.getListForQueryPage(mediaSourceType, mediaSourceName);
+    public List<MediaSourceInfo> getListForQueryPage(@Param("mediaSourceType") Set<MediaSourceType> mediaSourceType, @Param("mediaSourceName") String mediaSourceName, @Param("mediaSourceIp") String mediaSourceIp) {
+        return mediaSourceDAO.getListForQueryPage(mediaSourceType, mediaSourceName, mediaSourceIp);
     }
 
     @Override
@@ -76,6 +74,10 @@ public class MediaSourceServiceImpl implements MediaSourceService {
             checkEsInfo(mediaSourceInfo);
         } else if (mediaSourceInfo.getParameterObj().getMediaSourceType() == MediaSourceType.HBASE) {
             checkHBaseInfo(mediaSourceInfo);
+        } else if (mediaSourceInfo.getParameterObj().getMediaSourceType() == MediaSourceType.KUDU) {
+            checkKuduInfo(mediaSourceInfo);
+        } else if (mediaSourceInfo.getParameterObj().getMediaSourceType() == MediaSourceType.KAFKA) {
+            checkKafkaInfo(mediaSourceInfo);
         } else {
             checkRdbmsInfo(mediaSourceInfo);
         }
@@ -103,6 +105,10 @@ public class MediaSourceServiceImpl implements MediaSourceService {
             checkEsInfo(mediaSourceInfo);
         } else if (mediaSourceInfo.getParameterObj().getMediaSourceType() == MediaSourceType.HBASE) {
             checkHBaseInfo(mediaSourceInfo);
+        } else if (mediaSourceInfo.getParameterObj().getMediaSourceType() == MediaSourceType.KUDU) {
+            checkKuduInfo(mediaSourceInfo);
+        } else if (mediaSourceInfo.getParameterObj().getMediaSourceType() == MediaSourceType.KAFKA) {
+            checkKafkaInfo(mediaSourceInfo);
         } else {
             checkRdbmsInfo(mediaSourceInfo);
         }
@@ -121,9 +127,7 @@ public class MediaSourceServiceImpl implements MediaSourceService {
     @Override
     @Transactional
     public Boolean delete(Long id) {
-        TaskInfo condition = new TaskInfo();
-        condition.setReaderMediaSourceId(id);
-        List<TaskInfo> taskInfos = taskDAO.listByCondition(condition);
+        List<TaskInfo> taskInfos = taskDAO.listByCondition(id, null, null, null);
         if (taskInfos != null && !taskInfos.isEmpty()) {
             throw new ValidationException(
                     String.format("编号为%s的Task正在读端使用该介质源，不能执行删除操作！",
@@ -161,7 +165,7 @@ public class MediaSourceServiceImpl implements MediaSourceService {
     }
 
     @Override
-    public List<String> getRdbTableName(MediaSourceInfo info) {
+    public List<String> getRdbTableNames(MediaSourceInfo info) {
         List<String> result = new LinkedList<>();
         result.add("(.*)");
         result.addAll(RDBMSUtil.getTableName(info));
@@ -169,13 +173,23 @@ public class MediaSourceServiceImpl implements MediaSourceService {
     }
 
     @Override
-    public List<String> getHbaseTableName(MediaSourceInfo hbaseMediaSourceInfo) {
+    public List<String> getHbaseTableNames(MediaSourceInfo hbaseMediaSourceInfo) {
         return HBaseUtil.getTables(hbaseMediaSourceInfo).stream().map(i -> i.getName()).collect(Collectors.toList());
     }
 
     @Override
-    public List<String> getRdbColumnName(MediaSourceInfo info, String tableName) {
-        return RDBMSUtil.getColumnName(info,tableName);
+    public List<String> getRdbColumnNames(MediaSourceInfo info, String tableName) {
+        return RDBMSUtil.getColumnName(info, tableName);
+    }
+
+    @Override
+    public List<String> getHbaseColumnNames(MediaSourceInfo info, String tableName) {
+        List<ColumnMeta> columnMetas = HBaseUtil.getColumns(info, tableName);
+        if (columnMetas != null) {
+            return columnMetas.stream().map(i -> i.getName()).collect(Collectors.toList());
+        } else {
+            return new ArrayList<>();
+        }
     }
 
     @Override
@@ -295,6 +309,24 @@ public class MediaSourceServiceImpl implements MediaSourceService {
     }
 
 
+    public void checkKuduInfo(MediaSourceInfo mediaSourceInfo) {
+        String msName = mediaSourceInfo.getName();
+        String namePrefix = "kudu_";
+        if (!msName.startsWith(namePrefix)) {
+            throw new ValidationException(String.format("Kudu名称必须以%s为前缀.", namePrefix));
+        }
+    }
+
+
+    public void checkKafkaInfo(MediaSourceInfo mediaSourceInfo) {
+        String msName = mediaSourceInfo.getName();
+        String namePrefix = "kafka_";
+        if (!msName.startsWith(namePrefix)) {
+            throw new ValidationException(String.format("Kafka名称必须以%s为前缀.", namePrefix));
+        }
+    }
+
+
     @Override
     public Integer msCount() {
         return mediaSourceDAO.msCount();
@@ -304,4 +336,16 @@ public class MediaSourceServiceImpl implements MediaSourceService {
     public List<StatisDetail> getCountByType() {
         return mediaSourceDAO.getCountByType();
     }
+
+    @Override
+    public List<MediaSourceInfo> getListByNameList(List<String> mediaSourceNameList) {
+        return mediaSourceDAO.getListByNameList(mediaSourceNameList);
+    }
+
+    @Override
+    public List<MediaSourceInfo> getMediaSourceLikeSchema(String targetNamespace) {
+        String likeTargetNamespace = "\"namespace\":\"" + targetNamespace + "\"";
+        return mediaSourceDAO.getMediaSourceLikeSchema(likeTargetNamespace);
+    }
+
 }

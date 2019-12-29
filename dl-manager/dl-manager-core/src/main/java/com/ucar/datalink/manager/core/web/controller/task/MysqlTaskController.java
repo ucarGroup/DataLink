@@ -4,6 +4,8 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.collect.Lists;
 import com.ucar.datalink.biz.service.*;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.contract.log.rdbms.EventType;
 import com.ucar.datalink.domain.Parameter;
@@ -16,14 +18,20 @@ import com.ucar.datalink.domain.plugin.writer.es.EsWriterParameter;
 import com.ucar.datalink.domain.plugin.writer.hbase.HBaseWriterParameter;
 import com.ucar.datalink.domain.plugin.writer.hdfs.CommitMode;
 import com.ucar.datalink.domain.plugin.writer.hdfs.HdfsWriterParameter;
+import com.ucar.datalink.domain.plugin.writer.kafka.KafkaWriterParameter;
+import com.ucar.datalink.domain.plugin.writer.kafka.PartitionMode;
+import com.ucar.datalink.domain.plugin.writer.kafka.SerializeMode;
+import com.ucar.datalink.domain.plugin.writer.kudu.KuduWriterParameter;
 import com.ucar.datalink.domain.plugin.writer.rdbms.RdbmsWriterParameter;
 import com.ucar.datalink.domain.task.*;
 import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
+import com.ucar.datalink.manager.core.server.ManagerConfig;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import com.ucar.datalink.manager.core.web.dto.task.MysqlTaskModel;
 import com.ucar.datalink.manager.core.web.dto.task.TaskModel;
 import com.ucar.datalink.manager.core.web.dto.task.TaskView;
+import com.ucar.datalink.manager.core.web.util.AuditLogInfoUtil;
 import com.ucar.datalink.manager.core.web.util.Page;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -41,7 +49,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -51,22 +62,18 @@ import java.util.stream.Collectors;
 @RequestMapping(value = "/mysqlTask/")
 public class MysqlTaskController extends BaseTaskController {
 
-    private static Logger logger = LoggerFactory.getLogger(MysqlTaskController.class);
-
     private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-
+    private static Logger logger = LoggerFactory.getLogger(MysqlTaskController.class);
+    @Autowired
+    TaskSyncStatusService taskSyncStatusService;
     @Autowired
     private GroupService groupService;
-
     @Autowired
     private TaskConfigService taskService;
-
     @Autowired
     private TaskStatusService taskStatusService;
-
     @Autowired
     private MediaService mediaService;
-
     @Autowired
     @Qualifier("taskPositionServiceZkImpl")
     private TaskPositionService taskPositionService;
@@ -75,7 +82,8 @@ public class MysqlTaskController extends BaseTaskController {
     public ModelAndView listMysqlTasks() {
         ModelAndView mav = new ModelAndView("task/mysqlTaskList");
         List<TaskInfo> taskList = taskService.getList();
-        mav.addObject("taskList", CollectionUtils.isEmpty(taskList) ? taskList : taskList.stream().filter(t -> t.getLeaderTaskId() == null).collect(Collectors.toList()));
+
+        mav.addObject("taskList", CollectionUtils.isEmpty(taskList) ? taskList : taskList.stream().filter(t -> t.getTaskType() == TaskType.MYSQL).collect(Collectors.toList()));
         mav.addObject("groupList", groupService.getAllGroups());
         mav.addObject("mediaSourceList", mediaService.getMediaSourcesByTypes(MediaSourceType.MYSQL, MediaSourceType.SDDL));
         return mav;
@@ -84,6 +92,9 @@ public class MysqlTaskController extends BaseTaskController {
     @RequestMapping(value = "/toAddMysqlTask")
     public ModelAndView toAddMysqlTask() {
         ModelAndView mav = new ModelAndView("task/mysqlTaskAdd");
+        MysqlReaderParameter mysqlReaderParameter = new MysqlReaderParameter();
+        mysqlReaderParameter.setMultiplexingRead(ManagerConfig.current().getMultiplexingRead());
+
         MysqlTaskModel mysqlTaskModel = new MysqlTaskModel(
                 new TaskModel.TaskBasicInfo(null, null, null, null, null),
                 getWriterParameters(),
@@ -95,7 +106,10 @@ public class MysqlTaskController extends BaseTaskController {
                 CommitMode.getAllCommitModes(),
                 Lists.newArrayList(EventType.INSERT, EventType.UPDATE, EventType.DELETE),
                 GroupSinkMode.getAll(),
-                new MysqlReaderParameter()
+                SerializeMode.getAllSerializeModes(),
+                PartitionMode.getAllPartitionModes(),
+                mysqlReaderParameter,
+                null
         );
         mav.addObject("taskModel", mysqlTaskModel);
         return mav;
@@ -122,7 +136,9 @@ public class MysqlTaskController extends BaseTaskController {
                                     .collect(Collectors.toList()))
             );
             taskInfo.setTaskParameter("{}");
-            taskService.addTask(taskInfo);
+            TaskInfo t = taskService.addMySqlTask(taskInfo);
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(t
+                    , "004010102", AuditLogOperType.insert.getValue()));
         } catch (Exception e) {
             logger.error("Add MysqlTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -155,7 +171,10 @@ public class MysqlTaskController extends BaseTaskController {
                 CommitMode.getAllCommitModes(),
                 Lists.newArrayList(EventType.INSERT, EventType.UPDATE, EventType.DELETE),
                 GroupSinkMode.getAll(),
-                (MysqlReaderParameter) taskInfo.getTaskReaderParameterObj()
+                SerializeMode.getAllSerializeModes(),
+                PartitionMode.getAllPartitionModes(),
+                (MysqlReaderParameter) taskInfo.getTaskReaderParameterObj(),
+                null
         );
         mysqlTaskModel.setCurrentWriters(taskInfo.getTaskWriterParameterObjs().stream().collect(Collectors.toMap(PluginWriterParameter::getPluginName, i -> "1")));
         mav.addObject("taskModel", mysqlTaskModel);
@@ -182,7 +201,9 @@ public class MysqlTaskController extends BaseTaskController {
                                     .map(i -> i.getValue())
                                     .collect(Collectors.toList()))
             );
+            taskInfo.setTaskParameter("{}");
             taskService.updateTask(taskInfo);
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo, "004010104", AuditLogOperType.update.getValue()));
         } catch (Exception e) {
             logger.error("Update MysqlTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -195,7 +216,9 @@ public class MysqlTaskController extends BaseTaskController {
     public String deleteMysqlTask(HttpServletRequest request) {
         try {
             Long id = Long.valueOf(request.getParameter("id"));
+            TaskInfo task = taskService.getTask(id);
             taskService.deleteTask(id);
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(task, "004010105", AuditLogOperType.delete.getValue()));
         } catch (Exception e) {
             logger.error("Delete MysqlTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -209,6 +232,8 @@ public class MysqlTaskController extends BaseTaskController {
         try {
             Long id = Long.valueOf(request.getParameter("id"));
             taskService.pauseTask(id);
+            TaskInfo task = taskService.getTask(id);
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(task, "004010106", AuditLogOperType.other.getValue()));
         } catch (Exception e) {
             logger.error("Pause MysqlTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -222,6 +247,9 @@ public class MysqlTaskController extends BaseTaskController {
         try {
             Long id = Long.valueOf(request.getParameter("id"));
             taskService.resumeTask(id);
+            TaskInfo task = taskService.getTask(id);
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(task
+                    , "004010107", AuditLogOperType.other.getValue()));
         } catch (Exception e) {
             logger.error("Pause MysqlTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -230,7 +258,7 @@ public class MysqlTaskController extends BaseTaskController {
     }
 
     @RequestMapping(value = "/toRestartMysqlTask")
-    public ModelAndView toRestartMysqlTask(Long id) {
+    public ModelAndView toRestartMysqlTask(String id) {
         ModelAndView mav = new ModelAndView("task/mysqlTaskRestart");
         mav.addObject("id", id);
         return mav;
@@ -240,20 +268,27 @@ public class MysqlTaskController extends BaseTaskController {
     @ResponseBody
     public String doRestartMysqlTask(@RequestBody Map<String, String> restartParams) {
         try {
-            String id = restartParams.get("id");
+            String ids = restartParams.get("id");
             boolean resetPosition = Boolean.valueOf(restartParams.get("resetPosition"));
-            if (resetPosition) {
-                Long newTimeStamps = Long.valueOf(restartParams.get("newTimeStamps"));
-                MysqlReaderPosition position = (MysqlReaderPosition) taskPositionService.getPosition(id);
-                if (position == null) {
-                    throw new ValidationException("还未开始消费，无法重置位点");
+            String[] idArray = ids.split(",");
+            for (String id : idArray) {
+                if (resetPosition) {
+                    Long newTimeStamps = Long.valueOf(restartParams.get("newTimeStamps"));
+                    MysqlReaderPosition position = (MysqlReaderPosition) taskPositionService.getPosition(id);
+                    if (position == null) {
+                        throw new ValidationException("还未开始消费，无法重置位点");
+                    } else {
+                        position.setTimestamp(newTimeStamps);
+                        position.setSourceAddress(new InetSocketAddress("0.0.0.0", position.getSourceAddress().getPort()));
+                        sendRestartCommand(id, position);
+                    }
                 } else {
-                    position.setTimestamp(newTimeStamps);
-                    position.setSourceAddress(new InetSocketAddress("0.0.0.0", position.getSourceAddress().getPort()));
-                    sendRestartCommand(id, position);
+                    sendRestartCommand(id, null);
                 }
-            } else {
-                sendRestartCommand(id, null);
+
+                TaskInfo task = taskService.getTask(Long.valueOf(id));
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(task
+                        , "004010109", AuditLogOperType.other.getValue()));
             }
         } catch (Exception e) {
             logger.error("Restart MysqlTask Failed.", e);
@@ -316,18 +351,50 @@ public class MysqlTaskController extends BaseTaskController {
                 InetAddress inetAddress = inetSocketAddress.getAddress();
                 String ip = inetAddress.getHostAddress();
                 i.setReaderIp(ip);
-            }else{
+
+                //最后binlog文件名
+                if (StringUtils.isNotBlank(position.getLatestEffectSyncLogFileName())) {
+                    i.setLatestEffectSyncLogFileName(position.getLatestEffectSyncLogFileName());
+                } else {
+                    i.setLatestEffectSyncLogFileName("");
+                }
+                //最后binlog位点
+                i.setLatestEffectSyncLogFileOffset(position.getLatestEffectSyncLogFileOffset() == null ? "" : String.valueOf(position.getLatestEffectSyncLogFileOffset()));
+            } else {
                 i.setReaderIp("");
+                i.setLatestEffectSyncLogFileName("");
+                i.setLatestEffectSyncLogFileOffset("");
+            }
+            //设置影子位点
+            if (position != null && position.getShadowPosition() != null) {
+                MysqlReaderPosition shadowPosition = position.getShadowPosition();
+                String shadowTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(shadowPosition.getTimestamp()));
+                i.setShadowCurrentTimeStamp(shadowTime + " (" + shadowPosition.getTimestamp() + ")");
+                i.setShadowLatestEffectSyncLogFileName(shadowPosition.getLatestEffectSyncLogFileName() == null ? "" : String.valueOf(shadowPosition.getLatestEffectSyncLogFileName()));
+                i.setShadowLatestEffectSyncLogFileOffset(shadowPosition.getLatestEffectSyncLogFileOffset() == null ? "" : String.valueOf(shadowPosition.getLatestEffectSyncLogFileOffset()));
+            } else {
+                i.setShadowCurrentTimeStamp("");
+                i.setShadowLatestEffectSyncLogFileName("");
+                i.setShadowLatestEffectSyncLogFileOffset("");
             }
             //启动时间
             TaskStatus taskStatus = taskStatusService.getStatus(i.getId().toString());
-            if(taskStatus != null){
+            if (taskStatus != null) {
                 String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(taskStatus.getStartTime()));
                 i.setStartTime(time);
-            }else{
+            } else {
                 i.setStartTime("");
             }
             i.setDetail("");
+
+            //任务同步状态
+            TaskSyncStatus taskSyncStatus = taskSyncStatusService.getSyncStatus(String.valueOf(i.getId()));
+            if (taskSyncStatus != null) {
+                i.setTaskSyncStatus(taskSyncStatus.getState().name());
+            } else {
+                i.setTaskSyncStatus("");
+            }
+
         });
         PageInfo<TaskInfo> pageInfo = new PageInfo<>(taskInfos);
         page.setDraw(page.getDraw());
@@ -338,7 +405,7 @@ public class MysqlTaskController extends BaseTaskController {
     }
 
     private Map<String, PluginWriterParameter> getWriterParameters() {
-        return Lists.newArrayList(new RdbmsWriterParameter(), new EsWriterParameter(), new HdfsWriterParameter(), new HBaseWriterParameter())
+        return Lists.newArrayList(new RdbmsWriterParameter(), new EsWriterParameter(), new HdfsWriterParameter(), new HBaseWriterParameter(), new KuduWriterParameter(), new KafkaWriterParameter())
                 .stream()
                 .collect(Collectors.toMap(PluginWriterParameter::getPluginName, i -> i));
     }

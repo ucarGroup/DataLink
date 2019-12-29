@@ -2,6 +2,7 @@ package com.ucar.datalink.writer.rdbms.load;
 
 import com.ucar.datalink.contract.Record;
 import com.ucar.datalink.domain.RecordMeta;
+import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.worker.api.task.TaskWriterContext;
 import com.ucar.datalink.worker.api.util.dialect.DbDialect;
 import com.ucar.datalink.worker.api.util.dialect.DbDialectFactory;
@@ -34,10 +35,15 @@ public abstract class RecordLoader<T extends Record> {
      */
     public LoadResult load(TaskWriterContext context, List<T> records) {
         try {
+            DbDialect dbDialect = null;
+            MediaSourceInfo targetMediaSource = RecordMeta.mediaMapping(records.get(0)).getTargetMediaSource();
+
+            dbDialect = DbDialectFactory.getDbDialect(targetMediaSource);
+
             return doCall(
                     context,
                     records,
-                    DbDialectFactory.getDbDialect(RecordMeta.mediaMapping(records.get(0)).getTargetMediaSource())
+                    dbDialect
             );
         } catch (RecordLoadException re) {
             return new LoadResult(re.getCause(), re.getRecord());
@@ -62,13 +68,13 @@ public abstract class RecordLoader<T extends Record> {
         }
     }
 
-    protected abstract String getSql(T record);
+    protected abstract String getSql(T record, TaskWriterContext context);
 
     protected abstract void transactionBegin();
 
     protected abstract void transactionEnd();
 
-    protected abstract void fillPreparedStatement(PreparedStatement ps, LobCreator lobCreator, T record, DbDialect dbDialect, boolean isSyncAutoAddColumn) throws SQLException;
+    protected abstract void fillPreparedStatement(PreparedStatement ps, LobCreator lobCreator, T record, DbDialect dbDialect, TaskWriterContext context) throws SQLException;
 
     private LoadResult loadInBatch(TaskWriterContext context, List<T> records, DbDialect dbDialect) {
         //statistic before
@@ -76,7 +82,7 @@ public abstract class RecordLoader<T extends Record> {
         long startTime = System.currentTimeMillis();
 
         //do load
-        final String sql = getSql(records.get(0));//一个batch内的sql都是相同的,取第一个即可
+        final String sql = getSql(records.get(0), context);//一个batch内的sql都是相同的,取第一个即可
         dbDialect.getTransactionTemplate().execute((transactionStatus -> {
             final LobCreator lobCreator = dbDialect.getLobHandler().getLobCreator();
             try {
@@ -85,7 +91,7 @@ public abstract class RecordLoader<T extends Record> {
                 int[] result = template.batchUpdate(sql, new BatchPreparedStatementSetter() {
 
                     public void setValues(PreparedStatement ps, int idx) throws SQLException {
-                        fillPreparedStatement(ps, lobCreator, records.get(idx), dbDialect, context.getWriterParameter().isSyncAutoAddColumn());
+                        fillPreparedStatement(ps, lobCreator, records.get(idx), dbDialect, context);
                     }
 
                     public int getBatchSize() {
@@ -121,7 +127,7 @@ public abstract class RecordLoader<T extends Record> {
                     dbDialect.getTransactionTemplate().execute(transactionStatus -> {
                         transactionBegin();
                         JdbcTemplate template = dbDialect.getJdbcTemplate();
-                        loadOne(context, record, dbDialect, lobCreator, template);
+                        int i = loadOne(context, record, dbDialect, lobCreator, template);
                         transactionEnd();
                         return 0;
                     });
@@ -147,8 +153,8 @@ public abstract class RecordLoader<T extends Record> {
     }
 
     private int loadOne(TaskWriterContext context, T record, DbDialect dbDialect, LobCreator lobCreator, JdbcTemplate template) {
-        return template.update(getSql(record), ps -> {
-            fillPreparedStatement(ps, lobCreator, record, dbDialect, context.getWriterParameter().isSyncAutoAddColumn());
+        return template.update(getSql(record, context), ps -> {
+            fillPreparedStatement(ps, lobCreator, record, dbDialect, context);
         });
     }
 

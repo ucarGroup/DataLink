@@ -137,6 +137,6 @@
     function refresh() {
         $("#edit").hide();
         $("#mainContentInner").show();
-        hbaseListMyTable.ajax.reload();
+        hbaseListMyTable.draw(false);
     }
 </script>

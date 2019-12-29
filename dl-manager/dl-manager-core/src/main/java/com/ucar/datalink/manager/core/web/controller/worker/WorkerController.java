@@ -2,21 +2,27 @@ package com.ucar.datalink.manager.core.web.controller.worker;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.google.common.collect.Lists;
 import com.ucar.datalink.biz.service.GroupService;
 import com.ucar.datalink.biz.service.WorkerJvmStateService;
 import com.ucar.datalink.biz.service.WorkerService;
 import com.ucar.datalink.biz.service.WorkerSystemStateService;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.common.jvm.JvmSnapshot;
+import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.group.GroupInfo;
-import com.ucar.datalink.domain.worker.WorkerJvmStateInfo;
 import com.ucar.datalink.domain.worker.WorkerInfo;
+import com.ucar.datalink.domain.worker.WorkerJvmStateInfo;
 import com.ucar.datalink.domain.worker.WorkerSystemStateInfo;
 import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import com.ucar.datalink.manager.core.web.dto.work.WorkerView;
 import com.ucar.datalink.manager.core.web.util.Page;
+import com.ucar.datalink.manager.core.web.util.UserUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
@@ -62,6 +68,17 @@ public class WorkerController {
     @Autowired
     private WorkerSystemStateService workerSystemStateService;
 
+    private static AuditLogInfo getAuditLogInfo(WorkerInfo workerInfo, String menuCode, String operType) {
+        AuditLogInfo logInfo = new AuditLogInfo();
+        logInfo.setUserId(UserUtil.getUserIdFromRequest());
+        logInfo.setMenuCode(menuCode);
+        logInfo.setOperName(workerInfo.getWorkerName());
+        logInfo.setOperType(operType);
+        logInfo.setOperKey(workerInfo.getId());
+        logInfo.setOperRecord(workerInfo.toString());
+        return logInfo;
+    }
+
     @RequestMapping(value = "/workerList")
     public ModelAndView workerList() {
         ModelAndView mav = new ModelAndView("worker/list");
@@ -72,6 +89,10 @@ public class WorkerController {
     @RequestMapping(value = "/initWorker")
     @ResponseBody
     public Page<WorkerView> initWork(@RequestBody Map<String, String> map) {
+
+        Page<WorkerView> page = new Page<>(map);
+        PageHelper.startPage(page.getPageNum(), page.getLength());
+
         Long groupId = Long.valueOf(map.get("groupId"));
         List<WorkerInfo> listWorker = workerService.getListForQuery(groupId == -1L ? null : groupId);
         GroupMetadataManager groupManager = ServerContainer.getInstance().getGroupCoordinator().getGroupManager();
@@ -103,7 +124,13 @@ public class WorkerController {
             }
             return view;
         }).collect(Collectors.toList());
-        return new Page<WorkerView>(workerViews);
+
+        PageInfo<WorkerInfo> pageInfo = new PageInfo<WorkerInfo>(listWorker);
+        page.setDraw(page.getDraw());
+        page.setAaData(workerViews);
+        page.setRecordsTotal((int) pageInfo.getTotal());
+        page.setRecordsFiltered(page.getRecordsTotal());
+        return page;
     }
 
     @RequestMapping(value = "/toAdd")
@@ -119,6 +146,7 @@ public class WorkerController {
     public String doAdd(@ModelAttribute("workerInfo") WorkerInfo workerInfo) {
         Boolean isSuccess = workerService.insert(workerInfo);
         if (isSuccess) {
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(workerInfo, "001002003", AuditLogOperType.insert.getValue()));
             return "success";
         } else {
             return "fail";
@@ -148,6 +176,8 @@ public class WorkerController {
     @ResponseBody
     @RequestMapping(value = "/doEdit")
     public String doEdit(@ModelAttribute("workInfo") WorkerInfo workInfo) {
+        WorkerInfo oldWorkerInfo = workerService.getById(workInfo.getId());
+        boolean restartWorker = !oldWorkerInfo.getRestPort().equals(workInfo.getRestPort()) || !oldWorkerInfo.getGroupId().equals(workInfo.getGroupId());
         Boolean isSuccess = workerService.update(workInfo);
         if (isSuccess) {
             String javaopts = workInfo.getJavaopts();
@@ -158,6 +188,14 @@ public class WorkerController {
                     return "worker基础信息修改完成，但是javaopts参数更新失败! error info：" + updateJavaopts;
                 }
             }
+
+            if (restartWorker) {
+                if (restart(oldWorkerInfo.getId().toString()).equals("fail")) {
+                    return "数据修改成功,重启机器失败！";
+                }
+            }
+
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(workInfo, "001002005", AuditLogOperType.update.getValue()));
 
             return "success";
         } else {
@@ -172,8 +210,11 @@ public class WorkerController {
         if (StringUtils.isBlank(id)) {
             return "fail";
         }
-        Boolean isSuccess = workerService.delete(Long.valueOf(id));
+        Long idLong = Long.valueOf(id);
+        WorkerInfo info = workerService.getById(idLong);
+        Boolean isSuccess = workerService.delete(idLong);
         if (isSuccess) {
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(info, "001002006", AuditLogOperType.delete.getValue()));
             return "success";
         } else {
             return "fail";
@@ -239,6 +280,10 @@ public class WorkerController {
     @RequestMapping(value = "/restartWorker")
     private String restartWorker(HttpServletRequest requestPara) {
         String workerId = requestPara.getParameter("id");
+        return this.restart(workerId);
+    }
+
+    private String restart(String workerId) {
         if (StringUtils.isNotEmpty(workerId)) {
             WorkerInfo workerInfo = workerService.getById(Long.valueOf(workerId));
             if (workerInfo != null) {
@@ -253,7 +298,7 @@ public class WorkerController {
                 // TODO 重启完成后，记录此次的javaopts参数，添加到表t_dl_worker的字段parameters(定义一个类jvm_parameter.run_java_opts)
                 // TODO 此处先不调整，原因是：rebalance时，应该获取worker当前正在运行的配置参数；
 
-
+                AuditLogUtils.saveAuditLog(getAuditLogInfo(workerInfo, "001002009", AuditLogOperType.other.getValue()));
                 return result.get("content");
             }
 
@@ -343,10 +388,10 @@ public class WorkerController {
         List<Integer> threadCountList = new ArrayList<>();
         List<String> createTimeList = new ArrayList<>();
         for (WorkerJvmStateInfo jvmStateInfo : jvmStateList) {
-            youngUsedList.add(jvmStateInfo.getYoungMemUsed()/1024/1024);
-            youngMaxList.add(jvmStateInfo.getYoungMemMax()/1024/1024);
-            oldUsedList.add(jvmStateInfo.getOldMemUsed()/1024/1024);
-            oldMaxList.add(jvmStateInfo.getOldMemMax()/1024/1024);
+            youngUsedList.add(jvmStateInfo.getYoungMemUsed() / 1024 / 1024);
+            youngMaxList.add(jvmStateInfo.getYoungMemMax() / 1024 / 1024);
+            oldUsedList.add(jvmStateInfo.getOldMemUsed() / 1024 / 1024);
+            oldMaxList.add(jvmStateInfo.getOldMemMax() / 1024 / 1024);
             youngGCCountList.add(jvmStateInfo.getIntervalYoungCollectionCount());
             oldGCCountList.add(jvmStateInfo.getIntervalOldCollectionCount());
             youngGCTimeList.add(jvmStateInfo.getIntervalYoungCollectionTime());
@@ -369,9 +414,9 @@ public class WorkerController {
             loadAverageList.add(systemStateInfo.getLoadAverage());
             userCPUUtilizationList.add(systemStateInfo.getUserCPUUtilization());
             sysCPUUtilizationList.add(systemStateInfo.getSysCPUUtilization());
-            BigDecimal incomingMbps = new BigDecimal((double)systemStateInfo.getIncomingNetworkTraffic()/1024/1024*8).setScale(1, BigDecimal.ROUND_HALF_UP);
+            BigDecimal incomingMbps = new BigDecimal((double) systemStateInfo.getIncomingNetworkTraffic() / 1024 / 1024 * 8).setScale(1, BigDecimal.ROUND_HALF_UP);
             incomingNetworkTrafficList.add(incomingMbps);
-            BigDecimal outgoingMbps = new BigDecimal((double)systemStateInfo.getOutgoingNetworkTraffic()/1024/1024*8).setScale(1, BigDecimal.ROUND_HALF_UP);
+            BigDecimal outgoingMbps = new BigDecimal((double) systemStateInfo.getOutgoingNetworkTraffic() / 1024 / 1024 * 8).setScale(1, BigDecimal.ROUND_HALF_UP);
             outgoingNetworkTrafficList.add(outgoingMbps);
             tcpCurrentEstabList.add(systemStateInfo.getTcpCurrentEstab());
             Date createTime = systemStateInfo.getCreateTime();
@@ -452,10 +497,10 @@ public class WorkerController {
         List<Integer> threadCountList = new ArrayList<>();
         List<String> createTimeList = new ArrayList<>();
         for (WorkerJvmStateInfo jvmStateInfo : jvmStateList) {
-            youngUsedList.add(jvmStateInfo.getYoungMemUsed()/1024/1024);
-            youngMaxList.add(jvmStateInfo.getYoungMemMax()/1024/1024);
-            oldUsedList.add(jvmStateInfo.getOldMemUsed()/1024/1024);
-            oldMaxList.add(jvmStateInfo.getOldMemMax()/1024/1024);
+            youngUsedList.add(jvmStateInfo.getYoungMemUsed() / 1024 / 1024);
+            youngMaxList.add(jvmStateInfo.getYoungMemMax() / 1024 / 1024);
+            oldUsedList.add(jvmStateInfo.getOldMemUsed() / 1024 / 1024);
+            oldMaxList.add(jvmStateInfo.getOldMemMax() / 1024 / 1024);
             youngGCCountList.add(jvmStateInfo.getIntervalYoungCollectionCount());
             oldGCCountList.add(jvmStateInfo.getIntervalOldCollectionCount());
             youngGCTimeList.add(jvmStateInfo.getIntervalYoungCollectionTime());
@@ -532,9 +577,9 @@ public class WorkerController {
             loadAverageList.add(systemStateInfo.getLoadAverage());
             userCPUUtilizationList.add(systemStateInfo.getUserCPUUtilization());
             sysCPUUtilizationList.add(systemStateInfo.getSysCPUUtilization());
-            BigDecimal incomingMbps = new BigDecimal((double)systemStateInfo.getIncomingNetworkTraffic()/1024/1024*8).setScale(1, BigDecimal.ROUND_HALF_UP);
+            BigDecimal incomingMbps = new BigDecimal((double) systemStateInfo.getIncomingNetworkTraffic() / 1024 / 1024 * 8).setScale(1, BigDecimal.ROUND_HALF_UP);
             incomingNetworkTrafficList.add(incomingMbps);
-            BigDecimal outgoingMbps = new BigDecimal((double)systemStateInfo.getOutgoingNetworkTraffic()/1024/1024*8).setScale(1, BigDecimal.ROUND_HALF_UP);
+            BigDecimal outgoingMbps = new BigDecimal((double) systemStateInfo.getOutgoingNetworkTraffic() / 1024 / 1024 * 8).setScale(1, BigDecimal.ROUND_HALF_UP);
             outgoingNetworkTrafficList.add(outgoingMbps);
             tcpCurrentEstabList.add(systemStateInfo.getTcpCurrentEstab());
             Date createTime = systemStateInfo.getCreateTime();

@@ -27,11 +27,11 @@ public class DeleteParseHandler extends ParseHandler {
 		
 		vo.setJsonString(json.toJSONString());
 		
-		boolean found = json.getBooleanValue(FOUND_NAME);
-		
-		if(found) {
-			JSONObject shard = json.getJSONObject(SHARD_NAME);
-			
+		//boolean found = json.getBooleanValue(FOUND_NAME);
+
+		JSONObject shard = json.getJSONObject(SHARD_NAME);
+		if(shard != null) {
+
 			int failed = shard.getIntValue(FAILED_NAME);
 			int success = shard.getIntValue(SUCCESS_NAME);
 			

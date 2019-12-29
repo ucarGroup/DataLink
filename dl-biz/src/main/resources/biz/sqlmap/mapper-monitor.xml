@@ -52,7 +52,8 @@
         m.create_time,
         m.modify_time,
         m.monitor_range,
-        t.task_name AS resourceName
+        t.task_name AS resourceName,
+        t.group_id AS groupId
         FROM t_dl_monitor m left join t_dl_task t on m.resource_id = t.id
         WHERE monitor_cat = 1
         UNION ALL
@@ -68,10 +69,14 @@
         m.create_time,
         m.modify_time,
         m.monitor_range,
-        w.worker_name AS resourceName
+        w.worker_name AS resourceName,
+        w.group_id AS groupId
         FROM t_dl_monitor m left join t_dl_worker w on m.resource_id = w.id
         WHERE monitor_cat = 2) total
         WHERE 1=1
+        <if test="groupId != null">
+            AND total.groupId = #{groupId}
+        </if>
         <if test="resourceId != null">
             AND total.resource_id = #{resourceId}
         </if>
@@ -104,6 +109,7 @@
         t.task_name AS resourceName
         FROM t_dl_monitor m left join t_dl_task t on m.resource_id = t.id
         WHERE monitor_cat = 1
+
         UNION ALL
         SELECT
         m.id,

@@ -12,6 +12,8 @@ public interface UserDAO {
 
     List<UserInfo> getList();
 
+    List<UserInfo> getListByUserInfo(UserInfo userInfo);
+
     Integer insert(UserInfo userInfo);
 
     Integer update(UserInfo userInfo);

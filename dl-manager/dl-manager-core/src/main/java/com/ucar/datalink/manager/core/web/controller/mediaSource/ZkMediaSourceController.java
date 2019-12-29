@@ -2,7 +2,11 @@ package com.ucar.datalink.manager.core.web.controller.mediaSource;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ucar.datalink.biz.service.MediaSourceService;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
@@ -12,6 +16,7 @@ import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import com.ucar.datalink.manager.core.web.dto.mediaSource.ZkMediaSourceView;
+import com.ucar.datalink.manager.core.web.util.AuditLogInfoUtil;
 import com.ucar.datalink.manager.core.web.util.Page;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -22,6 +27,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
@@ -59,7 +65,10 @@ public class ZkMediaSourceController {
 
     @RequestMapping(value = "/initZk")
     @ResponseBody
-    public Page<ZkMediaSourceView> initZk() {
+    public Page<ZkMediaSourceView> initZk(@RequestBody Map<String, String> map) {
+        Page<ZkMediaSourceView> page = new Page<>(map);
+        PageHelper.startPage(page.getPageNum(), page.getLength());
+
         Set<MediaSourceType> setMediaSource = new HashSet<MediaSourceType>();
         setMediaSource.add(MediaSourceType.ZOOKEEPER);
         List<MediaSourceInfo> zkMediaSourceList = mediaSourceService.getListByType(setMediaSource);
@@ -75,7 +84,13 @@ public class ZkMediaSourceController {
             view.getZkMediaSrcParameter().setConnectionTimeout(((ZkMediaSrcParameter) i.getParameterObj()).getConnectionTimeout());
             return view;
         }).collect(Collectors.toList());
-        return new Page<ZkMediaSourceView>(taskView);
+
+        PageInfo<MediaSourceInfo> pageInfo = new PageInfo<MediaSourceInfo>(zkMediaSourceList);
+        page.setDraw(page.getDraw());
+        page.setAaData(taskView);
+        page.setRecordsTotal((int) pageInfo.getTotal());
+        page.setRecordsFiltered(page.getRecordsTotal());
+        return page;
     }
 
     @RequestMapping(value = "/toAdd")
@@ -89,8 +104,11 @@ public class ZkMediaSourceController {
     public String doAdd(@ModelAttribute("ZkMediaSourceView") ZkMediaSourceView zkMediaSourceView) {
         try {
             checkZkServers(zkMediaSourceView);
-            Boolean isSuccess = mediaSourceService.insert(buildZkMediaSourceInfo(zkMediaSourceView));
+            MediaSourceInfo mediaSourceInfo = buildZkMediaSourceInfo(zkMediaSourceView);
+            Boolean isSuccess = mediaSourceService.insert(mediaSourceInfo);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
+                        , "002004003", AuditLogOperType.insert.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -127,6 +145,8 @@ public class ZkMediaSourceController {
             Boolean isSuccess = mediaSourceService.update(mediaSourceInfo);
             toReloadDB(zkMediaSourceView.getId().toString());
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
+                        , "002004005", AuditLogOperType.update.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -153,8 +173,11 @@ public class ZkMediaSourceController {
             }
         }
         try {
+            MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(Long.valueOf(id));
             Boolean isSuccess = mediaSourceService.delete(Long.valueOf(id));
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
+                        , "002004006", AuditLogOperType.delete.getValue()));
                 return "success";
             }
         } catch (ValidationException e) {
@@ -202,7 +225,7 @@ public class ZkMediaSourceController {
                 return "success";
             }
             for (ClusterState.MemberData mem : memberDatas) {
-                String url = "http://" + mem.getWorkerState().url() + "/flush/reloadMediaSource/" + mediaSourceId;
+                String url = "http://" + mem.getWorkerState().url() + "/flush/reloadZK/" + mediaSourceId;
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 HttpEntity request = new HttpEntity(null, headers);
@@ -243,7 +266,7 @@ public class ZkMediaSourceController {
                 } catch (IOException e) {
                     throw new IOException("Zk服务器验证失败.", e);
                 }
-            }else {
+            } else {
                 throw new ValidationException("ip地址格式不正确.");
             }
         }

@@ -11,14 +11,14 @@ import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
+import com.ucar.datalink.worker.api.task.TaskWriterContext;
 import com.ucar.datalink.worker.api.util.dialect.DbDialect;
 import com.ucar.datalink.worker.api.util.dialect.DbDialectFactory;
+import com.ucar.datalink.worker.api.util.dialect.SqlUtils;
 import com.ucar.datalink.worker.api.util.dialect.mysql.MysqlDialect;
-
 import com.ucar.datalink.worker.api.util.dialect.sqlserver.SqlServerDialect;
 import com.ucar.datalink.writer.rdbms.handle.SqlBuilder;
 import com.ucar.datalink.writer.rdbms.load.RecordLoader;
-import com.ucar.datalink.worker.api.util.dialect.SqlUtils;
 import com.ucar.datalink.writer.rdbms.utils.TableCheckUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ddlutils.model.Column;
@@ -52,10 +52,10 @@ public class RdbEventRecordLoader extends RecordLoader<RdbEventRecord> {
     private static final Logger logger = LoggerFactory.getLogger(RdbEventRecordLoader.class);
 
     @Override
-    protected String getSql(RdbEventRecord record) {
+    protected String getSql(RdbEventRecord record, TaskWriterContext context) {
         if (StringUtils.isBlank(record.getSql())) {
             //如果外面没有生成过sql,则及时生成一下
-            SqlBuilder.buildSql(record);
+            SqlBuilder.buildSql(record, context);
         }
         return record.getSql();
     }
@@ -71,7 +71,7 @@ public class RdbEventRecordLoader extends RecordLoader<RdbEventRecord> {
     }
 
     @Override
-    protected void fillPreparedStatement(PreparedStatement ps, LobCreator lobCreator, RdbEventRecord record, DbDialect dbDialect, boolean isSyncAutoAddColumn) throws SQLException {
+    protected void fillPreparedStatement(PreparedStatement ps, LobCreator lobCreator, RdbEventRecord record, DbDialect dbDialect, TaskWriterContext context) throws SQLException {
         EventType type = record.getEventType();
         // 注意insert/update语句对应的字段数序都是将主键排在后面
         List<EventColumn> columns = new ArrayList<EventColumn>();
@@ -82,7 +82,12 @@ public class RdbEventRecordLoader extends RecordLoader<RdbEventRecord> {
             columns.addAll(record.getKeys());
         } else if (type.isUpdate()) {
             boolean existOldKeys = !CollectionUtils.isEmpty(record.getOldKeys());
-            columns.addAll(record.getUpdatedColumns());// 只更新带有isUpdate=true的字段
+            boolean hasAutoIncrementNotKeyColumns = dbDialect.hasAutoIncrementNotKeyColumns(record.getSchemaName(), record.getTableName());
+            if (hasAutoIncrementNotKeyColumns) {
+                columns.addAll(record.getUpdatedColumns());// 只更新带有isUpdate=true的字段
+            } else {
+                columns.addAll(record.getColumns());// update、upsert都更新所有字段
+            }
             columns.addAll(record.getKeys());
             if (existOldKeys) {
                 columns.addAll(record.getOldKeys());
@@ -90,7 +95,7 @@ public class RdbEventRecordLoader extends RecordLoader<RdbEventRecord> {
         }
 
         // 获取一下当前字段名的数据是否必填
-
+        boolean isSyncAutoAddColumn = context.getWriterParameter().isSyncAutoAddColumn();
         Map<String, Boolean> isRequiredMap = buildRequiredMap(dbDialect, record, columns, isSyncAutoAddColumn);
         Table table = dbDialect.findTable(record.getSchemaName(), record.getTableName());
 

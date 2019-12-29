@@ -12,18 +12,26 @@ import java.util.Map;
 
 public class BatchContentVo implements Serializable {
 
+	private static final long serialVersionUID = -395666768956888871L;
+
 	private BatchActionEnum batchActionEnum;
-
+	
 	private String index;
-
+	
 	private String type;
-
+	
 	private String id;
+
+	/**
+	 * routing值
+	 */
+	private String routingValue;
+
 	//转化json串时，保留值为null的字段，使其能将值为null的字段传递到服务端,默认自动过滤掉值为null的字段
 	private boolean retainNullValue = false;
 	//指定其他支持的配置
 	private Map<String,Object> selfConfig = new HashMap<String, Object>();
-
+	
 	private Object content;
 
 	public BatchActionEnum getBatchActionEnum() {
@@ -33,7 +41,7 @@ public class BatchContentVo implements Serializable {
 	public void setBatchActionEnum(BatchActionEnum batchActionEnum) {
 		this.batchActionEnum = batchActionEnum;
 	}
-
+	
 	public String getIndex() {
 		return index;
 	}
@@ -65,13 +73,21 @@ public class BatchContentVo implements Serializable {
 	public void setContent(Object content) {
 		this.content = content;
 	}
-
+	
 	public boolean isRetainNullValue() {
 		return retainNullValue;
 	}
 
 	public void setRetainNullValue(boolean retainNullValue) {
 		this.retainNullValue = retainNullValue;
+	}
+
+	public String getRoutingValue() {
+		return routingValue;
+	}
+
+	public void setRoutingValue(String routingValue) {
+		this.routingValue = routingValue;
 	}
 
 	public BatchContentVo putConfig(String configName, Object configValue) {
@@ -88,17 +104,21 @@ public class BatchContentVo implements Serializable {
 		StringBuilder sb = new StringBuilder();
 		JSONObject actionJson = new JSONObject();
 		JSONObject actionBodyJson =  new JSONObject();
-
+		
 		if(!StringUtils.isBlank(index)) {
 			actionBodyJson.put("_index", index);
 		}
-
+		
 		if(!StringUtils.isBlank(type)) {
 			actionBodyJson.put("_type", type);
 		}
-
+		
 		if(!StringUtils.isBlank(id)) {
 			actionBodyJson.put("_id", id);
+		}
+
+		if (!StringUtils.isBlank(routingValue)) {
+			actionBodyJson.put("routing", routingValue);
 		}
 
 		actionBodyJson.putAll(selfConfig);
@@ -109,16 +129,17 @@ public class BatchContentVo implements Serializable {
 			actionJson.put(batchActionEnum.getName(), actionBodyJson);
 		}
 
+		
 		sb.append(actionJson.toJSONString()).append("\n");
 		if(content != null) {
-
+			
             String json = null;
             if(retainNullValue) {
             	json = JSONObject.toJSONString(content, SerializerFeature.WriteMapNullValue);
             }else {
 				json = JSONObject.toJSONString(content);
             }
-
+            
 			if(BatchActionEnum.UPDATE.equals(batchActionEnum)) {
 				json = "{ \"doc\" : " + json + " }";
 			}
@@ -126,10 +147,10 @@ public class BatchContentVo implements Serializable {
 			if(BatchActionEnum.UPSERT.equals(batchActionEnum)) {
 				json = "{ \"doc\" : " + json + " ,\"doc_as_upsert\" : true}";
 			}
-
+			
 			sb.append(json).append("\n");
 		}
 		return sb.toString();
 	}
-
+	
 }

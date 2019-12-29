@@ -17,8 +17,13 @@ public class MysqlReaderPosition extends Position {
     private InetSocketAddress sourceAddress;
     private Long slaveId;
     protected Long timestamp;
+    private String gtid;
     private String latestEffectSyncLogFileName;
     private Long latestEffectSyncLogFileOffset;
+
+    //影子位点相关信息
+    private MysqlReaderPosition shadowPosition;
+    private Long shadowId;
 
     public Long getSlaveId() {
         return slaveId;
@@ -76,6 +81,14 @@ public class MysqlReaderPosition extends Position {
         this.timestamp = timestamp;
     }
 
+    public String getGtid() {
+        return gtid;
+    }
+
+    public void setGtid(String gtid) {
+        this.gtid = gtid;
+    }
+
     public String getLatestEffectSyncLogFileName() {
         return latestEffectSyncLogFileName;
     }
@@ -90,5 +103,21 @@ public class MysqlReaderPosition extends Position {
 
     public void setLatestEffectSyncLogFileOffset(Long latestEffectSyncLogFileOffset) {
         this.latestEffectSyncLogFileOffset = latestEffectSyncLogFileOffset;
+    }
+
+    public MysqlReaderPosition getShadowPosition() {
+        return shadowPosition;
+    }
+
+    public void setShadowPosition(MysqlReaderPosition shadowPosition) {
+        this.shadowPosition = shadowPosition;
+    }
+
+    public Long getShadowId() {
+        return shadowId;
+    }
+
+    public void setShadowId(Long shadowId) {
+        this.shadowId = shadowId;
     }
 }

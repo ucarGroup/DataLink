@@ -90,6 +90,7 @@ public class SqlCheckNote implements Comparable<SqlCheckNote> {
         SPARKA,//SPARK管理员
         HBASEA;//HBASE管理员
 
+
         private static Map<MediaSourceType, RoleType> typeMappings = new HashMap<>();
 
         static {
@@ -101,6 +102,7 @@ public class SqlCheckNote implements Comparable<SqlCheckNote> {
             typeMappings.put(MediaSourceType.ORACLE, DBA);
             typeMappings.put(MediaSourceType.SDDL, DBA);
             typeMappings.put(MediaSourceType.HBASE, HBASEA);
+            typeMappings.put(MediaSourceType.KUDU, SPARKA);
         }
 
         public static RoleType getRoleTypeByMediaSourceType(MediaSourceType mediaSourceType) {

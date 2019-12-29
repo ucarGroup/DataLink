@@ -107,11 +107,10 @@ public class UserLoginInterceptor implements HandlerInterceptor {
             }
             if (!authExist) {
                 //将角色的所有权限编码存入cookie中
-                List<String> roleCodeList;
+                List<String> roleCodeList = new ArrayList<>();
                 if (isSuper) {//SUPER拥有所有权限
-                    List<MenuInfo> menuList = menuService.getList();
-                    roleCodeList = menuList.stream().map(MenuInfo::getCode).collect(Collectors.toList());
-
+                    //超级管理员权限码用"super"代替(为解决cookie超长跳转产生502的问题，不把所有的菜单编码放入cookie)
+                    roleCodeList.add("\"super\"");
                 } else {
                     List<RoleAuthorityInfo> list = new ArrayList<RoleAuthorityInfo>();
                     for(RoleInfo info : user.getRoleInfoList()){

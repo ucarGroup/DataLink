@@ -52,9 +52,16 @@
 
     msgAlarmListMyTable = $('#groupTable').DataTable({
         "bAutoWidth": true,
+        serverSide: true,//开启服务器模式:启用服务器分页
+        paging: true,//是否分页
         "ajax": {
             "url": "${basePath}/group/initGroup",
-            "data": {}
+            "data": function (d) {
+                return JSON.stringify(d);
+            },
+            "dataType": 'json',
+            "contentType": 'application/json',
+            "type": 'POST'
         },
         "columns": [
             {"data": "id"},
@@ -98,6 +105,17 @@
                                 "<a href='javascript:doDelete(" + oData.id + ")' class='red'  title='删除'>" +
                                 "<i class='ace-icon fa fa-trash-o bigger-130'></i>" + "</a>" +
                                 "</div> &nbsp; &nbsp;"
+                                return str;
+                            }
+                        },
+                        {
+                            code: '001001007',
+                            html: function () {
+                                var str;
+                                str = "<div class='radio'>" +
+                                    "<a href='javascript:doReBalance(" + oData.id + ")' class='green'  title='强制reBalance'>" +
+                                    "<i class='ace-icon fa fa-refresh bigger-130'></i>" + "</a>" +
+                                    "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         }
@@ -147,4 +165,27 @@
             });
         }
     }
+
+    function doReBalance(id) {
+        if (confirm("警告！确定要reBalance吗？")) {
+            $.ajax({
+                type: "post",
+                url: "${basePath}/group/doReBalance?id=" + id,
+                dataType: "json",
+                async: false,
+                error: function (xhr, status, err) {
+                    alert(err);
+                },
+                success: function (data) {
+                    if (data == "success") {
+                        alert("reBalance成功！");
+                        msgAlarmListMyTable.ajax.reload();
+                    } else {
+                        alert(data);
+                    }
+                }
+            });
+        }
+    }
+
 </script>

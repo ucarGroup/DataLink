@@ -23,6 +23,13 @@ public abstract class PluginReaderParameter extends PluginParameter {
      */
     private boolean ddlSync = true;
 
+    /**
+     * 是否开启读端数据多路复用，该参数是否有效取决于Reader插件是否支持该功能
+     * 例如，对于MysqlReader来说：一旦开启，同一worker进程内，连接的【读端数据库实例】一样的Task将复用一份儿binlog
+     *
+     */
+    private boolean multiplexingRead;
+
     public boolean isDump() {
         return dump;
     }
@@ -45,5 +52,13 @@ public abstract class PluginReaderParameter extends PluginParameter {
 
     public void setDdlSync(boolean ddlSync) {
         this.ddlSync = ddlSync;
+    }
+
+    public boolean isMultiplexingRead() {
+        return multiplexingRead;
+    }
+
+    public void setMultiplexingRead(boolean multiplexingRead) {
+        this.multiplexingRead = multiplexingRead;
     }
 }

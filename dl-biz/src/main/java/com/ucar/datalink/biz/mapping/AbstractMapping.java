@@ -28,6 +28,10 @@ public abstract class AbstractMapping {
         throw new UnsupportedOperationException();
     }
 
+    public ColumnMeta toKudu(ColumnMeta meta) {
+        throw new UnsupportedOperationException();
+    }
+
     public void processMetaMapping(MetaMappingInfo info) {
 
     }
@@ -60,6 +64,8 @@ public abstract class AbstractMapping {
         target.setName(meta.getName());
         target.setType(meta.getType());
         target.setIsPrimaryKey(meta.isPrimaryKey());
+        target.setAliasName(meta.getAliasName());
+        target.setIsHide(meta.isHide());
         return target;
     }
 

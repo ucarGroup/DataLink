@@ -37,6 +37,9 @@ public class MediaMappingInfo implements Serializable, Storable {
     private Long interceptorId;
     private String joinColumn;
     private boolean esUsePrefix;
+    private String esRouting;
+    private String esRoutingIgnore;
+
     private String geoPositionConf;
     private String skipIds;
     private Date createTime;
@@ -155,6 +158,22 @@ public class MediaMappingInfo implements Serializable, Storable {
         this.esUsePrefix = esUsePrefix;
     }
 
+    public String getEsRouting() {
+        return esRouting;
+    }
+
+    public void setEsRouting(String esRouting) {
+        this.esRouting = esRouting;
+    }
+
+    public String getEsRoutingIgnore() {
+        return esRoutingIgnore;
+    }
+
+    public void setEsRoutingIgnore(String esRoutingIgnore) {
+        this.esRoutingIgnore = esRoutingIgnore;
+    }
+
     public String getGeoPositionConf() {
         return geoPositionConf;
     }
@@ -252,6 +271,24 @@ public class MediaMappingInfo implements Serializable, Storable {
     public String toString() {
         return "MediaMappingInfo{" +
                 "id=" + id +
+                ", taskId=" + taskId +
+                ", sourceMediaId=" + sourceMediaId +
+                ", targetMediaSourceId=" + targetMediaSourceId +
+                ", targetMediaName='" + targetMediaName + '\'' +
+                ", targetMediaNamespace='" + targetMediaNamespace + '\'' +
+                ", parameter='" + parameter + '\'' +
+                ", columnMappingMode=" + columnMappingMode +
+                ", writePriority=" + writePriority +
+                ", valid=" + valid +
+                ", interceptorId=" + interceptorId +
+                ", joinColumn='" + joinColumn + '\'' +
+                ", esUsePrefix=" + esUsePrefix +
+                ", esRouting='" + esRouting + '\'' +
+                ", esRoutingIgnore='" + esRoutingIgnore + '\'' +
+                ", geoPositionConf='" + geoPositionConf + '\'' +
+                ", skipIds='" + skipIds + '\'' +
+                ", createTime=" + createTime +
+                ", modifyTime=" + modifyTime +
                 '}';
     }
 }

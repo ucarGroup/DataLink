@@ -6,10 +6,9 @@ import com.google.common.cache.LoadingCache;
 import com.ucar.datalink.biz.utils.DataSourceFactory;
 import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
-
 import com.ucar.datalink.domain.media.MediaSourceType;
-import com.ucar.datalink.worker.api.util.dialect.oracle.OracleDialect;
 import com.ucar.datalink.worker.api.util.dialect.mysql.MysqlDialect;
+import com.ucar.datalink.worker.api.util.dialect.oracle.OracleDialect;
 import com.ucar.datalink.worker.api.util.dialect.postgresql.PostgreSqlDialect;
 import com.ucar.datalink.worker.api.util.dialect.sqlserver.SqlServerDialect;
 import org.slf4j.Logger;
@@ -23,6 +22,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 方言工厂类
@@ -40,7 +40,7 @@ public class DbDialectFactory {
         defaultLobHandler = new DefaultLobHandler();
         defaultLobHandler.setStreamAsLob(true);
 
-        dialects = CacheBuilder.newBuilder().softValues().build(new CacheLoader<MediaSourceInfo, DbDialect>() {
+        dialects = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).softValues().build(new CacheLoader<MediaSourceInfo, DbDialect>() {
             @Override
             public DbDialect load(MediaSourceInfo mediaSourceInfo) throws Exception {
                 DataSource dataSource = DataSourceFactory.getDataSource(mediaSourceInfo);

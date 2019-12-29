@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.TaskDecorateDetailDAO">
+
+    <resultMap id="taskDecorateDetail" type="com.ucar.datalink.domain.decorate.TaskDecorateDetail">
+        <result property="id" column="id"/>
+        <result property="decorateId" column="decorate_id"/>
+        <result property="taskName" column="task_name"/>
+        <result property="tableName" column="table_name"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="executedLog" column="executed_log"/>
+        <result property="taskId" column="task_id"/>
+        <result property="statement" column="statement"/>
+    </resultMap>
+
+    <select id="listByCondition" resultMap="taskDecorateDetail"
+            parameterType="com.ucar.datalink.domain.decorate.TaskDecorateDetail">
+        SELECT
+        t.id,
+        t.decorate_id,
+        m.task_name,
+        l.table_name,
+        t.status,
+        t.create_time,
+        t.update_time,
+        t.executed_log
+        FROM t_dl_task_decorate_detail t
+        LEFT JOIN t_dl_task_decorate l ON t.decorate_id = l.id
+        LEFT JOIN t_dl_task m ON l.task_id = m.id
+        WHERE t.decorate_id =  #{decorateId}
+        order by t.id desc
+    </select>
+
+    <select id="queryBytaskIdAndStatus" resultMap="taskDecorateDetail"
+            parameterType="com.ucar.datalink.domain.decorate.TaskDecorateDetail">
+        SELECT
+        t.id,
+        t.decorate_id,
+        l.table_name,
+        l.statement,
+        t.status,
+        t.create_time,
+        t.update_time,
+        t.executed_log
+        from t_dl_task_decorate l
+        left join t_dl_task_decorate_detail t on t.decorate_id = l.id
+        where l.task_id = #{taskId} and t.status = #{status}
+    </select>
+
+    <select id="findById" parameterType="long" resultMap="taskDecorateDetail">
+        SELECT
+        id,decorate_id,status,create_time,update_time,executed_log
+        FROM t_dl_task_decorate_detail where id=#{id}
+    </select>
+
+    <insert id="insert" parameterType="com.ucar.datalink.domain.decorate.TaskDecorateDetail" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO t_dl_task_decorate_detail
+        (decorate_id,status,create_time,update_time,executed_log) VALUES
+        (#{decorateId},#{status},now(),now(),#{executedLog})
+    </insert>
+
+    <update id="update" parameterType="com.ucar.datalink.domain.decorate.TaskDecorateDetail">
+        UPDATE t_dl_task_decorate_detail
+        <set>
+            <if test="status!=null and status!=''">
+                status=#{status},
+            </if>
+            <if test="executedLog!=null and executedLog!=''">
+                executed_log=#{executedLog},
+            </if>
+            update_time=now()
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="recordCount" resultType="Integer" parameterType="long">
+        SELECT
+        COUNT(1)
+        FROM t_dl_task_decorate_detail  where t.decorate_id = #{decorateId}
+    </select>
+</mapper>

@@ -4,20 +4,17 @@ import com.google.common.collect.Lists;
 import com.ucar.datalink.biz.dal.MediaDAO;
 import com.ucar.datalink.biz.dal.MediaSourceDAO;
 import com.ucar.datalink.biz.dal.MonitorDAO;
-import com.ucar.datalink.biz.service.MonitorService;
-import com.ucar.datalink.biz.service.TaskConfigService;
 import com.ucar.datalink.biz.dal.TaskDAO;
-import com.ucar.datalink.biz.service.TaskStatusService;
+import com.ucar.datalink.biz.service.*;
+import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.monitor.MonitorCat;
 import com.ucar.datalink.domain.monitor.TaskMonitorInfo;
 import com.ucar.datalink.domain.statis.StatisDetail;
-import com.ucar.datalink.domain.task.TargetState;
-import com.ucar.datalink.domain.task.TaskInfo;
-import com.ucar.datalink.domain.task.TaskStatus;
-import com.ucar.datalink.domain.task.TaskType;
+import com.ucar.datalink.domain.task.*;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +34,11 @@ import java.util.stream.Collectors;
 public class TaskConfigServiceImpl implements TaskConfigService {
 
     private static final Logger logger = LoggerFactory.getLogger(TaskConfigServiceImpl.class);
+
+    /**
+     * 同步修改状态，主task修改配置参数，是否同步修改从task,1:表示同步修改
+     */
+    private static final String SYNC_FLAG = "1";
 
     @Autowired
     private TaskDAO taskDAO;
@@ -56,26 +58,40 @@ public class TaskConfigServiceImpl implements TaskConfigService {
     @Autowired
     private TaskStatusService taskStatusService;
 
+    @Autowired
+    private MediaService mediaService;
+
+    @Autowired
+    private MediaSourceService mediaSourceService;
+
     @Override
     public List<TaskInfo> getList() {
         return taskDAO.getList();
     }
 
     @Override
-    public List<TaskInfo> getActiveTaskConfigsByGroup(Long groupId) {
+    public ActiveTasks getActiveTaskConfigsByGroup(Long groupId) {
         Assert.notNull(groupId);
 
-        long start = System.currentTimeMillis();
-        List<TaskInfo> taskInfos = taskDAO.getListWithDeleted();
-        logger.info("Time for querying task from db  is : " + (System.currentTimeMillis() - start) + "ms");
+        while (true) {
+            long start = System.currentTimeMillis();
+            long version = getTaskConfigVersion();
+            List<TaskInfo> taskInfos = taskDAO.listByGroupId(groupId);
+            logger.info("Time for querying task from db  is : " + (System.currentTimeMillis() - start) + "ms");
 
-        if (taskInfos == null) {
-            return Lists.newArrayList();
-        } else {
-            OptionalLong ol = taskInfos.stream().mapToLong(t -> t.getModifyTimeMillSeconds()).max();
-            long version = ol.isPresent() ? ol.getAsLong() : -1L;
-            taskInfos.forEach(t -> t.setVersion(version));
-            return taskInfos.stream().filter(t -> t.getGroupId().equals(groupId) && !t.isDelete()).collect(Collectors.toList());
+            List<TaskInfo> result;
+            if (version == -1 || taskInfos == null) {
+                return new ActiveTasks(groupId, version, Lists.newArrayList());
+            } else {
+                result = taskInfos.stream().filter(t -> t.getModifyTime().getTime() <= version).collect(Collectors.toList());
+                result.forEach(t -> t.setVersion(version));
+
+                if (result.size() == taskInfos.size()) {
+                    return new ActiveTasks(groupId, version, result);
+                } else {
+                    logger.info("find dirty tasks which exceed version {}.", version);
+                }
+            }
         }
     }
 
@@ -96,17 +112,13 @@ public class TaskConfigServiceImpl implements TaskConfigService {
                 }
             }
         }
-        return -1L;
+        throw new DatalinkException("get task config version failed after 3 times.");
     }
 
     @Override
-    public List<TaskInfo> listTasksForQueryPage(Long readerMediaSourceId, Long groupId, Long id, TaskType taskType) {
-        TaskInfo query = new TaskInfo();
-        query.setTaskType(taskType);
-        query.setGroupId(groupId);
-        query.setId(id);
-        query.setReaderMediaSourceId(readerMediaSourceId);
-        List<TaskInfo> result = taskDAO.listByCondition(query);
+    public List<TaskInfo> listTasksForQueryPage(Long readerMediaSourceId, Long groupId,
+                                                Long id, TaskType taskType) {
+        List<TaskInfo> result = taskDAO.listByCondition(readerMediaSourceId, groupId, id, taskType);
         return result == null ? Lists.newArrayList() : result;
     }
 
@@ -136,6 +148,18 @@ public class TaskConfigServiceImpl implements TaskConfigService {
     }
 
     @Override
+    @Transactional
+    public TaskInfo addMySqlTask(TaskInfo taskInfo) {
+        checkTaskName(taskInfo);
+
+        taskDAO.insert(taskInfo);
+        if (taskInfo.getLeaderTaskId() == null) {
+            monitorService.createAllMonitor(taskInfo.getId(), MonitorCat.TASK_MONITOR);
+        }
+        return taskInfo;
+    }
+
+    @Override
     public void updateTask(TaskInfo taskInfo) {
         checkTaskName(taskInfo);
         taskDAO.update(taskInfo);
@@ -143,7 +167,7 @@ public class TaskConfigServiceImpl implements TaskConfigService {
 
     @Override
     @Transactional
-    public void deleteTask(long id) {
+    public void deleteTask(long id) throws Exception {
         List<TaskInfo> friendTasks = taskDAO.listByLeaderTaskId(id);
         if (CollectionUtils.isNotEmpty(friendTasks)) {
             throw new ValidationException(String.format("任务%s是其它任务的Leader Task，不能删除!", id));
@@ -153,6 +177,7 @@ public class TaskConfigServiceImpl implements TaskConfigService {
         mediaDAO.deleteMediaMappingColumnByTaskId(id);//先删除MappingColumn
         mediaDAO.deleteMediaMappingByTaskId(id);//再删除Mapping
         monitorDAO.deleteByResourceIdAndCat(id, MonitorCat.TASK_MONITOR.getKey());
+        mediaService.cleanTableMapping(id);//清除Task的映射缓存
     }
 
     @Override
@@ -176,7 +201,7 @@ public class TaskConfigServiceImpl implements TaskConfigService {
         TaskInfo taskInfo = taskDAO.findById(id);
 
         try {
-            taskDAO.delete(id);
+            taskDAO.deleteTemp(id);
             waitStop(id);
             taskDAO.migrateGroup(id, targetGroupId);//迁到新分组
         } catch (Throwable t) {
@@ -238,5 +263,35 @@ public class TaskConfigServiceImpl implements TaskConfigService {
             }
         }
 
+    }
+
+    /**
+     * 支持主leader同步配置参数到所有的follower上
+     *
+     * @param taskInfo
+     * @param sync
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void updateTask(TaskInfo taskInfo, String sync) {
+        //修改leader配置
+        updateTask(taskInfo);
+        //同步所有的follower
+        if (!StringUtils.isEmpty(sync) && SYNC_FLAG.equals(sync) && taskInfo.isLeaderTask()) {
+            Long leaderId = taskInfo.getId();
+            String taskReaderParameter = taskInfo.getTaskReaderParameter();
+            String taskWriterParameter = taskInfo.getTaskWriterParameter();
+            List<TaskInfo> updateTaskList = new ArrayList<>();
+            //查询出所有从task
+            List<TaskInfo> taskInfoList = taskDAO.listByLeaderTaskId(leaderId);
+            if (taskInfoList != null && taskInfoList.size() > 0) {
+                taskInfoList.forEach(t -> {
+                    t.setTaskReaderParameter(taskReaderParameter);
+                    t.setTaskWriterParameter(taskWriterParameter);
+                    updateTaskList.add(t);
+                });
+                taskDAO.batchUpdateTaskInfo(updateTaskList);
+            }
+        }
     }
 }

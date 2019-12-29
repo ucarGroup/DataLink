@@ -11,7 +11,7 @@ import java.util.Date;
 public abstract class DateUtils {
 
     public static Date parse(String time) {
-        if (time == null || time.equals("0000-00-00 00:00:00.000"))
+        if (time == null || time.equals("0000-00-00 00:00:00.000") || time.equals("0000-00-00 00:00:00"))
             return null;
         return DateTime.parse(time.trim().replace(' ', 'T')).toDate();
     }

@@ -68,6 +68,9 @@ public class MonitorServiceImpl implements MonitorService {
     @Value("${biz.monitor.defaultJvmUsageThreshold}")
     private Integer defaultJvmUsageThreshold;//百分比*100
 
+    @Value("${biz.monitor.defaultBusyTimeThreshold}")
+    private Integer defaultBusyTimeThreshold;//单位：ms
+
     @Autowired
     MonitorDAO monitorDAO;
 
@@ -84,8 +87,8 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     @Override
-    public List<MonitorInfo> getListForQueryPage(@Param("monitorCat") Integer monitorCat, @Param("monitorType") Integer monitorType, @Param("resourceId") Long resourceId, @Param("isEffective") Integer isEffective) {
-        return monitorDAO.getListForQueryPage(monitorCat, monitorType, resourceId, isEffective);
+    public List<MonitorInfo> getListForQueryPage(@Param("monitorCat") Integer monitorCat, @Param("monitorType") Integer monitorType, @Param("groupId") Long groupId, @Param("resourceId") Long resourceId, @Param("isEffective") Integer isEffective) {
+        return monitorDAO.getListForQueryPage(monitorCat, monitorType, groupId, resourceId, isEffective);
     }
 
     @Override
@@ -148,7 +151,7 @@ public class MonitorServiceImpl implements MonitorService {
         if (monitorCat == MonitorCat.TASK_MONITOR) {
             MonitorInfo delayMonitorInfo = new MonitorInfo();
             delayMonitorInfo.setIsEffective(1);
-            delayMonitorInfo.setMonitorRange("09:00-22:00");
+            delayMonitorInfo.setMonitorRange("06:00-23:59");
             delayMonitorInfo.setIntervalTime(defaultIntervalTime);
             delayMonitorInfo.setResourceId(resourceId);
             delayMonitorInfo.setThreshold(defaultDelayThreshold);
@@ -157,7 +160,7 @@ public class MonitorServiceImpl implements MonitorService {
 
             MonitorInfo exceptionMonitorInfo = new MonitorInfo();
             exceptionMonitorInfo.setIsEffective(1);
-            exceptionMonitorInfo.setMonitorRange("09:00-22:00");
+            exceptionMonitorInfo.setMonitorRange("00:00-23:59");
             exceptionMonitorInfo.setIntervalTime(defaultIntervalTime);
             exceptionMonitorInfo.setResourceId(resourceId);
             exceptionMonitorInfo.setThreshold(1);
@@ -166,7 +169,7 @@ public class MonitorServiceImpl implements MonitorService {
 
             MonitorInfo taskStatusMonitorInfo = new MonitorInfo();
             taskStatusMonitorInfo.setIsEffective(1);
-            taskStatusMonitorInfo.setMonitorRange("09:00-22:00");
+            taskStatusMonitorInfo.setMonitorRange("06:00-23:59");
             taskStatusMonitorInfo.setIntervalTime(defaultIntervalTime);
             taskStatusMonitorInfo.setResourceId(resourceId);
             taskStatusMonitorInfo.setThreshold(1);
@@ -175,26 +178,36 @@ public class MonitorServiceImpl implements MonitorService {
 
             MonitorInfo taskStatusMismatchMonitorInfo = new MonitorInfo();
             taskStatusMismatchMonitorInfo.setIsEffective(1);
-            taskStatusMismatchMonitorInfo.setMonitorRange("09:00-22:00");
+            taskStatusMismatchMonitorInfo.setMonitorRange("06:00-23:59");
             taskStatusMismatchMonitorInfo.setIntervalTime(defaultIntervalTime);
             taskStatusMismatchMonitorInfo.setResourceId(resourceId);
             taskStatusMismatchMonitorInfo.setThreshold(1);
             taskStatusMismatchMonitorInfo.setMonitorType(MonitorType.TASK_STATUS_MISMATCH_MONITOR.getKey());
             taskStatusMismatchMonitorInfo.setMonitorCat(MonitorCat.TASK_MONITOR.getKey());
 
+            MonitorInfo taskSyncStatusMonitorInfo = new MonitorInfo();
+            taskSyncStatusMonitorInfo.setIsEffective(1);
+            taskSyncStatusMonitorInfo.setMonitorRange("06:00-23:59");
+            taskSyncStatusMonitorInfo.setIntervalTime(defaultIntervalTime);
+            taskSyncStatusMonitorInfo.setResourceId(resourceId);
+            taskSyncStatusMonitorInfo.setThreshold(defaultBusyTimeThreshold);
+            taskSyncStatusMonitorInfo.setMonitorType(MonitorType.TASK_SYNC_STATUS_MONITOR.getKey());
+            taskSyncStatusMonitorInfo.setMonitorCat(MonitorCat.TASK_MONITOR.getKey());
+
             Integer num1 = monitorDAO.insert(delayMonitorInfo);
             Integer num2 = monitorDAO.insert(exceptionMonitorInfo);
             Integer num3 = monitorDAO.insert(taskStatusMonitorInfo);
             Integer num4 = monitorDAO.insert(taskStatusMismatchMonitorInfo);
+            Integer num5 = monitorDAO.insert(taskSyncStatusMonitorInfo);
 
-            if (num1 <= 0 || num2 <= 0 || num3 <= 0 || num4 <= 0) {
+            if (num1 <= 0 || num2 <= 0 || num3 <= 0 || num4 <= 0 || num5 <= 0) {
                 throw new DatalinkException("create task monitor fail.");
             }
         }
         if (monitorCat == MonitorCat.WORKER_MONITOR) {
             MonitorInfo workerJvmStateMonitorInfo = new MonitorInfo();
             workerJvmStateMonitorInfo.setIsEffective(1);
-            workerJvmStateMonitorInfo.setMonitorRange("09:00-22:00");
+            workerJvmStateMonitorInfo.setMonitorRange("06:00-23:59");
             workerJvmStateMonitorInfo.setIntervalTime(defaultIntervalTime);
             workerJvmStateMonitorInfo.setResourceId(resourceId);
             workerJvmStateMonitorInfo.setThreshold(defaultJvmUsageThreshold);
@@ -203,7 +216,7 @@ public class MonitorServiceImpl implements MonitorService {
 
             MonitorInfo workerRunningStateMonitorInfo = new MonitorInfo();
             workerRunningStateMonitorInfo.setIsEffective(1);
-            workerRunningStateMonitorInfo.setMonitorRange("09:00-22:00");
+            workerRunningStateMonitorInfo.setMonitorRange("06:00-23:59");
             workerRunningStateMonitorInfo.setIntervalTime(defaultIntervalTime);
             workerRunningStateMonitorInfo.setResourceId(resourceId);
             workerRunningStateMonitorInfo.setThreshold(1);

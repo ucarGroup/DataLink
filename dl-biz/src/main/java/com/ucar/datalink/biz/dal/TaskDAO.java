@@ -18,8 +18,6 @@ public interface TaskDAO {
 
     List<TaskInfo> getTasksByReaderMediaSourceId(Long readerMediaSourceId);
 
-    List<TaskInfo> getListWithDeleted();
-
     List<TaskInfo> listByGroupId(Long groupId);
 
     List<TaskInfo> listByLeaderTaskId(Long leaderTaskId);
@@ -28,7 +26,7 @@ public interface TaskDAO {
 
     Date findMaxModifyTime();
 
-    List<TaskInfo> listByCondition(TaskInfo query);
+    List<TaskInfo> listByCondition(@Param(value = "readerMediaSourceId") Long readerMediaSourceId, @Param(value = "groupId") Long groupId, @Param(value = "id") Long id, @Param(value = "taskType") TaskType taskType);
 
     TaskInfo findById(Long id);
 
@@ -38,15 +36,31 @@ public interface TaskDAO {
 
     Integer delete(Long id);
 
+    Integer deleteTemp(Long id);
+
     Integer migrateGroup(@Param(value = "id") Long id, @Param(value = "groupId") Long groupId);
 
     Integer taskCount();
 
     List<StatisDetail> getCountByType();
 
-    List<TaskInfo> getTasksByType(@Param(value = "taskType")TaskType taskType);
+    List<TaskInfo> getTasksByType(@Param(value = "taskType") TaskType taskType);
 
     List<TaskMonitorInfo> getTaskMonitorInfoList(@Param(value = "taskId") Long taskId, @Param(value = "groupId") Long groupId, @Param(value = "startTime") Date startTime, @Param(value = "endTime") Date endTime);
 
     List<TaskInfo> getTaskListByGroupId(Long groupId);
+
+    /**
+     * 批量修改taskInfo的信息
+     *
+     * @param updateTaskList
+     */
+    void batchUpdateTaskInfo(@Param("taskInfoList") List<TaskInfo> updateTaskList);
+
+    /**
+     * 批量插入
+     *
+     * @param taskInfoList
+     */
+    void batchInsertTask(@Param("taskInfoList") List<TaskInfo> taskInfoList);
 }

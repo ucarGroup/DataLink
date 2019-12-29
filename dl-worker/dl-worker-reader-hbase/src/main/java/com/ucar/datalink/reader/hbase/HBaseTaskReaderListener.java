@@ -64,6 +64,13 @@ public class HBaseTaskReaderListener implements PluginListener {
             }
         });
 
+        //获取集群状态
+        eventBus.register(new Object() {
+            @Subscribe
+            public void listener(HBaseStatusEvent event) {
+                HBasePluginUtil.executeStatusEvent(event);
+            }
+        });
 
     }
 

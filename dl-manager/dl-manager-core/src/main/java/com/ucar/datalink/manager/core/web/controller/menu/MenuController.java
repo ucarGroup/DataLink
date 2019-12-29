@@ -1,20 +1,28 @@
 package com.ucar.datalink.manager.core.web.controller.menu;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ucar.datalink.biz.service.MenuService;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
+import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.menu.MenuInfo;
 import com.ucar.datalink.domain.menu.MenuType;
 import com.ucar.datalink.manager.core.web.dto.menu.MenuView;
 import com.ucar.datalink.manager.core.web.util.Page;
+import com.ucar.datalink.manager.core.web.util.UserUtil;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -35,7 +43,10 @@ public class MenuController {
 
     @RequestMapping(value = "/initMenu")
     @ResponseBody
-    public Page<MenuView> initMenu() {
+    public Page<MenuView> initMenu(@RequestBody Map<String, String> map) {
+        Page<MenuView> page = new Page<>(map);
+        PageHelper.startPage(page.getPageNum(), page.getLength());
+
         List<MenuInfo> menuInfos = menuService.getList();
         List<MenuView> menuViews = menuInfos.stream().map(i -> {
             MenuView menuView = new MenuView();
@@ -48,7 +59,14 @@ public class MenuController {
             menuView.setIcon(i.getIcon());
             return menuView;
         }).collect(Collectors.toList());
-        return new Page<MenuView>(menuViews);
+
+        PageInfo<MenuInfo> pageInfo = new PageInfo<MenuInfo>(menuInfos);
+        page.setDraw(page.getDraw());
+        page.setAaData(menuViews);
+        page.setRecordsTotal((int) pageInfo.getTotal());
+        page.setRecordsFiltered(page.getRecordsTotal());
+
+        return page;
     }
 
     @RequestMapping(value = "/toAdd")
@@ -65,10 +83,22 @@ public class MenuController {
     public String doAdd(@ModelAttribute("menuInfo") MenuInfo menuInfo) {
         Boolean isSuccess = menuService.insert(menuInfo);
         if (isSuccess) {
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(menuInfo, "007002003", AuditLogOperType.insert.getValue()));
             return "success";
         } else {
             return "fail";
         }
+    }
+
+    private static AuditLogInfo getAuditLogInfo(MenuInfo info, String menuCode, String operType){
+        AuditLogInfo logInfo=new AuditLogInfo();
+        logInfo.setUserId(UserUtil.getUserIdFromRequest());
+        logInfo.setMenuCode(menuCode);
+        logInfo.setOperName(info.getName());
+        logInfo.setOperType(operType);
+        logInfo.setOperKey(info.getId());
+        logInfo.setOperRecord(info.toString());
+        return logInfo;
     }
 
     @RequestMapping(value = "/toEdit")
@@ -91,6 +121,7 @@ public class MenuController {
     public String doEdit(@ModelAttribute("menuInfo") MenuInfo menuInfo) {
         Boolean isSuccess = menuService.update(menuInfo);
         if (isSuccess) {
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(menuInfo, "007002005", AuditLogOperType.update.getValue()));
             return "success";
         } else {
             return "fail";
@@ -104,8 +135,11 @@ public class MenuController {
         if (StringUtils.isBlank(id)) {
             return "fail";
         }
-        Boolean isSuccess = menuService.delete(Long.valueOf(id));
+        Long idLong = Long.valueOf(id);
+        MenuInfo info = menuService.getById(idLong);
+        Boolean isSuccess = menuService.delete(idLong);
         if (isSuccess) {
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(info, "007002006", AuditLogOperType.delete.getValue()));
             return "success";
         } else {
             return "fail";

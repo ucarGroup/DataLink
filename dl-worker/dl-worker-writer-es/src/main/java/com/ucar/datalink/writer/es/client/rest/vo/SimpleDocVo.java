@@ -3,8 +3,9 @@
  */
 package com.ucar.datalink.writer.es.client.rest.vo;
 
+import com.ucar.datalink.writer.es.client.rest.constant.CharacterConstant;
 import com.ucar.datalink.writer.es.util.Assert;
-
+import org.apache.commons.lang.StringUtils;
 import java.io.Serializable;
 
 /**
@@ -15,12 +16,19 @@ import java.io.Serializable;
  * @since 4.1
  */
 public class SimpleDocVo extends VoItf implements Serializable {
-	
+
+	private static final long serialVersionUID = 600186545130286317L;
+
 	private String id ;
 	
 	//版本号，update/del 乐观锁
 	private String version ;
-	
+
+	/**
+	 * routing值
+	 */
+	private String routingValue;
+
     public SimpleDocVo() {}
 	
 	public SimpleDocVo(String clusterName) {
@@ -39,6 +47,15 @@ public class SimpleDocVo extends VoItf implements Serializable {
 	public void setId(String id) {
 		this.id = id;
 	}
+
+	public String getRoutingValue() {
+		return routingValue;
+	}
+
+	public void setRoutingValue(String routingValue) {
+		this.routingValue = routingValue;
+	}
+
 	public String getUrl(){
 		
 		Assert.notNull(index, "index不能为空");
@@ -49,6 +66,12 @@ public class SimpleDocVo extends VoItf implements Serializable {
 		
 		if(id != null) {
 			lastUrl += "/"+ id;
+		}
+
+		lastUrl += CharacterConstant.QUEST;
+
+		if (!StringUtils.isBlank(routingValue)) {
+			lastUrl += "routing="+routingValue;
 		}
 
 		return lastUrl;

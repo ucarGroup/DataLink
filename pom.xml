@@ -5,7 +5,7 @@
     <artifactId>datalink</artifactId>
     <packaging>pom</packaging>
     <name>datalink</name>
-    <version>0.0.2</version>
+    <version>1.0.0-beta</version>
     <inceptionYear>2016</inceptionYear>
     <url>https://github.com/ucar/datalink</url>
 
@@ -63,12 +63,6 @@
                 <version>1.7.12</version>
             </dependency>
 
-            <!-- kafka clients-->
-            <dependency>
-                <groupId>org.apache.kafka</groupId>
-                <artifactId>kafka-clients</artifactId>
-                <version>0.10.1.0</version>
-            </dependency>
 
             <!--jdbc pool-->
             <dependency>
@@ -154,7 +148,7 @@
             <dependency>
                 <groupId>com.alibaba</groupId>
                 <artifactId>fastjson</artifactId>
-                <version>1.2.12</version>
+                <version>1.2.58</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -168,9 +162,15 @@
             </dependency>
             <!--zookeeper-->
             <dependency>
-                <groupId>com.github.sgroschupf</groupId>
+                <groupId>com.101tec</groupId>
                 <artifactId>zkclient</artifactId>
-                <version>0.1</version>
+                <version>0.10</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
@@ -319,19 +319,6 @@
                 <version>2.22.2</version>
             </dependency>
 
-            <!-- mysql -->
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>5.1.35</version>
-            </dependency>
-
-            <!--sqlserver-->
-            <dependency>
-                <groupId>com.microsoft.sqlserver</groupId>
-                <artifactId>sqljdbc4</artifactId>
-                <version>4.0</version>
-            </dependency>
             <dependency>
                 <groupId>dom4j</groupId>
                 <artifactId>dom4j</artifactId>
@@ -368,6 +355,7 @@
                     <encoding>${project-source-encoding}</encoding>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -375,6 +363,7 @@
                     <encoding>${project-source-encoding}</encoding>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 </project>

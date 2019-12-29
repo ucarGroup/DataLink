@@ -199,7 +199,7 @@
     function refresh() {
         $("#edit").hide();
         $("#mainContentInner").show();
-        msgAlarmListMyTable.ajax.reload();
+        msgAlarmListMyTable.draw(false);
     }
     $('#form-update-monitorType').on('change', function () {
         var type = $('#form-update-monitorType').val();

@@ -33,6 +33,10 @@
     </insert>
 
     <update id="delete" parameterType="long">
+        UPDATE t_dl_task set TASK_NAME = concat(TASK_NAME ,SUBSTRING(MD5(RAND()),1,20)),IS_DELETE='true',MODIFY_TIME=now() where id=#{id}
+    </update>
+
+    <update id="deleteTemp" parameterType="long">
         UPDATE t_dl_task set IS_DELETE='true',MODIFY_TIME=now() where id=#{id}
     </update>
 
@@ -81,12 +85,6 @@
         FROM t_dl_task where is_delete='false'
     </select>
 
-    <select id="getListWithDeleted" resultMap="taskResult">
-        SELECT
-        <include refid="allTaskColumns"/>
-        FROM t_dl_task
-    </select>
-
     <select id="getTasksByReaderMediaSourceId" resultMap="taskResult">
         SELECT
         <include refid="allTaskColumns"/>
@@ -114,28 +112,30 @@
     <select id="listByGroupId" resultMap="taskResult" parameterType="long">
         select
         <include refid="allTaskColumns"/>
-        from t_dl_task where GROUP_ID= #{groupId} and is_delete='false'
+        from T_DL_TASK where GROUP_ID= #{groupId} and is_delete='false'
     </select>
 
     <select id="findMaxModifyTime" resultType="java.util.Date">
-        select max(MODIFY_TIME) from t_dl_task
+        select max(MODIFY_TIME) from T_DL_TASK
     </select>
 
-    <select id="listByCondition" resultMap="taskResult" parameterType="task">
+    <select id="listByCondition" resultMap="taskResult">
         SELECT
         <include refid="allTaskColumns"/>
-        from t_dl_task where is_delete='false'
+        from t_dl_task t
+        LEFT JOIN t_dl_media_source m ON t.READER_MEDIA_SOURCE_ID = m.id
+        where is_delete='false'
         <if test="groupId != null">
-            and GROUP_ID = #{groupId}
+            and t.GROUP_ID = #{groupId}
         </if>
         <if test="id != null">
-            and ID = #{id}
+            and t.ID = #{id}
         </if>
         <if test="taskType != null">
-            and TASK_TYPE = #{taskType}
+            and t.TASK_TYPE = #{taskType}
         </if>
         <if test="readerMediaSourceId!=null">
-            and READER_MEDIA_SOURCE_ID=#{readerMediaSourceId}
+            and t.READER_MEDIA_SOURCE_ID=#{readerMediaSourceId}
         </if>
     </select>
 
@@ -158,7 +158,7 @@
     <select id="getTasksByType" resultMap="taskResult">
         SELECT
         <include refid="allTaskColumns"/>
-        from t_dl_task where is_delete='false' and task_type = #{taskType}
+        from T_DL_TASK where is_delete='false' and task_type = #{taskType}
     </select>
 
     <select id="getTaskMonitorInfoList" resultType="com.ucar.datalink.domain.monitor.TaskMonitorInfo">
@@ -171,8 +171,11 @@
         ex.exception_detail exception,
         ex.id exceptionId
         FROM t_dl_task t
-        LEFT JOIN (SELECT * FROM t_dl_task_delaytime d INNER JOIN (SELECT max(id) AS maxid FROM t_dl_task_delaytime GROUP BY task_id) m ON d.id= m.maxid) dt ON dt.task_id=t.id
-        LEFT JOIN (SELECT * FROM t_dl_task_exception e INNER JOIN (SELECT max(id) AS maxid FROM t_dl_task_exception GROUP BY task_id) m ON e.id = m.maxid WHERE e.create_time BETWEEN #{startTime} AND #{endTime}) ex ON ex.task_id = t.id
+        LEFT JOIN (SELECT * FROM t_dl_task_delaytime d INNER JOIN (SELECT max(id) AS maxid FROM t_dl_task_delaytime
+        GROUP BY task_id) m ON d.id= m.maxid) dt ON dt.task_id=t.id
+        LEFT JOIN (SELECT * FROM t_dl_task_exception e INNER JOIN (SELECT max(id) AS maxid FROM t_dl_task_exception
+        GROUP BY task_id) m ON e.id = m.maxid WHERE e.create_time BETWEEN #{startTime} AND #{endTime}) ex ON ex.task_id
+        = t.id
         WHERE t.is_delete='false'
         <if test="taskId != null">
             AND t.id = #{taskId}
@@ -188,4 +191,46 @@
         <include refid="allTaskColumns"/>
         FROM t_dl_task where is_delete='false' AND group_id = #{groupId}
     </select>
+    <update id="batchUpdateTaskInfo">
+        UPDATE T_DL_TASK
+        <trim prefix="set" suffixOverrides=",">
+            MODIFY_TIME=now(),
+            <trim prefix="task_name=case" suffix="end,">
+                <foreach collection="taskInfoList" item="item">
+                    <if test="item.taskName!=null">
+                        when id=#{item.id} then #{item.taskName}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="TASK_READER_PARAMETER=case" suffix="end,">
+                <foreach collection="taskInfoList" item="item">
+                    <if test="item.taskReaderParameter!=null">
+                        when id=#{item.id} then #{item.taskReaderParameter}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="TASK_WRITER_PARAMETER=case" suffix="end,">
+                <foreach collection="taskInfoList" item="item">
+                    <if test="item.taskWriterParameter!=null">
+                        when id=#{item.id} then #{item.taskWriterParameter}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        <where>
+            id in
+            <foreach collection="taskInfoList" index="index" item="item" open="(" separator="," close=")">
+                #{item.id}
+            </foreach>
+        </where>
+    </update>
+
+    <insert id="batchInsertTask" parameterType="List">
+        <foreach collection="taskInfoList" index="index" item="taskInfo" open="(" separator="," close=")">
+            INSERT INTO t_dl_task
+            (TASK_NAME,TASK_DESC,TASK_TYPE,READER_MEDIA_SOURCE_ID,TASK_PARAMETER,TASK_READER_PARAMETER,TASK_WRITER_PARAMETER,TARGET_STATE,GROUP_ID,LEADER_TASK_ID,IS_LEADER_TASK,CREATE_TIME,MODIFY_TIME,lab_id,task_sync_mode)
+            VALUES
+            (#{taskInfo.taskName},#{taskInfo.taskDesc},#{taskInfo.taskType},#{taskInfo.readerMediaSourceId},#{taskInfo.taskParameter},#{taskInfo.taskReaderParameter},#{taskInfo.taskWriterParameter},#{taskInfo.targetState},#{taskInfo.groupId},#{taskInfo.leaderTaskId},#{taskInfo.isLeaderTask},now(),now(),#{taskInfo.labId},#{taskInfo.taskSyncMode})
+        </foreach>
+    </insert>
 </mapper>

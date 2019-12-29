@@ -12,7 +12,7 @@ public interface MonitorDAO {
 
     List<MonitorInfo> getList();
 
-    List<MonitorInfo> getListForQueryPage(@Param("monitorCat") Integer monitorCat, @Param("monitorType") Integer monitorType, @Param("resourceId") Long resourceId, @Param("isEffective") Integer isEffective);
+    List<MonitorInfo> getListForQueryPage(@Param("monitorCat") Integer monitorCat, @Param("monitorType") Integer monitorType, @Param("groupId") Long groupId, @Param("resourceId") Long resourceId, @Param("isEffective") Integer isEffective);
 
     List<MonitorInfo> getListByResourceAndCat(@Param("resourceId") Long resourceId, @Param("monitorCat") Integer monitorCat);
 

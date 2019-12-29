@@ -4,6 +4,8 @@ import com.ucar.datalink.domain.group.GroupInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.plugin.PluginWriterParameter;
 import com.ucar.datalink.domain.plugin.reader.hbase.HBaseReaderParameter;
+import com.ucar.datalink.domain.plugin.writer.kafka.PartitionMode;
+import com.ucar.datalink.domain.plugin.writer.kafka.SerializeMode;
 import com.ucar.datalink.domain.plugin.writer.hdfs.CommitMode;
 import com.ucar.datalink.domain.plugin.writer.rdbms.RdbmsWriterParameter;
 import com.ucar.datalink.domain.task.TargetState;
@@ -17,6 +19,7 @@ import java.util.Map;
 public class HBaseTaskModel extends TaskModel {
     private HBaseReaderParameter hbaseReaderParameter;
     private List<MediaSourceInfo> zkMediaSourceList;
+    private String isLeaderTask;
 
     public HBaseTaskModel() {
     }
@@ -30,10 +33,14 @@ public class HBaseTaskModel extends TaskModel {
                           List<PluginWriterParameter.RetryMode> retryModeList,
                           List<RdbmsWriterParameter.SyncMode> rdbSyncModeList,
                           HBaseReaderParameter hbaseReaderParameter,
-                          List<CommitMode> commitModeList) {
-        super(taskBasicInfo, writerParameterMap, groupList, targetStateList, mediaSourceList, retryModeList, rdbSyncModeList, commitModeList);
+                          List<CommitMode> commitModeList,
+                          List<SerializeMode> serializeModeList,
+                          List<PartitionMode> partitionModeList,
+                          String isLeaderTask) {
+        super(taskBasicInfo, writerParameterMap, groupList, targetStateList, mediaSourceList, retryModeList, rdbSyncModeList, commitModeList, serializeModeList,partitionModeList);
         this.hbaseReaderParameter = hbaseReaderParameter;
         this.zkMediaSourceList = zkMediaSourceList;
+        this.isLeaderTask = isLeaderTask;
     }
 
     public HBaseReaderParameter getHbaseReaderParameter() {
@@ -50,5 +57,13 @@ public class HBaseTaskModel extends TaskModel {
 
     public void setZkMediaSourceList(List<MediaSourceInfo> zkMediaSourceList) {
         this.zkMediaSourceList = zkMediaSourceList;
+    }
+
+    public String getIsLeaderTask() {
+        return isLeaderTask;
+    }
+
+    public void setIsLeaderTask(String isLeaderTask) {
+        this.isLeaderTask = isLeaderTask;
     }
 }

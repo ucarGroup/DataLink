@@ -45,7 +45,7 @@ public class CustomInsideGroupMysqlEventParser extends MysqlEventParser{
         if (heartBeatTimerTask == null) {// fixed issue #56，避免重复创建heartbeat线程
             heartBeatTimerTask = buildHeartBeatTimeTask(connection);
             Integer interval = detectingIntervalInSeconds;
-            timer.schedule(heartBeatTimerTask, 10L, interval * 10L);//@@changes
+            timer.schedule(heartBeatTimerTask, 5L, interval * 5L);//@@changes
             logger.info("start heart beat.... ");
         }
     }

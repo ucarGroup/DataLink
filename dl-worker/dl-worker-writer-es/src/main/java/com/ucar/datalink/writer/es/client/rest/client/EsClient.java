@@ -736,4 +736,24 @@ public class EsClient {
                 JSON.toJSONString(logVo), ES_COMMANDS_STAT_TYPE, logVo.getEsServerIp());
 	}
 
+    /**
+     * 获取es的版本号
+     * @param vo
+     * @return
+     */
+    public static String getEsVersion(MappingIndexVo vo) {
+        Long start = System.currentTimeMillis();
+        COMMAND_STAT_THREADLOCAL.set(new CollectInfoVo());
+        boolean success = false;
+        Integer resultNum = 0;
+
+        try {
+            String result =   ViewMappingIndex.getInstance().processRequest(vo, null);
+            success = true;
+            return JSONObject.parseObject(result).getJSONObject("version").getString("number");
+        }finally {
+            long executeTime = System.currentTimeMillis() - start;
+            executeLog("getVersion", vo, vo.getUrl(), executeTime, success,resultNum);
+        }
+    }
 }

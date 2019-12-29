@@ -40,6 +40,21 @@ public class ColumnMeta {
      */
     private boolean isPrimaryKey;
 
+    /**
+     * 是否是自增列
+     */
+    private boolean isAutoIncrement;
+
+    /**
+     * 别名，用作生成目标端列名的时候使用
+     */
+    private String aliasName;
+
+    /**
+     * 是否隐藏此列，用作黑白名单时候使用
+     */
+    private boolean isHide = false;
+
 
 
     public String getName() {
@@ -98,6 +113,30 @@ public class ColumnMeta {
 
     public void setIsPrimaryKey(boolean isPrimaryKey) {
         this.isPrimaryKey = isPrimaryKey;
+    }
+
+    public boolean isAutoIncrement() {
+        return isAutoIncrement;
+    }
+
+    public void setIsAutoIncrement(boolean isAutoIncrement) {
+        this.isAutoIncrement = isAutoIncrement;
+    }
+
+    public String getAliasName() {
+        return aliasName;
+    }
+
+    public void setAliasName(String aliasName) {
+        this.aliasName = aliasName;
+    }
+
+    public boolean isHide() {
+        return isHide;
+    }
+
+    public void setIsHide(boolean isHide) {
+        this.isHide = isHide;
     }
 
     @Override

@@ -78,6 +78,9 @@ public class TaskStatusMonitor extends Monitor {
 
     private void alarmAndRestart(TaskInfo taskInfo, TargetState targetState, TaskStatus.State actualState) {
         MonitorInfo monitorInfo = monitorService.getByResourceAndType(taskInfo.getId(), MonitorType.TASK_STATUS_MONITOR);
+		if(monitorInfo == null) {
+            return;
+        }
         if (isAlarm(taskInfo.getId(), Long.MAX_VALUE, monitorInfo)) {
             //do alarm
             alarmService.alarmTaskStatus(monitorInfo, taskInfo, targetState, actualState);

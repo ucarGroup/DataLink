@@ -587,6 +587,16 @@ public class GroupCoordinator {
         heartbeatPurgatory.checkAndComplete(memberKey);
     }
 
+    /**
+     * 强制Rebalance
+     *
+     * @param groupId
+     */
+    public void forceRebalance(String groupId){
+        GroupMetadata groupMetadata = groupManager.getGroup(groupId);
+        maybePrepareRebalance(groupMetadata);
+    }
+
     class GroupKey {
         private final String keyLabel;
 

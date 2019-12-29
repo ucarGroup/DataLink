@@ -2,6 +2,7 @@ package com.ucar.datalink.biz.dal;
 
 import com.ucar.datalink.domain.media.*;
 import com.ucar.datalink.domain.statis.StatisDetail;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Map;
@@ -11,19 +12,24 @@ import java.util.Map;
  */
 public interface MediaDAO {
 
+    //-----------------------------------------------------------------------------------------------
     //----------------------------------------methods for media--------------------------------------
+    //-----------------------------------------------------------------------------------------------
+
     long mediaInsert(MediaInfo mediaInfo);
 
     int deleteMediaById(long id);
 
     int deleteMediaByMediaSourceId(Long mediaSourceId);
 
-    MediaInfo getMediaByMediaSourceAndMediaName(Map<String,Object> mapPram);
+    MediaInfo getMediaByMediaSourceAndMediaName(Map<String, Object> mapPram);
 
     MediaInfo findMediaById(long id);
 
-
+    //-----------------------------------------------------------------------------------------------
     //-------------------------------------methods for mediamapping----------------------------------
+    //-----------------------------------------------------------------------------------------------
+
     int deleteMediaMappingById(long id);
 
     int deleteMediaMappingColumnByMappingId(long id);
@@ -42,7 +48,7 @@ public interface MediaDAO {
 
     List<MediaMappingInfo> findMediaMappingsByTargetMediaSourceId(Long targetMediaSourceId);
 
-    List<MediaMappingInfo> findMediaMappingsByTaskIdAndTargetMediaSourceId(Map<String,Object> mapParam);
+    List<MediaMappingInfo> findMediaMappingsByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam);
 
     List<MediaMappingInfo> getAllMediaMappings();
 
@@ -57,7 +63,10 @@ public interface MediaDAO {
     MediaSourceInfo findMediaSourceById(Long id);
 
 
-    //-------------------------------------methods for mediacolumnmapping---------------------------------
+    //-----------------------------------------------------------------------------------------------
+    //-------------------------------------methods for mediacolumnmapping----------------------------
+    //-----------------------------------------------------------------------------------------------
+
     void updateMediaColumnMapping(MediaColumnMappingInfo mediaColumnMappingInfo);
 
     long mediaColumnInsert(MediaColumnMappingInfo mediaColumnMappingInfo);
@@ -69,4 +78,19 @@ public interface MediaDAO {
     List<StatisDetail> getCountByType();
 
     List<Long> findTaskIdsByMediaSourceId(Long mediaSourceId);
+
+    List<MediaInfo> findMediaByMediaSourceId(Long mediaSourceId);
+
+    List<Long> findTaskIdListByMediaSourceList(@Param("mediaSourceIdList") List<Long> mediaSourceIdList);
+
+    MediaMappingInfo getMediaMappingOfSpecial(@Param(value = "tableName") String tableName, @Param(value = "mediaSourceId") Long mediaSourceId);
+
+    List<MediaMappingInfo> findMappingListByCondition(MediaMappingInfo mediaMappingInfo);
+
+    List<MediaMappingInfo> getMappingsByTargetMediaNameAndNamespace(@Param(value = "targetMediaSourceId") Long targetMediaSourceId, @Param(value = "targetNamespace") String targetNamespace, @Param(value = "targetTableName") String targetTableName);
+
+    List<MediaMappingInfo> getMappingsByMediaSourceIdAndTargetTable(@Param(value = "srcMediaSourceId") Long srcMediaSourceId, @Param(value = "targetMediaSourceId") Long targetMediaSourceId, @Param(value = "targetTableName") String targetTableName);
+
+    MediaMappingInfo findMediaMappingByJoinIndex(MediaMappingInfo mediaMappingInfo);
+
 }

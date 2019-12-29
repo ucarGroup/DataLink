@@ -2,8 +2,10 @@ package com.ucar.datalink.manager.core.web.controller.sync;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.ucar.datalink.biz.service.MediaService;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.biz.service.SyncRelationService;
+import com.ucar.datalink.biz.service.TaskConfigService;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.parameter.rdb.RdbMediaSrcParameter;
@@ -40,6 +42,12 @@ public class SyncRelationController {
     @Autowired
     private SyncRelationService syncRelationService;
 
+    @Autowired
+    private MediaService mediaService;
+
+    @Autowired
+    private TaskConfigService taskConfigService;
+
     @RequestMapping(value = "/show")
     public ModelAndView show() {
         ModelAndView mav = new ModelAndView("sync/relation/show");
@@ -65,12 +73,14 @@ public class SyncRelationController {
     @RequestMapping(value = "/checkSql")
     @ResponseBody
     public List<TreeView> checkSql(@RequestBody Map<String, String> map) {
+        long currentTime = System.currentTimeMillis();
         Long mediaSourceId = Long.valueOf(map.get("mediaSourceId"));
         String sqls = map.get("sqls");
         List<SqlCheckResult> results = syncRelationService.checkSqls(mediaSourceId, sqls);
         if (!results.isEmpty()) {
             return buildTreeViews(results);
         }
+        logger.info("脚本检测(checkSql),共花费{}秒。", (System.currentTimeMillis() - currentTime) / 1000);
         return Lists.newArrayList();
     }
 
@@ -80,7 +90,7 @@ public class SyncRelationController {
     public List<TreeView> checkSql_4_dbms(String ip, int port, String schema, String sqls) {
         logger.info(String.format("Receive a check request: \r\n IP is %s , \r\n Port is %s, \r\n Schema is %s, \r\n sqls is %s",
                 ip, port, schema, sqls));
-
+        long currentTime = System.currentTimeMillis();
         try {
             Long mediaSourceId = null;
 
@@ -104,6 +114,8 @@ public class SyncRelationController {
         } catch (Exception e) {
             logger.error("Sql Check Error:", e);
             throw e;
+        } finally {
+            logger.info("脚本检测(checkSql_4_dbms),共花费{}秒。", (System.currentTimeMillis() - currentTime) / 1000);
         }
     }
 
@@ -135,6 +147,9 @@ public class SyncRelationController {
         nodeView.setMediaSourceId(node.getMediaSource().getId());
         nodeView.setMediaSourceType(node.getMediaSourceType());
         nodeView.setMediaSourceName(node.getMediaSourceName());
+        if (node.getMappingInfo() != null) {
+            nodeView.setMappingId(node.getMappingInfo().getId());
+        }
         nodeView.setName(String.format("【%s】%s", node.getMediaSource().getType(), node.getMediaSource().getName()));
         nodeView.setTableAliasName(node.getTableNameAlias());
 
@@ -144,6 +159,11 @@ public class SyncRelationController {
             for (SyncNode childNode : childNodes) {
                 childrenTreeNodes.add(buildTreeNode(childNode));
             }
+            nodeView.setChildren(childrenTreeNodes);
+        }
+        //只是支持单节点的情况
+        else {
+            List<TreeView.NodeView> childrenTreeNodes = new ArrayList<>();
             nodeView.setChildren(childrenTreeNodes);
         }
         return nodeView;

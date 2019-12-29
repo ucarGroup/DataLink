@@ -36,6 +36,9 @@ public class TaskStatusMismatchMonitor extends Monitor {
         }
         for (TaskStatusMismatchLogInfo statusMismatchLogInfo : list) {
             MonitorInfo monitorInfo = monitorService.getByResourceAndType(statusMismatchLogInfo.getTaskId(), MonitorType.TASK_STATUS_MISMATCH_MONITOR);
+			if(monitorInfo == null) {
+                continue;
+            }
             if (!isMoreThan5Min(statusMismatchLogInfo.getCreateTime()) && isAlarm(statusMismatchLogInfo.getTaskId(), Long.MAX_VALUE, monitorInfo)) {
                 alarmService.alarmTaskStatusMismatch(monitorInfo, statusMismatchLogInfo);
             }

@@ -4,7 +4,6 @@ package com.ucar.datalink.reader.mysql.utils;
  * Created by lubiao on 2018/5/11.
  */
 public class Constants {
-    public static final String BATCH_ID = "BATCH_ID";
-    public static final String LOG_FILE_NAME = "LOG_FILE_NAME";
-    public static final String LOG_FILE_OFFSET = "LOG_FILE_OFFSET";
+    public static final String MAIN_BATCH_ID = "MAIN_BATCH_ID";
+    public static final String SHADOW_BATCH_ID = "SHADOW_BATCH_ID";
 }

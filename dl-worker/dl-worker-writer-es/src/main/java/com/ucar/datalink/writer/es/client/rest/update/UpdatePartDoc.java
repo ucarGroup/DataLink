@@ -6,6 +6,7 @@
 package com.ucar.datalink.writer.es.client.rest.update;
 
 import com.ucar.datalink.writer.es.client.rest.AbstractRequestEs;
+import com.ucar.datalink.writer.es.client.rest.constant.CharacterConstant;
 import com.ucar.datalink.writer.es.client.rest.constant.ESEnum;
 import com.ucar.datalink.writer.es.client.rest.vo.CRDResultVo;
 import com.ucar.datalink.writer.es.client.rest.vo.VoItf;
@@ -43,7 +44,15 @@ public class UpdatePartDoc extends AbstractRequestEs {
 	@Override
 	public HttpRequestBase getHttpUriRequest(VoItf vo) {
 
-		HttpPost post = new HttpPost(vo.getUrl()+"/_update");
+		String url = vo.getUrl();
+		if (url.indexOf(CharacterConstant.QUEST) < 0) {
+			url = vo.getUrl()+"/_update";
+		} else {
+			int questIndex = url.indexOf(CharacterConstant.QUEST);
+			url = url.substring(0, questIndex) + "/_update" + url.substring(questIndex, url.length());
+		}
+
+		HttpPost post = new HttpPost(url);
 		
 		return post;
 	}

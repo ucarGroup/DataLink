@@ -12,7 +12,7 @@ import java.util.Enumeration;
  * Created by lubiao on 2017/4/16.
  */
 public class ManagerActiveCheckFilter implements Filter {
-
+ 
     private FilterConfig filterConfig;
     private ManagerProxyServlet proxyServlet;
 
@@ -45,6 +45,7 @@ public class ManagerActiveCheckFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+
         ServerStatusMonitor monitor = ServerContainer.getInstance().getServerStatusMonitor();
         if (monitor.activeIsMine()) {
             filterChain.doFilter(servletRequest, servletResponse);

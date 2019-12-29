@@ -12,6 +12,7 @@ import com.ucar.datalink.contract.Record;
 import com.ucar.datalink.domain.RecordMeta;
 import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
+import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.plugin.PluginWriterParameter;
 import com.ucar.datalink.worker.api.intercept.BuiltInDdlEventInterceptor;
 import com.ucar.datalink.worker.api.intercept.Interceptor;
@@ -24,10 +25,10 @@ import com.ucar.datalink.worker.api.task.TaskWriterContext;
 import com.ucar.datalink.worker.api.transform.Transformer;
 import com.ucar.datalink.worker.api.transform.TransformerFactory;
 import com.ucar.datalink.worker.api.util.copy.RecordCopier;
-import com.ucar.datalink.worker.api.util.statistic.RecordGroupLoadStatistic;
-import com.ucar.datalink.worker.api.util.statistic.WriterStatistic;
 import com.ucar.datalink.worker.api.util.priority.PriorityTask;
 import com.ucar.datalink.worker.api.util.priority.PriorityTaskExecutor;
+import com.ucar.datalink.worker.api.util.statistic.RecordGroupLoadStatistic;
+import com.ucar.datalink.worker.api.util.statistic.WriterStatistic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,12 +48,9 @@ import java.util.stream.Collectors;
 public abstract class AbstractHandler<T extends Record> implements Handler {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractHandler.class);
-
-    private LinkedList<Interceptor<T>> builtinInterceptors;
-
-    private ExecutorService recordChunkExecutorService;
-
     protected ExecutorService executorService;
+    private LinkedList<Interceptor<T>> builtinInterceptors;
+    private ExecutorService recordChunkExecutorService;
 
     protected AbstractHandler() {
         this.builtinInterceptors = Lists.newLinkedList();
@@ -81,32 +79,18 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
                     .summaryStatistics()
                     .getMin();
         }
-
-        //必须保证 maximumPoolSize >= targetMediaSourceCount,保证所有线程都有机会执行PriorityTaskExecutor的execute方法，否则可能导致活锁现象
-        //见loadData方法
-        int maxPoolSize = 1;
-        if (!taskMappings.isEmpty()) {
-            maxPoolSize = taskMappings
-                    .stream()
-                    .collect(Collectors.groupingBy(MediaMappingInfo::getTargetMediaSourceId))
-                    .size();
-        }
-
         logger.info(String.format("CorePoolSize for recordChunkExecutor is %s.", corePoolSize));
-        logger.info(String.format("MaxPoolSize  for recordChunkExecutor is %s.", maxPoolSize));
 
         recordChunkExecutorService = new ThreadPoolExecutor(
                 corePoolSize,
-                maxPoolSize,
+                Integer.MAX_VALUE,
                 60L,
                 TimeUnit.SECONDS,
                 new SynchronousQueue<>(),
                 new NamedThreadFactory(
                         MessageFormat.format("Task-{0}-Writer-{1}-chunk", context.taskId(), parameter.getPluginName())
-                ),
-                new ThreadPoolExecutor.CallerRunsPolicy()
+                )
         );
-
 
         // 对于该线程池来说,不能使用CallerRunsPolicy，会导致Future.get方法一直阻塞，进而导致Task始终无法关闭
         // 相关原因可参考该链接：https://blog.csdn.net/zero__007/article/details/78915354
@@ -130,6 +114,7 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
                 if (r instanceof RunnableFuture) {
                     RunnableFuture runnableFuture = (RunnableFuture) r;
                     runnableFuture.cancel(true);
+                    logger.info("RunnableFuture for executorService is canceled.");
                 }
             });
         }
@@ -141,6 +126,7 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
             }
         } catch (InterruptedException e) {
             //do nothing
+            logger.info("InterruptedException occurred:" + e);
         }
 
         if (recordChunkExecutorService != null) {
@@ -149,6 +135,7 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
                 if (r instanceof RunnableFuture) {
                     RunnableFuture runnableFuture = (RunnableFuture) r;
                     runnableFuture.cancel(true);
+                    logger.info("RunnableFuture for recordChunkExecutorService is canceled.");
                 }
             });
         }
@@ -159,6 +146,7 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
             }
         } catch (InterruptedException e) {
             //do nothing
+            logger.info("InterruptedException occurred:" + e);
         }
     }
 
@@ -191,7 +179,7 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
             return;
         }
 
-        RecordChunk<T> mergedChunk = merge(interceptedChunk, context);
+        RecordChunk<T> mergedChunk = merge(interceptedChunk, context, false);
         if (!shouldContinue(mergedChunk)) {
             return;
         }
@@ -201,10 +189,27 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
             return;
         }
 
+
+        if (sourceMediaTypeIsSDDL(transformedChunk)) {
+            //解决分库分表中的冗余表重复数据，避免写入端死锁或版本冲突
+            transformedChunk = merge(transformedChunk, context, true);
+            if (!shouldContinue(transformedChunk)) {
+                return;
+            }
+        }
         List<RecordChunk<T>> groupedChunkList = group(transformedChunk, context);
 
         load(groupedChunkList, context);
     }
+
+
+    private boolean sourceMediaTypeIsSDDL(RecordChunk<T> recordChunk) {
+        if (recordChunk == null || recordChunk.getRecords() == null || recordChunk.getRecords().size() == 0) {
+            return false;
+        }
+        return MediaSourceType.SDDL.equals(RecordMeta.mediaMapping(recordChunk.getRecords().get(0)).getSourceMedia().getMediaSource().getType());
+    }
+
 
     /**
      * 根据MediaMapping的配置，对Record进行mapping映射,
@@ -245,6 +250,26 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
 
         return newChunk;
     }
+
+
+    protected void checkFutures(List<Future> results, String errrorMsg) {
+        Throwable ex = null;
+        for (int i = 0; i < results.size(); i++) {
+            Future result = results.get(i);
+            try {
+                Object obj = result.get();
+                if (obj instanceof Throwable) {
+                    ex = (Throwable) obj;
+                }
+            } catch (Throwable e) {
+                ex = e;
+            }
+        }
+        if (ex != null) {
+            throw new DatalinkException(errrorMsg, ex);
+        }
+    }
+
 
     /**
      * 对record进行拦截
@@ -288,16 +313,17 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
     }
 
     /**
+     * 以mapperingId+schame+table+id进行merge操作（多条数据只保留一条）
      * 需要的话，可以对数据进行merge操作
      */
-    protected RecordChunk<T> merge(RecordChunk<T> recordChunk, TaskWriterContext context) {
+    protected RecordChunk<T> merge(RecordChunk<T> recordChunk, TaskWriterContext context, boolean forceMerge) {
         //statistic before
         WriterStatistic writerStatistic = context.taskWriterSession().getData(WriterStatistic.KEY);
         writerStatistic.setRecordsCountBeforeMerge(recordChunk.getRecords().size());
         Long startTime = System.currentTimeMillis();
 
         //do merge
-        if (context.getWriterParameter().isMerging()) {
+        if (context.getWriterParameter().isMerging() || forceMerge) {
             Merger<T> merger = MergerFactory.
                     getMerger(recordChunk.getRecords().get(0).getClass());
             RecordChunk<T> newChunk = merger.merge(recordChunk);

@@ -16,6 +16,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * Created by lubiao on 2017/10/10.
  */
+
+//从1.0.24升级到1.1.3之后，canal已对上述问题进行了修复，此类废弃不用了
+@Deprecated
 public class FixedTimelineTransactionBarrier extends TimelineBarrier {
 
     private ThreadLocal<Boolean> inTransaction = new ThreadLocal() {

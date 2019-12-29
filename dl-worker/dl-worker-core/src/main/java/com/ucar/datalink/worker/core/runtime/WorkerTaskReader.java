@@ -5,6 +5,7 @@ import com.ucar.datalink.domain.plugin.PluginReaderParameter;
 import com.ucar.datalink.domain.task.TaskInfo;
 import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.common.utils.FutureCallback;
+import com.ucar.datalink.domain.task.TaskSyncStatus;
 import com.ucar.datalink.worker.api.probe.index.TaskDelayProbeIndex;
 import com.ucar.datalink.worker.api.probe.index.TaskExceptionProbeIndex;
 import com.ucar.datalink.worker.api.probe.index.TaskStatisticProbeIndex;
@@ -29,15 +30,17 @@ public class WorkerTaskReader extends WorkerTask {
     private final ArrayBlockingQueue<TaskChunk> queue;
     private final WorkerTaskReaderContext workerTaskReaderContext;
     private final PluginReaderParameter taskReaderParameter;
+    private final TaskSyncStatusManager taskSyncStatusManager;
     private TaskReader taskReader;
     private RecordChunk toSend;
 
     public WorkerTaskReader(WorkerConfig workerConfig, TaskInfo taskInfo, TaskStatusListener statusListener, ArrayBlockingQueue<TaskChunk> queue,
-                            WorkerTaskReaderContext workerTaskReaderContext) {
+                            WorkerTaskReaderContext workerTaskReaderContext, TaskSyncStatusManager taskSyncStatusManager) {
         super(workerConfig, taskInfo, statusListener, workerTaskReaderContext.taskExecutionId());
         this.queue = queue;
         this.workerTaskReaderContext = workerTaskReaderContext;
         this.taskReaderParameter = workerTaskReaderContext.getReaderParameter();
+        this.taskSyncStatusManager = taskSyncStatusManager;
 
         boolean ddlSyncGlobal = workerConfig.getBoolean(WorkerConfig.DDL_SYNC_CONFIG);
         boolean ddlSyncTask = taskReaderParameter.isDdlSync();
@@ -67,6 +70,7 @@ public class WorkerTaskReader extends WorkerTask {
                     return;
                 }
                 taskReader.start();
+                taskSyncStatusManager.updateSyncStatus(id(), new TaskSyncStatus(id(), TaskSyncStatus.State.Init, System.currentTimeMillis()));
                 log.info("TaskReader-{} finished initialization and start.", taskReaderParameter.getPluginName());
             }
 
@@ -144,7 +148,9 @@ public class WorkerTaskReader extends WorkerTask {
                 //do put and wait
                 TaskChunk taskChunk = new TaskChunk(toSend, new FutureCallback<>());
                 queue.put(taskChunk);
+                taskSyncStatusManager.updateSyncStatus(id(), new TaskSyncStatus(id(), TaskSyncStatus.State.Busy, System.currentTimeMillis()));
                 taskChunk.getCallback().get();
+                taskSyncStatusManager.updateSyncStatus(id(), new TaskSyncStatus(id(), TaskSyncStatus.State.Idle, System.currentTimeMillis()));
 
                 //statistic after
                 long writeTime = System.currentTimeMillis() - startTime;

@@ -4,10 +4,7 @@ import org.springframework.core.io.PathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
@@ -34,7 +31,11 @@ public class PropertiesUtil {
 
         if (resultProperties == null) {
             Resource resource = new PathResource(propertiesPath);
-            resultProperties = PropertiesLoaderUtils.loadProperties(resource);
+            try {
+                resultProperties = PropertiesLoaderUtils.loadProperties(resource);
+            } catch (FileNotFoundException e) {
+                resultProperties = null;
+            }
 
             if (resultProperties != null)
                 propertiesMap.put(propertiesPath, resultProperties);
@@ -44,11 +45,10 @@ public class PropertiesUtil {
     }
 
     /**
+     * @param propertiesPath :绝对路径
      * @Description:
-     *
      * @Author : yongwang.chen@ucarinc.com
-     * @Date   : 4:38 PM 06/02/2018
-     * @param  propertiesPath :绝对路径
+     * @Date : 4:38 PM 06/02/2018
      */
     public static void updateProperties(String propertiesPath, String content) throws IOException {
 
@@ -67,11 +67,10 @@ public class PropertiesUtil {
     }
 
     /**
+     * @param propertiesPath :绝对路径
      * @Description:
-     *
      * @Author : yongwang.chen@ucarinc.com
-     * @Date   : 4:38 PM 06/02/2018
-     * @param  propertiesPath :绝对路径
+     * @Date : 4:38 PM 06/02/2018
      */
     public static void updatePropertiesByMap(String propertiesPath, Map<String, String> content) throws IOException {
         Properties prop = new Properties();

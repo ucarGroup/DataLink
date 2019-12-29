@@ -152,6 +152,6 @@
     function refresh() {
         $("#edit").hide();
         $("#mainContentInner").show();
-        esListMyTable.ajax.reload();
+        esListMyTable.draw(false);
     }
 </script>

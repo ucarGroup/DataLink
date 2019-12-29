@@ -53,6 +53,7 @@ public class JettyServer {
                 webAppContext.setResourceBase(webAppPath);
             }
         }
+
         server.start();
         if (logger.isInfoEnabled()) {
             logger.info("##Jetty Embed Server is started.");

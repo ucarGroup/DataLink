@@ -12,8 +12,13 @@ import com.alibaba.otter.canal.parse.inbound.AbstractEventParser;
 import com.alibaba.otter.canal.parse.inbound.group.GroupEventParser;
 import com.alibaba.otter.canal.parse.inbound.mysql.LocalBinlogEventParser;
 import com.alibaba.otter.canal.parse.inbound.mysql.MysqlEventParser;
+import com.alibaba.otter.canal.parse.inbound.mysql.rds.RdsBinlogEventParserProxy;
+import com.alibaba.otter.canal.parse.inbound.mysql.tsdb.DefaultTableMetaTSDBFactory;
+import com.alibaba.otter.canal.parse.inbound.mysql.tsdb.TableMetaTSDB;
+import com.alibaba.otter.canal.parse.inbound.mysql.tsdb.TableMetaTSDBBuilder;
 import com.alibaba.otter.canal.parse.support.AuthenticationInfo;
 import com.alibaba.otter.canal.protocol.position.EntryPosition;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +32,12 @@ import java.util.List;
 /**
  * 1. 继承自Canal的CanalInstanceWithManager
  * 2. initEventParser()和doInitEventParser()，这两个方法完全copy自CanalInstanceWithManager，与其差异在于：
- *    > 如果在Group模式下，初始化的parser类型为自定义的CustomInsideGroupMysqlEventParser
- *    > 如果是在非Group模型下，初始化的parser类型为Canal自带的MysqlEventParser
- *    > 具体原因参见CustomInsideGroupMysqlEventParser的注释
- *    > 相关代码变更以 "//@@changes" 进行了标记
+ * > 如果在Group模式下，初始化的parser类型为自定义的CustomInsideGroupMysqlEventParser
+ * > 如果是在非Group模型下，初始化的parser类型为Canal自带的MysqlEventParser
+ * > 具体原因参见CustomInsideGroupMysqlEventParser的注释
+ * > 相关代码变更以 "//@@changes" 进行了标记
  * 3. Important：对引用的canal版本进行升级的时候，记得进行代码检查和合并
- *
+ * <p>
  * Created by lubiao on 2019/1/29.
  */
 public class CustomCanalInstanceWithManager extends CanalInstanceWithManager {
@@ -66,7 +71,7 @@ public class CustomCanalInstanceWithManager extends CanalInstanceWithManager {
                 }
 
                 // 初始化其中的一个分组parser
-                eventParsers.add(doInitEventParser(lastType, dbAddress, true));//@@changes
+                eventParsers.add(doInitEventParser(lastType, dbAddress, (size > 1) ? true : false));//@@changes
             }
 
             if (eventParsers.size() > 1) { // 如果存在分组，构造分组的parser
@@ -78,7 +83,7 @@ public class CustomCanalInstanceWithManager extends CanalInstanceWithManager {
             }
         } else {
             // 创建一个空数据库地址的parser，可能使用了tddl指定地址，启动的时候才会从tddl获取地址
-            this.eventParser = doInitEventParser(type, new ArrayList<InetSocketAddress>(), true);//@@changes
+            this.eventParser = doInitEventParser(type, new ArrayList<InetSocketAddress>(), false);//@@changes
         }
 
         logger.info("init eventParser end! \n\t load CanalEventParser:{}", eventParser.getClass().getName());
@@ -87,15 +92,26 @@ public class CustomCanalInstanceWithManager extends CanalInstanceWithManager {
     private CanalEventParser doInitEventParser(CanalParameter.SourcingType type, List<InetSocketAddress> dbAddresses, boolean isGroupMode) {
         CanalEventParser eventParser;
         if (type.isMysql()) {
-            //@@changes begin
-            MysqlEventParser mysqlEventParser;
-            if (isGroupMode) {
-                mysqlEventParser = new CustomInsideGroupMysqlEventParser();
-            } else {
-                mysqlEventParser = new MysqlEventParser();
-            }
-            //@@changes end
+            MysqlEventParser mysqlEventParser = null;
+            if (StringUtils.isNotEmpty(parameters.getRdsAccesskey())
+                    && StringUtils.isNotEmpty(parameters.getRdsSecretkey())
+                    && StringUtils.isNotEmpty(parameters.getRdsInstanceId())) {
 
+                mysqlEventParser = new RdsBinlogEventParserProxy();
+                ((RdsBinlogEventParserProxy) mysqlEventParser).setAccesskey(parameters.getRdsAccesskey());
+                ((RdsBinlogEventParserProxy) mysqlEventParser).setSecretkey(parameters.getRdsSecretkey());
+                ((RdsBinlogEventParserProxy) mysqlEventParser).setInstanceId(parameters.getRdsInstanceId());
+            } else {
+                //@@changes begin
+                if (isGroupMode) {
+                    mysqlEventParser = new CustomInsideGroupMysqlEventParser();
+                    logger.info("init event parser in group mode.");
+                } else {
+                    mysqlEventParser = new MysqlEventParser();
+                    logger.info("init event parser in common mode.");
+                }
+                //@@changes end
+            }
             mysqlEventParser.setDestination(destination);
             // 编码参数
             mysqlEventParser.setConnectionCharset(Charset.forName(parameters.getConnectionCharset()));
@@ -131,7 +147,7 @@ public class CustomCanalInstanceWithManager extends CanalInstanceWithManager {
                 mysqlEventParser.setMasterPosition(masterPosition);
 
                 if (parameters.getPositions().size() > 1) {
-                    EntryPosition standbyPosition = JsonUtils.unmarshalFromString(parameters.getPositions().get(0),
+                    EntryPosition standbyPosition = JsonUtils.unmarshalFromString(parameters.getPositions().get(1),
                             EntryPosition.class);
                     mysqlEventParser.setStandbyPosition(standbyPosition);
                 }
@@ -139,6 +155,41 @@ public class CustomCanalInstanceWithManager extends CanalInstanceWithManager {
             mysqlEventParser.setFallbackIntervalInSeconds(parameters.getFallbackIntervalInSeconds());
             mysqlEventParser.setProfilingEnabled(false);
             mysqlEventParser.setFilterTableError(parameters.getFilterTableError());
+            mysqlEventParser.setParallel(parameters.getParallel());
+            mysqlEventParser.setIsGTIDMode(BooleanUtils.toBoolean(parameters.getGtidEnable()));
+            // tsdb
+            if (parameters.getTsdbSnapshotInterval() != null) {
+                mysqlEventParser.setTsdbSnapshotInterval(parameters.getTsdbSnapshotInterval());
+            }
+            if (parameters.getTsdbSnapshotExpire() != null) {
+                mysqlEventParser.setTsdbSnapshotExpire(parameters.getTsdbSnapshotExpire());
+            }
+            boolean tsdbEnable = BooleanUtils.toBoolean(parameters.getTsdbEnable());
+            if (tsdbEnable) {
+                mysqlEventParser.setTableMetaTSDBFactory(new DefaultTableMetaTSDBFactory() {
+
+                    @Override
+                    public void destory(String destination) {
+                        TableMetaTSDBBuilder.destory(destination);
+                    }
+
+                    @Override
+                    public TableMetaTSDB build(String destination, String springXml) {
+                        try {
+                            System.setProperty("canal.instance.tsdb.url", parameters.getTsdbJdbcUrl());
+                            System.setProperty("canal.instance.tsdb.dbUsername", parameters.getTsdbJdbcUserName());
+                            System.setProperty("canal.instance.tsdb.dbPassword", parameters.getTsdbJdbcPassword());
+
+                            return TableMetaTSDBBuilder.build(destination, "classpath:spring/tsdb/mysql-tsdb.xml");
+                        } finally {
+                            System.setProperty("canal.instance.tsdb.url", "");
+                            System.setProperty("canal.instance.tsdb.dbUsername", "");
+                            System.setProperty("canal.instance.tsdb.dbPassword", "");
+                        }
+                    }
+                });
+                mysqlEventParser.setEnableTsdb(tsdbEnable);
+            }
             eventParser = mysqlEventParser;
         } else if (type.isLocalBinlog()) {
             LocalBinlogEventParser localBinlogEventParser = new LocalBinlogEventParser();
@@ -151,14 +202,15 @@ public class CustomCanalInstanceWithManager extends CanalInstanceWithManager {
             localBinlogEventParser.setDetectingEnable(parameters.getDetectingEnable());
             localBinlogEventParser.setDetectingIntervalInSeconds(parameters.getDetectingIntervalInSeconds());
             localBinlogEventParser.setFilterTableError(parameters.getFilterTableError());
+            localBinlogEventParser.setParallel(parameters.getParallel());
             // 数据库信息，反查表结构时需要
             if (!CollectionUtils.isEmpty(dbAddresses)) {
                 localBinlogEventParser.setMasterInfo(new AuthenticationInfo(dbAddresses.get(0),
                         parameters.getDbUsername(),
                         parameters.getDbPassword(),
                         parameters.getDefaultDatabaseName()));
-
             }
+
             eventParser = localBinlogEventParser;
         } else if (type.isOracle()) {
             throw new CanalException("unsupport SourcingType for " + type);

@@ -183,6 +183,35 @@
                                                     </div>
                                                 </div>
                                             </div>
+
+
+                                            <div class="col-sm-12">
+                                                <div class="col-sm-6 form-group">
+                                                    <label class="col-sm-4 control-label no-padding-right"
+                                                           for="form-add-esRouting">esRouting</label>
+
+                                                    <div class="col-sm-8">
+                                                        <input type="text" name="esRouting" id="form-add-esRouting"
+                                                               value=""
+                                                               style="width:100%;" readonly="false">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6 form-group">
+                                                    <label class="col-sm-4 control-label no-padding-right"
+                                                           for="form-add-esRoutingIgnore">esRouting<br>是否忽略</label>
+
+                                                    <div class="col-sm-8">
+                                                        <select name="esRoutingIgnore" class="col-sm-12"
+                                                                id="form-add-esRoutingIgnore"
+                                                                style="width:100%;" disabled="true">
+                                                            <option value="">请选择</option>
+                                                            <option value="true">是</option>
+                                                            <option value="false">否</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                         </div>
                                         <div class="form-group" id="duallistbox_demo1" style="display: none;">
                                             <div class="col-sm-12">
@@ -304,6 +333,8 @@
             <input type="hidden" name="writePriorityHidden" value="5">
             <input type="hidden" name="validHidden" value="true">
             <input type="hidden" name="esUsePrefixHidden" value="true">
+			<input type="hidden" name="esRoutingHidden">
+			<input type="hidden" name="esRoutingIgnoreHidden" value="true">
             <input type="hidden" name="geoPositionConfHidden">
             <input type="hidden" name="skipIdsHidden">
             <input type="hidden" name="parameterHidden">
@@ -577,6 +608,20 @@
         } else {
             $('#form-add-esUsePrefix').val(true);
         }
+		
+		var esRouting = $(obj).parent().parent().find('input[name=esRoutingHidden]').val();
+        if (esRouting != null && esRouting != '') {
+            $('#form-add-esRouting').val(esRouting);
+        } else {
+            $('#form-add-esRouting').val('');
+        }
+		
+		var esRoutingIgnore = $(obj).parent().parent().find('input[name=esRoutingIgnoreHidden]').val();
+        if (esRoutingIgnore != null && esRoutingIgnore != '') {
+            $('#form-add-esRoutingIgnore').val(esRoutingIgnore);
+        } else {
+            $('#form-add-esRoutingIgnore').val(true);
+        }
 
         var geoPositionConf = $(obj).parent().parent().find('input[name=geoPositionConfHidden]').val();
         if (geoPositionConf != null && geoPositionConf != '') {
@@ -670,6 +715,12 @@
 
         var esUsePrefix = $('#form-add-esUsePrefix').val();
         $(obj).parent().parent().find('input[name=esUsePrefixHidden]').val(esUsePrefix);
+		
+		var esRouting = $('#form-add-esRouting').val();
+        $(obj).parent().parent().find('input[name=esRoutingHidden]').val(esRouting);
+		
+		var esRoutingIgnore = $('#form-add-esRoutingIgnore').val();
+        $(obj).parent().parent().find('input[name=esRoutingIgnoreHidden]').val(esRoutingIgnore);
 
         var geoPositionConf = $('#form-add-geoPositionConf').val();
         $(obj).parent().parent().find('input[name=geoPositionConfHidden]').val(geoPositionConf);

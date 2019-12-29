@@ -52,6 +52,7 @@ public class URLConnectionUtil {
             try {
                 return post(serverUrl,data);
             } catch (Exception e) {
+                logger.error("请求异常",e);
                 //ignore
             }
         }
@@ -190,5 +191,8 @@ public class URLConnectionUtil {
         }
         return "{}";
     }
+
+
+
 
 }

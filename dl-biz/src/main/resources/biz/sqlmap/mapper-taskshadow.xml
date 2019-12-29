@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.TaskShadowDAO">
+
+    <resultMap id="taskShadowResult" type="taskShadow">
+        <result property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="state" column="state"/>
+        <result property="parameter" column="parameter"/>
+        <result property="note" column="note"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+        <association property="taskInfo" column="task_id" select="findTaskById"/>
+    </resultMap>
+
+    <resultMap id="taskMap" type="task">
+        <result property="id" column="ID"/>
+        <result property="taskName" column="TASK_NAME"/>
+        <result property="taskDesc" column="TASK_DESC"/>
+        <result property="taskType" column="TASK_TYPE"/>
+        <result property="readerMediaSourceId" column="READER_MEDIA_SOURCE_ID"/>
+        <result property="taskParameter" column="TASK_PARAMETER"/>
+        <result property="taskReaderParameter" column="TASK_READER_PARAMETER"/>
+        <result property="taskWriterParameter" column="TASK_WRITER_PARAMETER"/>
+        <result property="targetState" column="TARGET_STATE"/>
+        <result property="groupId" column="GROUP_ID"/>
+        <result property="isDelete" column="IS_DELETE"/>
+        <result property="createTime" column="CREATE_TIME"/>
+        <result property="modifyTime" column="MODIFY_TIME"/>
+    </resultMap>
+
+    <sql id="allTaskShadowColumns">id,task_id,state,parameter,note,create_time,modify_time</sql>
+
+    <insert id="insertTaskShadow" parameterType="taskShadow" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_task_shadow
+        (task_id, state, parameter, note, create_time, modify_time)
+        VALUES
+        (#{taskId}, #{state}, #{parameter}, #{note}, now(), now())
+    </insert>
+
+    <update id="updateTaskShadowState" parameterType="taskShadow">
+        UPDATE t_dl_task_shadow
+        SET
+        state=#{state},
+        modify_time=now()
+        WHERE id=#{id}
+    </update>
+
+    <select id="getTaskShadowById" parameterType="long" resultMap="taskShadowResult">
+        SELECT
+        <include refid="allTaskShadowColumns"/>
+        from t_dl_task_shadow WHERE id = #{id}
+    </select>
+
+    <select id="getMinTaskShadowInInitState" parameterType="long" resultMap="taskShadowResult">
+        SELECT
+        <include refid="allTaskShadowColumns"/>
+        from t_dl_task_shadow WHERE id = (select min(id) FROM t_dl_task_shadow where task_id = #{taskId} and state =
+        'INIT')
+    </select>
+
+    <select id="getTaskShadowInExecutingState" parameterType="long" resultMap="taskShadowResult">
+        SELECT
+        <include refid="allTaskShadowColumns"/>
+        from t_dl_task_shadow WHERE task_id = #{taskId} and state = 'EXECUTING'
+    </select>
+
+    <update id="discardTaskShadow" parameterType="long">
+        UPDATE t_dl_task_shadow
+        SET
+        state='DISCARD',
+        modify_time=now()
+        WHERE id=#{id} and state = 'INIT'
+    </update>
+    <select id="taskShadowListsForQueryPage" resultMap="taskShadowResult">
+        select
+        <include refid="allTaskShadowColumns"/>
+        from t_dl_task_shadow
+        WHERE task_id = #{taskId}
+        <if test="state!=null">
+            and state = #{state}
+        </if>
+        order by create_time desc
+    </select>
+    <select id="findTaskById" parameterType="long" resultMap="taskMap">
+        select * from t_dl_task where id =#{id}
+    </select>
+</mapper>

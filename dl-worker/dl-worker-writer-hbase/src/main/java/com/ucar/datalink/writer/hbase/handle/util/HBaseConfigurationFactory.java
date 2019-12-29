@@ -13,6 +13,8 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Created by sqq on 2017/11/29.
  */
@@ -22,7 +24,7 @@ public class HBaseConfigurationFactory {
     private static final LoadingCache<MediaSourceInfo, Configuration> configuration;
 
     static {
-        configuration = CacheBuilder.newBuilder().build(new CacheLoader<MediaSourceInfo, Configuration>() {
+        configuration = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build(new CacheLoader<MediaSourceInfo, Configuration>() {
             @Override
             public Configuration load(MediaSourceInfo mediaSourceInfo) throws Exception {
                 HBaseMediaSrcParameter hbaseParameter = mediaSourceInfo.getParameterObj();

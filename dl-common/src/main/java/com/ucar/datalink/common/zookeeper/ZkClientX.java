@@ -40,7 +40,7 @@ public class ZkClientX extends ZkClient {
     }
 
     private ZkClientX(String zkServers, int sessionTimeout, int connectionTimeout) {
-        super(zkServers, sessionTimeout, connectionTimeout);
+        super(zkServers, sessionTimeout, connectionTimeout,new DLSerializableSerializer());
     }
 
 

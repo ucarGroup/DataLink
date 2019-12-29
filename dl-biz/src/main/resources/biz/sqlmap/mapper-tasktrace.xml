@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.TaskTraceDAO">
+
+    <resultMap id="taskTraceResult" type="taskTrace">
+        <result property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="workerId" column="worker_id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="taskTrace" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_task_trace
+        (task_id, worker_id, group_id, start_time, end_time)
+        VALUES
+        (#{taskId}, #{workerId}, #{groupId}, now(), now())
+    </insert>
+
+    <update id="update" parameterType="taskTrace">
+        update t_dl_task_trace
+        set
+        end_time=now()
+        where id = #{id}
+    </update>
+
+    <select id="findListByTaskId" resultMap="taskTraceResult">
+        select *
+        from t_dl_task_trace
+        where task_id = #{taskId}
+        <if test="startTime != null">
+            <![CDATA[
+            AND start_time >= #{startTime}
+            ]]>
+        </if>
+        <if test="endTime != null">
+            <![CDATA[
+            AND end_time <= #{endTime}
+        ]]>
+        </if>
+        ORDER BY start_time DESC
+    </select>
+
+</mapper>

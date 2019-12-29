@@ -40,6 +40,9 @@ public class TaskDelayTimeMonitor extends Monitor {
         }
         for (TaskDelayTimeInfo delayTime : list) {
             MonitorInfo monitorInfo = monitorService.getByResourceAndType(delayTime.getTaskId(), MonitorType.TASK_DELAY_MONITOR);
+			if(monitorInfo == null) {
+                continue;
+            }
             if (!isMoreThan3min(delayTime.getCreateTime()) && isAlarm(delayTime.getTaskId(), delayTime.getDelayTime(), monitorInfo)) {
                 alarmService.alarmDelay(monitorInfo, delayTime.getDelayTime());
             }

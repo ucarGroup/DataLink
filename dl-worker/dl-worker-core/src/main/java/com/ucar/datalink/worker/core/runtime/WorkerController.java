@@ -22,6 +22,7 @@ public class WorkerController {
     public void startup() {
         keeper.start();
         rest.start(keeper);
+
         logger.info("Worker Controller started.");
     }
 

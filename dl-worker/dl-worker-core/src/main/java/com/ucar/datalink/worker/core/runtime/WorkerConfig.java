@@ -53,6 +53,14 @@ public class WorkerConfig extends AbstractConfig {
     public static final long POSITION_COMMIT_INTERVAL_MS_DEFAULT = 1000L;
 
     /**
+     * <code>task.syncstatus.commit.interval.ms</code>
+     */
+    public static final String TASK_SYNCSTATUS_COMMIT_INTERVAL_MS_CONFIG = "task.syncstatus.commit.interval.ms";
+    private static final String TASK_SYNCSTATUS_COMMIT_INTERVAL_MS_DOC
+            = "Interval at which to try committing syncstatus for tasks.";
+    public static final long TASK_SYNCSTATUS_COMMIT_INTERVAL_MS_DEFAULT = 1000L;
+
+    /**
      * <code>rest.host.name</code>
      */
     public static final String REST_HOST_NAME_CONFIG = "rest.host.name";
@@ -229,8 +237,15 @@ public class WorkerConfig extends AbstractConfig {
                         Importance.LOW,
                         TASK_SHUTDOWN_GRACEFUL_TIMEOUT_MS_DOC)
                 .define(POSITION_COMMIT_INTERVAL_MS_CONFIG,
-                        Type.LONG, POSITION_COMMIT_INTERVAL_MS_DEFAULT,
-                        Importance.LOW, POSITION_COMMIT_INTERVAL_MS_DOC)
+                        Type.LONG,
+                        POSITION_COMMIT_INTERVAL_MS_DEFAULT,
+                        Importance.LOW,
+                        POSITION_COMMIT_INTERVAL_MS_DOC)
+                .define(TASK_SYNCSTATUS_COMMIT_INTERVAL_MS_CONFIG,
+                        Type.LONG,
+                        TASK_SYNCSTATUS_COMMIT_INTERVAL_MS_DEFAULT,
+                        Importance.LOW,
+                        TASK_SYNCSTATUS_COMMIT_INTERVAL_MS_DOC)
                 .define(REST_HOST_NAME_CONFIG,
                         Type.STRING,
                         null,

@@ -2,6 +2,8 @@ package com.ucar.datalink.manager.core.web.controller.mediaSource;
 
 import com.google.common.collect.Sets;
 import com.ucar.datalink.biz.service.MediaSourceService;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.biz.utils.DataSourceFactory;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
@@ -11,6 +13,7 @@ import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import com.ucar.datalink.manager.core.web.dto.mediaSource.SddlMediaSourceView;
+import com.ucar.datalink.manager.core.web.util.AuditLogInfoUtil;
 import com.ucar.datalink.manager.core.web.util.Page;
 import org.apache.commons.lang.StringUtils;
 import org.apache.oro.text.regex.*;
@@ -110,6 +113,8 @@ public class SddlMediaSourceController {
             mediaSourceInfo.setType(MediaSourceType.SDDL);
             Boolean isSuccess = mediaSourceService.insert(mediaSourceInfo);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
+                        , "002006003", AuditLogOperType.insert.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -127,8 +132,12 @@ public class SddlMediaSourceController {
             return "fail";
         }
         try {
-            Boolean isSuccess = mediaSourceService.delete(Long.valueOf(id));
+            Long idLong = Long.valueOf(id);
+            MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(idLong);
+            Boolean isSuccess = mediaSourceService.delete(idLong);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
+                        , "002006006", AuditLogOperType.delete.getValue()));
                 return "success";
             }
         } catch (ValidationException e) {
@@ -197,11 +206,13 @@ public class SddlMediaSourceController {
             Boolean isSuccess = mediaSourceService.update(mediaSourceInfo);
             toReloadDB(sddlMediaSourceId.toString());
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
+                        , "002006005", AuditLogOperType.update.getValue()));
                 return "success";
             }
         } catch (Throwable e) {
             logger.error("sddl介质更新报错，", e);
-            return "sddl介质更新报错，"+e.getMessage();
+            return "sddl介质更新报错，" + e.getMessage();
         }
         return "fail";
     }
@@ -290,7 +301,7 @@ public class SddlMediaSourceController {
                 DataSourceFactory.invalidate(ms, () -> null);
             }
             for (ClusterState.MemberData mem : memberDatas) {
-                String url = "http://" + mem.getWorkerState().url() + "/flush/reloadMediaSource/" + mediaSourceId;
+                String url = "http://" + mem.getWorkerState().url() + "/flush/reloadRdbMediaSource/" + mediaSourceId;
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 HttpEntity request = new HttpEntity(null, headers);

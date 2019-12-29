@@ -42,6 +42,11 @@ public class TaskStatusManager {
                 logger.info("received handle new session event.");
                 reRegisterStatus();
             }
+
+            @Override
+            public void handleSessionEstablishmentError(Throwable error) throws Exception {
+                logger.error("handleSessionEstablishmentError is : " + error);
+            }
         };
     }
 

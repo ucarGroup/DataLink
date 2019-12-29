@@ -37,7 +37,18 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="form-group col-xs-3">
+                            <label class="col-sm-4 control-label">所属分组</label>
 
+                            <div class="col-sm-8">
+                                <select class="groupId width-100 chosen-select" id="groupId" style="width:100%">
+                                    <option value="-1">全部</option>
+                                    <c:forEach items="${groupList}" var="item">
+                                        <option value="${item.id}">${item.groupName}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                        </div>
 
                         <div class="form-group col-xs-3">
                             <label class="col-sm-4 control-label">监控项目</label>
@@ -126,6 +137,7 @@
             "data": function (d) {
                 d.monitorCat = $("#monitorCat").val();
                 d.monitorType = $("#monitorType").val();
+                d.groupId = $("#groupId").val();
                 d.resourceId = $("#resourceId").val();
                 d.isEffective = $("#isEffective").val();
                 return JSON.stringify(d);
@@ -152,8 +164,10 @@
                         $(nTd).html("worker运行状态");
                     } else if (oData.monitorType == 5) {
                         $(nTd).html("workerJVM状态");
-                    } else {
+                    } else if (oData.monitorType == 6) {
                         $(nTd).html("任务状态冲突监控");
+                    } else if (oData.monitorType == 8) {
+                        $(nTd).html("任务同步状态监控");
                     }
                 }
             },
@@ -182,9 +196,9 @@
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
-                                "<a href='javascript:toEdit(" + oData.id + ")' class='blue'  title='修改'>" +
-                                "<i class='ace-icon fa fa-pencil bigger-130'></i>" + "</a>" +
-                                "</div> &nbsp; &nbsp;"
+                                        "<a href='javascript:toEdit(" + oData.id + ")' class='blue'  title='修改'>" +
+                                        "<i class='ace-icon fa fa-pencil bigger-130'></i>" + "</a>" +
+                                        "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         },
@@ -193,9 +207,9 @@
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
-                                "<a href='javascript:doDelete(" + oData.id + ")' class='red'  title='删除'>" +
-                                "<i class='ace-icon fa fa-trash-o bigger-130'></i>" + "</a>" +
-                                "</div> &nbsp; &nbsp;"
+                                        "<a href='javascript:doDelete(" + oData.id + ")' class='red'  title='删除'>" +
+                                        "<i class='ace-icon fa fa-trash-o bigger-130'></i>" + "</a>" +
+                                        "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         },
@@ -205,9 +219,9 @@
                                 var str;
                                 if (oData.isEffective == 1) {
                                     str = "<div class='radio'>" +
-                                    "<a href='javascript:doPause(" + oData.id + ")' class='red'  title='关闭'>" +
-                                    "<i class='ace-icon fa fa-pause bigger-130'></i>" + "</a>" +
-                                    "</div> &nbsp; &nbsp;"
+                                            "<a href='javascript:doPause(" + oData.id + ")' class='red'  title='关闭'>" +
+                                            "<i class='ace-icon fa fa-pause bigger-130'></i>" + "</a>" +
+                                            "</div> &nbsp; &nbsp;"
                                 }
                                 return str;
                             }
@@ -218,9 +232,9 @@
                                 var str;
                                 if (oData.isEffective == 2) {
                                     str = "<div class='radio'>" +
-                                    "<a href='javascript:doStart(" + oData.id + ")' class='red'  title='启动'>" +
-                                    "<i class='ace-icon fa fa-play bigger-130'></i>" + "</a>" +
-                                    "</div> &nbsp; &nbsp;"
+                                            "<a href='javascript:doStart(" + oData.id + ")' class='red'  title='启动'>" +
+                                            "<i class='ace-icon fa fa-play bigger-130'></i>" + "</a>" +
+                                            "</div> &nbsp; &nbsp;"
                                 }
                                 return str;
                             }
@@ -236,6 +250,10 @@
     //    });
 
     $("#monitorType").change(function () {
+        msgAlarmListMyTable.ajax.reload();
+    });
+
+    $("#groupId").change(function () {
         msgAlarmListMyTable.ajax.reload();
     });
 

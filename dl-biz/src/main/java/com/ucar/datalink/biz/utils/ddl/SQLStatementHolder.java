@@ -10,6 +10,7 @@ import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlAlterTableAlterCol
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlAlterTableChangeColumn;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlAlterTableModifyColumn;
 import com.alibaba.druid.sql.dialect.mysql.ast.statement.MySqlRenameTableStatement;
+import com.alibaba.druid.sql.dialect.oracle.ast.stmt.OracleAlterTableModify;
 import com.alibaba.druid.sql.dialect.sqlserver.ast.stmt.SQLServerExecStatement;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
@@ -50,9 +51,31 @@ public class SQLStatementHolder {
             this.sqlType = SqlType.AlterTable;
         } else if (checkIfTableDrop()) {
             this.sqlType = SqlType.DropTable;
-        } else {
+        } else if (checkIfTableSelect()) {
+            this.sqlType = SqlType.SelectTable;
+        }else {
             this.sqlType = SqlType.Other;
         }
+    }
+
+    private boolean checkIfTableSelect() {
+        if (shouldIgnore()) {
+            return false;
+        }
+
+        boolean flag = false;
+        Map<TableStat.Name, TableStat> tables = schemaStatVisitor.getTables();
+        for (Map.Entry<TableStat.Name, TableStat> entry : tables.entrySet()) {
+            String tableName = entry.getKey().getName();
+            TableStat tStat = entry.getValue();
+
+            if (tStat.getSelectCount() > 0) {
+                buildSqlCheckItem(tableName, SqlType.SelectTable);
+                flag = true;
+            }
+        }
+
+        return flag;
     }
 
     private boolean checkIfTableCreate() {
@@ -169,6 +192,7 @@ public class SQLStatementHolder {
         sqlCheckItem.setColumnsAddInfo(buildColumnAddInfo());
         sqlCheckItem.setUniqueKeysDropInfo(buildUniqueKeysDropInfo());
         sqlCheckItem.setIndexesAddInfo(buildIndexAddInfo());
+        sqlCheckItem.setColumnsModifyInfo(buildColumnModifyInfo());
 
         if (SqlType.AlterTable.equals(ddlSqlType)) {
             sqlCheckItem.setAlterAffectColumn(isAlterAffectColumn());
@@ -292,6 +316,40 @@ public class SQLStatementHolder {
         return false;
     }
 
+    private List<SqlCheckColumnInfo> buildColumnModifyInfo() {
+        if (sqlStatement instanceof SQLAlterTableStatement) {
+            SQLAlterTableStatement alterStmt = (SQLAlterTableStatement) sqlStatement;
+            List<SqlCheckColumnInfo> columnsModifyList = new ArrayList<>();
+            for (SQLAlterTableItem item : alterStmt.getItems()) {
+                if (item instanceof MySqlAlterTableModifyColumn) {
+                    MySqlAlterTableModifyColumn columnModify = (MySqlAlterTableModifyColumn) item;
+                    SQLColumnDefinition columnDefinition = columnModify.getNewColumnDefinition();
+                    SqlCheckColumnInfo columnInfo = new SqlCheckColumnInfo();
+                    columnInfo.setName(columnDefinition.getName().getSimpleName());
+                    columnInfo.setDataType(columnDefinition.getDataType().getName());
+                    columnsModifyList.add(columnInfo);
+                }else if(item instanceof OracleAlterTableModify){
+                    OracleAlterTableModify columnModify = (OracleAlterTableModify) item;
+                    List<SQLColumnDefinition> columnDefinitionList = columnModify.getColumns();
+                    columnDefinitionList.forEach(columnDefinition->{
+                        SqlCheckColumnInfo columnInfo = new SqlCheckColumnInfo();
+                        columnInfo.setName(columnDefinition.getName().getSimpleName());
+                        columnDefinition.setDataType(columnDefinition.getDataType());
+                        columnsModifyList.add(columnInfo);
+                    });
+                }else if(item instanceof SQLAlterTableAlterColumn){
+                     SQLAlterTableAlterColumn columnModify = (SQLAlterTableAlterColumn) item;
+                     SQLColumnDefinition columnDefinition = columnModify.getColumn();
+                     SqlCheckColumnInfo columnInfo = new SqlCheckColumnInfo();
+                     columnInfo.setName(columnDefinition.getName().getSimpleName());
+                     columnDefinition.setDataType(columnDefinition.getDataType());
+                     columnsModifyList.add(columnInfo);
+                }
+            }
+            return columnsModifyList;
+        }
+        return Lists.newArrayList();
+    }
     private List<SqlCheckColumnInfo> buildColumnAddInfo() {
         if (sqlStatement instanceof SQLAlterTableStatement) {
             SQLAlterTableStatement alterStmt = (SQLAlterTableStatement) sqlStatement;
@@ -389,6 +447,7 @@ public class SQLStatementHolder {
 
         return false;
     }
+
 
     //---------------------------------------------getters && setters---------------------------------
 

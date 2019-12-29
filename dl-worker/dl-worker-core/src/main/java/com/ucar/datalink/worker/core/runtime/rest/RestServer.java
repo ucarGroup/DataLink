@@ -62,6 +62,7 @@ public class RestServer {
         log.info("Starting REST server");
 
         ResourceConfig resourceConfig = new ResourceConfig();
+        resourceConfig.packages("com.ucar.datalink.worker.core.runtime.rest.resources");
         resourceConfig.register(new FastJsonProvider());
         resourceConfig.register(RootResource.class);
         resourceConfig.register(new TasksResource(keeper));

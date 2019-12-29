@@ -18,25 +18,13 @@ public class SqlServerTemplate extends AbstractSqlTemplate {
     @Override
     public String getMergeSql(String schemaName, String tableName, String[] pkNames, String[] columnNames, String[] viewColumnNames) {
 
-        //判断是否有自增列且自增列不是主键
-        Table table = getDbDialect().findTable(schemaName, tableName);
-        Column[] columns = table.getAutoIncrementColumns();
-        Boolean flag = false;
-        if(columns != null){
-            for (Column column : columns){
-                if(!column.isPrimaryKey()){
-                    flag = true;
-                    break;
-                }
-            }
-        }
         //有自增列，且不是主键
-        if(flag){
-            return getSpecialInsertSql(schemaName,tableName,pkNames,columnNames);
+        if (getDbDialect().hasAutoIncrementNotKeyColumns(schemaName, tableName)) {
+            return getSpecialInsertSql(schemaName, tableName, pkNames, columnNames);
         }
         //正常
         else {
-            return getMergeSql(schemaName,tableName,pkNames,columnNames);
+            return getMergeSql(schemaName, tableName, pkNames, columnNames);
         }
     }
 

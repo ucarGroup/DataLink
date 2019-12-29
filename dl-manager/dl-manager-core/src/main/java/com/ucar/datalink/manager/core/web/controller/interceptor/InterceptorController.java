@@ -1,7 +1,12 @@
 package com.ucar.datalink.manager.core.web.controller.interceptor;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ucar.datalink.biz.service.InterceptorService;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.common.errors.ValidationException;
+import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.interceptor.InterceptorInfo;
 import com.ucar.datalink.domain.interceptor.InterceptorType;
 import com.ucar.datalink.manager.core.coordinator.ClusterState;
@@ -9,6 +14,7 @@ import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import com.ucar.datalink.manager.core.web.dto.interceptor.InterceptorView;
 import com.ucar.datalink.manager.core.web.util.Page;
+import com.ucar.datalink.manager.core.web.util.UserUtil;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -16,6 +22,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
@@ -44,7 +51,10 @@ public class InterceptorController {
 
     @RequestMapping(value = "/initInterceptor")
     @ResponseBody
-    public Page<InterceptorView> initInterceptor() {
+    public Page<InterceptorView> initInterceptor(@RequestBody Map<String, String> map) {
+        Page<InterceptorView> page = new Page<>(map);
+        PageHelper.startPage(page.getPageNum(), page.getLength());
+
         List<InterceptorInfo> interceptorLists = interceptorService.getList();
         List<InterceptorView> interceptorViews = interceptorLists.stream().map(i -> {
             InterceptorView view = new InterceptorView();
@@ -56,7 +66,13 @@ public class InterceptorController {
             view.setCreateTime(i.getCreateTime());
             return view;
         }).collect(Collectors.toList());
-        return new Page<InterceptorView>(interceptorViews);
+
+        PageInfo<InterceptorInfo> pageInfo = new PageInfo<>(interceptorLists);
+        page.setDraw(page.getDraw());
+        page.setAaData(interceptorViews);
+        page.setRecordsTotal((int) pageInfo.getTotal());
+        page.setRecordsFiltered(page.getRecordsTotal());
+        return page;
     }
 
     @RequestMapping(value = "/toAdd")
@@ -71,11 +87,21 @@ public class InterceptorController {
     public String doAdd(@ModelAttribute("interceptorInfo") InterceptorInfo interceptorInfo) {
         Boolean isSuccess = interceptorService.insert(interceptorInfo);
         if (isSuccess) {
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(interceptorInfo, "004030300", AuditLogOperType.insert.getValue()));
             return "success";
         }
         return "fail";
     }
-
+    private static AuditLogInfo getAuditLogInfo(InterceptorInfo interceptorInfo, String menuCode, String operType){
+        AuditLogInfo logInfo=new AuditLogInfo();
+        logInfo.setUserId(UserUtil.getUserIdFromRequest());
+        logInfo.setMenuCode(menuCode);
+        logInfo.setOperName(interceptorInfo.getName());
+        logInfo.setOperType(operType);
+        logInfo.setOperKey(interceptorInfo.getId());
+        logInfo.setOperRecord(interceptorInfo.toString());
+        return logInfo;
+    }
     @RequestMapping(value = "/toEdit")
     public ModelAndView toEdit(HttpServletRequest request) {
         String id = request.getParameter("id");
@@ -99,6 +125,7 @@ public class InterceptorController {
         Boolean isSuccess = interceptorService.update(interceptorInfo);
         toReload(interceptorId.toString());
         if (isSuccess) {
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(interceptorInfo, "004030500", AuditLogOperType.update.getValue()));
             return "success";
         }
         return "fail";
@@ -112,8 +139,11 @@ public class InterceptorController {
             return "fail";
         }
         try {
-            Boolean isSuccess = interceptorService.delete(Long.valueOf(id));
+            Long idLong = Long.valueOf(id);
+            InterceptorInfo interceptorInfo = interceptorService.getInterceptorById(idLong);
+            Boolean isSuccess = interceptorService.delete(idLong);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(getAuditLogInfo(interceptorInfo, "004030600", AuditLogOperType.delete.getValue()));
                 return "success";
             }
         } catch (ValidationException e) {

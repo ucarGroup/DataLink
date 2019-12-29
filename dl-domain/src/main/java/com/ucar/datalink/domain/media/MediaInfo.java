@@ -1,6 +1,7 @@
 package com.ucar.datalink.domain.media;
 
 import com.ucar.datalink.domain.Storable;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.ibatis.type.Alias;
@@ -193,6 +194,17 @@ public class MediaInfo implements Serializable, Storable {
 
         public String toString() {
             return ToStringBuilder.reflectionToString(this, ToStringStyle.DEFAULT_STYLE);
+        }
+
+        public boolean isAbsoluteContain(String value) {
+            if(null != values && values.size() != 0){
+                for (String temp : values){
+                    if(StringUtils.equals(value,temp)){
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 

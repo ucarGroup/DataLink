@@ -3,6 +3,8 @@ package com.ucar.datalink.manager.core.web.dto.task;
 import com.ucar.datalink.domain.group.GroupInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.plugin.PluginWriterParameter;
+import com.ucar.datalink.domain.plugin.writer.kafka.PartitionMode;
+import com.ucar.datalink.domain.plugin.writer.kafka.SerializeMode;
 import com.ucar.datalink.domain.plugin.writer.hdfs.CommitMode;
 import com.ucar.datalink.domain.plugin.writer.rdbms.RdbmsWriterParameter;
 import com.ucar.datalink.domain.task.TargetState;
@@ -23,6 +25,8 @@ public class TaskModel {
     private List<PluginWriterParameter.RetryMode> retryModeList;
     private List<RdbmsWriterParameter.SyncMode> rdbSyncModeList;
     private List<CommitMode> commitModeList;
+    private List<SerializeMode> serializeModeList;
+    private List<PartitionMode> partitionModeList;
     private Map<String, String> currentWriters;
 
     public TaskModel() {
@@ -35,7 +39,10 @@ public class TaskModel {
                      List<MediaSourceInfo> mediaSourceList,
                      List<PluginWriterParameter.RetryMode> retryModeList,
                      List<RdbmsWriterParameter.SyncMode> rdbSyncModeList,
-                     List<CommitMode> commitModeList) {
+                     List<CommitMode> commitModeList,
+                     List<SerializeMode> serializeModeList,
+                     List<PartitionMode> partitionModeList
+					 ) {
         this.taskBasicInfo = taskBasicInfo;
         this.writerParameterMap = writerParameterMap;
         this.groupList = groupList;
@@ -44,6 +51,8 @@ public class TaskModel {
         this.retryModeList = retryModeList;
         this.rdbSyncModeList = rdbSyncModeList;
         this.commitModeList = commitModeList;
+        this.serializeModeList = serializeModeList;
+        this.partitionModeList = partitionModeList;
     }
 
     public TaskBasicInfo getTaskBasicInfo() {
@@ -110,12 +119,29 @@ public class TaskModel {
         this.commitModeList = commitModeList;
     }
 
+    public List<SerializeMode> getSerializeModeList() {
+        return serializeModeList;
+    }
+
+    public void setSerializeModeList(List<SerializeMode> serializeModeList) {
+        this.serializeModeList = serializeModeList;
+    }
+
     public Map<String, String> getCurrentWriters() {
         return currentWriters;
     }
 
     public void setCurrentWriters(Map<String, String> currentWriters) {
         this.currentWriters = currentWriters;
+    }
+
+
+    public List<PartitionMode> getPartitionModeList() {
+        return partitionModeList;
+    }
+
+    public void setPartitionModeList(List<PartitionMode> partitionModeList) {
+        this.partitionModeList = partitionModeList;
     }
 
     public static class TaskBasicInfo {

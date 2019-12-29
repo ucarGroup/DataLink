@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.AuditLogDAO">
+
+    <resultMap id="result" type="auditLog">
+        <result property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="menuCode" column="menu_code"/>
+        <result property="operType" column="oper_type"/>
+        <result property="operTime" column="oper_time"/>
+        <result property="operKey" column="oper_key"/>
+        <result property="operName" column="oper_name"/>
+        <result property="operRecord" column="oper_record"/>
+        <result property="userName" column="user_name"/>
+        <result property="menuName" column="menu_name"/>
+    </resultMap>
+
+    <sql id="allColumns">a.id,a.user_id,a.menu_code,a.oper_type,a.oper_time,a.oper_key,a.oper_name,a.oper_record,u.user_name,m.name as menu_name</sql>
+
+    <select id="getListByParam" resultMap="result">
+        SELECT
+        <include refid="allColumns"/>
+        FROM t_dl_audit_log a
+        LEFT JOIN t_dl_user u ON a.user_id = u.id
+        LEFT JOIN t_dl_menu m ON a.menu_code = m.`code`
+        where 1=1
+        <if test="operType != ''">
+            AND a.oper_type = #{operType}
+        </if>
+        <if test="userId != null">
+            AND a.user_id = #{userId}
+        </if>
+        <if test="menuCode != ''">
+            AND a.menu_code = #{menuCode}
+        </if>
+
+        <if test="operKey != null">
+            AND a.oper_key = #{operKey}
+        </if>
+        <if test="operName != null and operName !='' ">
+            AND a.oper_name = #{operName}
+        </if>
+        order by a.oper_time desc
+    </select>
+
+    <insert id="insert" parameterType="auditLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_audit_log
+        (user_id,
+        menu_code,
+        oper_type,
+        oper_time,
+        oper_key,
+        oper_name,
+        oper_record
+        )
+        VALUE
+        (#{userId},
+        #{menuCode},
+        #{operType},
+        #{operTime},
+        #{operKey},
+        #{operName},
+        #{operRecord}
+        )
+    </insert>
+
+</mapper>

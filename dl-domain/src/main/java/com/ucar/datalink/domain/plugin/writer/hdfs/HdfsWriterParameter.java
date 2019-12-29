@@ -17,6 +17,7 @@ public class HdfsWriterParameter extends PluginWriterParameter {
     private Long hsyncInterval = 30000L;//单位：毫秒，用于控制当CommitMode为Hflush的时候，多长时间进行一次hsync操作
     private String hbasePath = "user/hbase";
     private String mysqlBinlogPath = "user/mysql/binlog";
+    private Integer socketTimeout = 180000;//默认是60000，设置大点，防止流量高峰hdfs响应慢连接超时
 
     @Override
     public String initPluginName() {
@@ -84,5 +85,13 @@ public class HdfsWriterParameter extends PluginWriterParameter {
 
     public void setMysqlBinlogPath(String mysqlBinlogPath) {
         this.mysqlBinlogPath = mysqlBinlogPath;
+    }
+
+    public Integer getSocketTimeout() {
+        return socketTimeout;
+    }
+
+    public void setSocketTimeout(Integer socketTimeout) {
+        this.socketTimeout = socketTimeout;
     }
 }

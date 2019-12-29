@@ -2,6 +2,7 @@ package com.ucar.datalink.writer.es.handle;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.contract.log.rdbms.EventColumn;
 import com.ucar.datalink.contract.log.rdbms.EventType;
@@ -35,6 +36,43 @@ public class BatchContentBuilder {
             //只支持insert和update类型
             if (record.getEventType() == EventType.INSERT || record.getEventType() == EventType.UPDATE) {
                 BatchContentVo contentVo = buildContentVo(record);
+
+                MediaMappingInfo mediaMappingInfo = RecordMeta.mediaMapping(record);
+                //走routing逻辑
+                if (StringUtils.isNotBlank(mediaMappingInfo.getEsRouting())) {
+
+                    //logger.info("Rdb write to es，走了routing逻辑");
+
+                    String esRoutingValue = "";
+                    boolean canIgnoreThisRecord = false;
+
+                    //es routing是否忽略
+                    Boolean esRoutingIgnore = Boolean.parseBoolean(mediaMappingInfo.getEsRoutingIgnore());
+                    String esRouting = mediaMappingInfo.getEsRouting();
+                    String[] esRoutingArr = esRouting.split(",");
+                    for (String columnName : esRoutingArr) {
+                        EventColumn eventColumn = record.getColumn(columnName);
+                        if (StringUtils.isNotBlank(eventColumn.getColumnValue())) {
+                            esRoutingValue += eventColumn.getColumnValue() + ",";
+                        } else {
+                            if (esRoutingIgnore) {
+                                canIgnoreThisRecord = true;
+                                break;
+                            } else {
+                                throw new DatalinkException("走es routing逻辑，routing字段" + columnName + "没有值，且不能忽略，需要人为手动忽略这条数据，有问题的数据是 : " + record);
+                            }
+                        }
+                    }
+
+                    if (canIgnoreThisRecord) {
+                        continue;
+                    }
+
+                    //去掉最后的逗号
+                    esRoutingValue = esRoutingValue.substring(0, esRoutingValue.length() - 1);
+                    contentVo.setRoutingValue(esRoutingValue);
+                }
+
                 contents.add(contentVo);
             }
         }
@@ -112,16 +150,16 @@ public class BatchContentBuilder {
         contentVo.setBatchActionEnum(ESEnum.BatchActionEnum.UPSERT);
 
         if (record.getEventType() == EventType.INSERT) {
-            contentVo.setContent(buildData(record, false));
+            contentVo.setContent(buildData(record));
         } else if (record.getEventType() == EventType.UPDATE) {
-            contentVo.setContent(buildData(record, true));
+            contentVo.setContent(buildData(record));
         }
     }
 
     /**
      * 将RdbEventRecord数据转化为Es数据
      */
-    private static Map<String, Object> buildData(RdbEventRecord record, boolean justUpdated) {
+    private static Map<String, Object> buildData(RdbEventRecord record) {
         String fieldNamePrefix = (String) record.metaData().get(Constants.FIELD_NAME_PREFIX);
         Map<String, Object> data = Maps.newLinkedHashMap();
 
@@ -129,23 +167,6 @@ public class BatchContentBuilder {
         for (EventColumn column : record.getKeys()) {
             data.put(fieldNamePrefix + column.getColumnName(), column.isNull() ? null : column.getColumnValue());
         }
-
-        //joinColumn列必须同步
-//        String joinColumn = RecordMeta.mediaMapping(record).getJoinColumn();
-/*        for (EventColumn column : record.getColumns()) {
-            boolean isJoinColumn = column.getColumnName().equals(joinColumn);
-            if (justUpdated && !column.isUpdate() && !isJoinColumn) {
-                continue;
-            }
-
-            logger.debug(String.format("Column Name is %s,Sql Type is %s", column.getColumnName(), column.getColumnType()));
-
-            if (isDate(column)) {
-                data.put(fieldNamePrefix + column.getColumnName(), column.isNull() ? null : normalizeDate(column.getColumnValue()));
-            } else {
-                data.put(fieldNamePrefix + column.getColumnName(), column.isNull() ? null : column.getColumnValue());
-            }
-        }*/
 
         //将变更后当前行所有的值全部更新
         for (EventColumn column : record.getColumns()) {
@@ -155,8 +176,6 @@ public class BatchContentBuilder {
                 data.put(fieldNamePrefix + column.getColumnName(), column.isNull() ? null : column.getColumnValue());
             }
         }
-
-
 
         buildGeoPosition(record, data, fieldNamePrefix);
         return data;

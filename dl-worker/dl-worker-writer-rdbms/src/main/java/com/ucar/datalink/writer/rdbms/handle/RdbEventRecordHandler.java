@@ -66,7 +66,7 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
             results.add(executorService.submit(
                     () -> {
                         for (RdbEventRecord record : oneBatch) {
-                            SqlBuilder.buildSql(record);
+                            SqlBuilder.buildSql(record, context);
                         }
                     }
             ));

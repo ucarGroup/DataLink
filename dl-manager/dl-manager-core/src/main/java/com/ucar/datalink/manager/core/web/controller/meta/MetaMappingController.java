@@ -2,8 +2,12 @@ package com.ucar.datalink.manager.core.web.controller.meta;
 
 import com.ucar.datalink.biz.meta.MetaMapping;
 import com.ucar.datalink.biz.service.MetaMappingService;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
+import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.meta.MetaMappingInfo;
 import com.ucar.datalink.manager.core.web.dto.meta.MetaMappingView;
+import com.ucar.datalink.manager.core.web.util.UserUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,11 +91,23 @@ public class MetaMappingController {
             info.setTargetMappingType(view.getTargetMappingType());
             service.createMetaMapping(info);
             MetaMapping.load();
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(info, "002008003", AuditLogOperType.insert.getValue()));
             return "success";
         } catch(Exception e) {
             logger.error(e.getMessage(), e);
             return e.getMessage();
         }
+    }
+
+    private static AuditLogInfo getAuditLogInfo(MetaMappingInfo info, String menuCode, String operType){
+        AuditLogInfo logInfo=new AuditLogInfo();
+        logInfo.setUserId(UserUtil.getUserIdFromRequest());
+        logInfo.setMenuCode(menuCode);
+        logInfo.setOperName("MetaMapping");
+        logInfo.setOperType(operType);
+        logInfo.setOperKey(info.getId());
+        logInfo.setOperRecord(info.toString());
+        return logInfo;
     }
 
 
@@ -129,6 +145,7 @@ public class MetaMappingController {
             info.setTargetMappingType(view.getTargetMappingType());
             service.modifyMetaMapping(info);
             MetaMapping.load();
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(info, "002008005", AuditLogOperType.update.getValue()));
             return "success";
         } catch(Exception e) {
             logger.error(e.getMessage(), e);
@@ -145,7 +162,10 @@ public class MetaMappingController {
             return "fail";
         }
         try {
-            service.deleteMetaMappingById( Long.parseLong(id) );
+            long idLong = Long.parseLong(id);
+            MetaMappingInfo metaMappingInfo = service.queryMetaMappingById(idLong);
+            service.deleteMetaMappingById(idLong);
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(metaMappingInfo, "002008006", AuditLogOperType.delete.getValue()));
             return "success";
         } catch (ValidationException e) {
             logger.error("delete job media mapping failure.", e);

@@ -25,9 +25,11 @@
     </mvc:annotation-driven>
 
     <!--启动自动扫描-->
-    <context:component-scan base-package="com.ucar.datalink.manager.core.web">
-        <!-- 制定扫包规则 ,只扫描使用@Controller注解的JAVA类 -->
+    <context:component-scan base-package="com.ucar.datalink.manager">
+        <!-- 制定扫包规则 ,扫描使用@Controller注解和自定义注解@EventHandler的JAVA类 -->
         <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+        <context:include-filter type="annotation" expression="com.ucar.datalink.common.event.EventHandler"/>
     </context:component-scan>
 
     <mvc:resources mapping="/assets/**" location="/assets/"/>

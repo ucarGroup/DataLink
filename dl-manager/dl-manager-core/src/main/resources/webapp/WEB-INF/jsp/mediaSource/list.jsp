@@ -7,6 +7,9 @@
 </div>
 <div id="edit" class="main-container">
 </div>
+
+<div id="tableStructure" class="main-container">
+</div>
 <div class="main-container" id="mainContentInner">
     <div class="page-content">
         <div class="row">
@@ -24,6 +27,8 @@
                                     <option value="MYSQL">MYSQL</option>
                                     <option value="SQLSERVER">SQLSERVER</option>
                                     <option value="POSTGRESQL">POSTGRESQL</option>
+                                    <option value="ORACLE">ORACLE</option>
+                                    <option value="HANA">HANA</option>
                                 </select>
                             </div>
                         </div>
@@ -34,6 +39,12 @@
                             <div class="col-sm-8">
                                 <input id="name" type="text" style="width:100%;">
                             </div>
+                        </div>
+                        <div class="form-group col-xs-3">
+                              <label class="col-sm-2 control-label">ip</label>
+                              <div class="col-sm-8">
+                                   <input id="ip" type="text" style="width:100%;">
+                               </div>
                         </div>
                         <div class="col-xs-2">
                             <button type="button" id="search" class="btn btn-sm btn-purple">查询</button>
@@ -78,7 +89,13 @@
         html: '<div class="pull-left tableTools-container" style="padding-top: 10px;">' +
         '<p> <button class="btn btn-sm btn-info" onclick="toAdd();">新增</button> </p>' +
         '</div>'
-    }], $("#OperPanel"));
+    }
+    ,{
+            code: "002001009",
+              html: '<div class="pull-left tableTools-container" style="padding-top: 10px;padding-left: 10px;">' +
+                    '<p> <button class="btn btn-sm btn-info" onclick="toGetTableStructure();">查询表结构</button> </p>' +
+                    '</div>'
+     }], $("#OperPanel"));
 
     msgAlarmListMyTable = $('#mediaSourceTable').DataTable({
         "bAutoWidth": true,
@@ -90,6 +107,7 @@
             "data": function (d) {
                 d.mediaSourceType = $("#mediaSourceType").val();
                 d.name = $("#name").val();
+                d.ip = $("#ip").val();
                 return JSON.stringify(d);
             },
             "dataType": 'json',
@@ -187,6 +205,15 @@
         $("#mainContentInner").hide();
 
     }
+
+
+    function toGetTableStructure() {
+        reset();//每次必须先reset，把已开界面资源清理掉
+        $("#tableStructure").load("${basePath}/mediaSource/toGetTableStructure?random=" + Math.random());
+        $("#tableStructure").show();
+        $("#mainContentInner").hide();
+    }
+
     function toEdit(id) {
         reset();//每次必须先reset，把已开界面资源清理掉
         $("#edit").load("${basePath}/mediaSource/toEdit?id=" + id + "&random=" + Math.random());

@@ -15,6 +15,9 @@ import java.util.List;
  *
  * Created by lubiao on 2017/10/10.
  */
+
+//从1.0.24升级到1.1.3之后，canal已对上述问题进行了修复，此类废弃不用了
+@Deprecated
 public class FixedGroupEventSink extends EntryEventSink {
 
     private int          groupSize;

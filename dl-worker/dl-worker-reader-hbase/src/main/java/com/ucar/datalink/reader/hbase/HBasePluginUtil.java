@@ -1,5 +1,6 @@
 package com.ucar.datalink.reader.hbase;
 
+import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.domain.event.*;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.parameter.hbase.HBaseMediaSrcParameter;
@@ -8,10 +9,7 @@ import com.ucar.datalink.domain.meta.ColumnMeta;
 import com.ucar.datalink.domain.meta.MediaMeta;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.filter.PageFilter;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -33,6 +31,12 @@ public class HBasePluginUtil {
      * 一次抓取的最大数量，1000条，然后根据这些记录分析出表结构
      */
     private static final long MAX_FETCH_NUM = 1000;
+
+    /**
+     * 客户端最大缓存数量
+     */
+    private static final long MAX_CACHE_AMOUNT = 1000;
+
     /**
      *  根据传入的MediaSourceInfo的id，检查对应的hbase集群是否连接正常
      * @param event
@@ -143,6 +147,7 @@ public class HBasePluginUtil {
             HBaseMediaSrcParameter hbaseParameter = event.getHbaseParameter();
             String tableName = event.getTableName();
             ZkMediaSrcParameter zkParameter = event.getZkParameter();
+            int fetchAmount = event.getOnceFetchAmount();
             List<String> columnFamilys = getHbaseColumnFamilies(tableName,hbaseParameter,zkParameter);
             if(logger.isDebugEnabled()) {
                 logger.debug("getHbaseColumnFamilies success "+columnFamilys.toString());
@@ -153,7 +158,8 @@ public class HBasePluginUtil {
             }
 
             for (String cf : columnFamilys) {
-                Set<String> qualifiers = getHbaseQualifier(tableName, zkParameter.parseServersToString(), zkParameter.parsePort() + "", hbaseParameter.getZnodeParent(), cf);
+                Set<String> qualifiers = getHbaseQualifier(tableName, zkParameter.parseServersToString(),
+                        zkParameter.parsePort() + "", hbaseParameter.getZnodeParent(), cf,fetchAmount);
                 if(logger.isDebugEnabled()) {
                     logger.debug("getHbaseQualifier success "+qualifiers.toString());
                 }
@@ -234,7 +240,7 @@ public class HBasePluginUtil {
      * @param columnFamily
      * @return
      */
-    private static Set<String> getHbaseQualifier(String tableName, String hosts, String port, String znode, String columnFamily) {
+    private static Set<String> getHbaseQualifier(String tableName, String hosts, String port, String znode, String columnFamily, int fetchAmount) {
         HBaseAdmin admin = null;
         ResultScanner rs = null;
         Set<String> columnList = new HashSet<>();
@@ -256,10 +262,25 @@ public class HBasePluginUtil {
             }
             Scan scan = new Scan();
             scan.addFamily(columnFamily.getBytes());
-            scan.setCaching((int)MAX_FETCH_NUM);
-            scan.setFilter(new PageFilter(MAX_FETCH_NUM));
+            scan.setCaching((int)MAX_CACHE_AMOUNT);
+            if(fetchAmount <= 0) {
+                scan.setFilter(new PageFilter(MAX_FETCH_NUM));
+            } else {
+                scan.setFilter(new PageFilter(fetchAmount));
+            }
             rs = hTable.getScanner(scan);
-            Result r = rs.next();
+
+            for (Result res : rs) {
+                if(res == null) {
+                    continue;
+                }
+                for (Cell cell : res.rawCells()) {
+                    if(!columnList.contains(Bytes.toString(cell.getQualifier()))){
+                        columnList.add(Bytes.toString(cell.getQualifier()));
+                    }
+                }
+            }
+/*            Result r = rs.next();
             if (r == null) {
                 logger.error("query data is empty Result:" + r);
                 return columnList;
@@ -267,7 +288,7 @@ public class HBasePluginUtil {
 
             for (Cell cell : r.rawCells()) {
                 columnList.add(Bytes.toString(cell.getQualifier()));
-            }
+            }*/
 
         } catch (IOException e) {
             logger.error("get hbase qualifier error", e);
@@ -387,4 +408,47 @@ public class HBasePluginUtil {
         System.out.println(i);
     }
 
+    public static void executeStatusEvent(HBaseStatusEvent event) {
+        if(logger.isErrorEnabled()) {
+            logger.debug("start executeStatusEvent method "+event.toString());
+        }
+        HBaseAdmin admin = null;
+        List<String> tableNameList = new ArrayList<String>();
+        List<MediaMeta> list = new ArrayList<>();
+
+        try {
+            HBaseMediaSrcParameter hbaseParameter = event.getHbaseParameter();
+            //通过hbase Parameter获取ZK相关的
+            ZkMediaSrcParameter zkParameter = event.getZkParameter();
+
+            String port = zkParameter.parsePort() + "";
+            String address = zkParameter.parseServersToString();
+            String znode = hbaseParameter.getZnodeParent();
+            org.apache.hadoop.conf.Configuration conf = HBaseConfiguration.create();
+            conf.set("hbase.zookeeper.quorum", address);
+            conf.set("hbase.zookeeper.property.clientPort", port);
+            conf.set("zookeeper.znode.parent", znode);
+            logger.info("executeTableEvent hbase admin begin connection.");
+            admin = new HBaseAdmin(conf);
+            logger.info("executeTableEvent hbase admin execute success "+admin.toString());
+            ClusterStatus status = admin.getClusterStatus();
+            String result = JSONObject.toJSONString(status);
+            event.getCallback().onCompletion(null, result);
+        } catch (IOException e) {
+            logger.error("get Hbase status error",e);
+            event.getCallback().onCompletion(e, list);
+        } catch(Exception e) {
+            logger.error("unknown error ",e);
+            event.getCallback().onCompletion(e, list);
+        } finally {
+            if (admin != null) {
+                try {
+                    admin.close();
+                } catch (IOException e) {
+                    logger.error("close hbase admin failure",e);
+                    event.getCallback().onCompletion(e, list);
+                }
+            }
+        }
+    }
 }

@@ -92,4 +92,20 @@ public class MenuInfo implements Serializable, Storable {
     public void setModifyTime(Date modifyTime) {
         this.modifyTime = modifyTime;
     }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("MenuInfo{");
+        sb.append("id=").append(id);
+        sb.append(", code='").append(code).append('\'');
+        sb.append(", name='").append(name).append('\'');
+        sb.append(", parentCode='").append(parentCode).append('\'');
+        sb.append(", type=").append(type);
+        sb.append(", url='").append(url).append('\'');
+        sb.append(", icon='").append(icon).append('\'');
+        sb.append(", createTime=").append(createTime);
+        sb.append(", modifyTime=").append(modifyTime);
+        sb.append('}');
+        return sb.toString();
+    }
 }

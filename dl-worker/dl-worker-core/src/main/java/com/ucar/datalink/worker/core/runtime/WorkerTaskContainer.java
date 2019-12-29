@@ -26,13 +26,15 @@ public class WorkerTaskContainer extends WorkerTask {
     private final WorkerTaskReaderContext workerTaskReaderContext;
     private final WorkerTaskReader workerTaskReader;
     private final WorkerCombinedTaskWriter workerCombinedTaskWriter;
+    private final TaskSyncStatusManager taskSyncStatusManager;
     private final ClassLoaderSwapper classLoaderSwapper;
     private final ClassLoader readerClassLoader;
     private final Thread readerThread;
     private final Thread writerThread;
     private final AtomicBoolean subWorkersStarted;
 
-    public WorkerTaskContainer(WorkerConfig workerConfig, TaskInfo taskInfo, TaskStatusListener statusListener, TaskPositionManager taskPositionManager, String executionId) {
+    public WorkerTaskContainer(WorkerConfig workerConfig, TaskInfo taskInfo, TaskStatusListener statusListener,
+                               TaskPositionManager taskPositionManager, TaskSyncStatusManager taskSyncStatusManager, String executionId) {
         super(workerConfig, taskInfo, statusListener, executionId);
 
         this.queue = new ArrayBlockingQueue<>(1);
@@ -41,8 +43,9 @@ public class WorkerTaskContainer extends WorkerTask {
         this.classLoaderSwapper = ClassLoaderSwapper.newCurrentThreadClassLoaderSwapper();
         this.readerClassLoader = ClassLoaderFactory.getClassLoader(PluginType.Reader, workerTaskReaderContext.getReaderParameter().getPluginName(),
                 workerConfig().getString(WorkerConfig.CLASSLOADER_TYPE_CONFIG));
-        this.workerTaskReader = newWorkerTaskReader();
+        this.workerTaskReader = newWorkerTaskReader(taskSyncStatusManager);
         this.workerCombinedTaskWriter = newWorkerCombinedTaskWriter();
+        this.taskSyncStatusManager = taskSyncStatusManager;
         this.readerThread = new Thread(workerTaskReader, MessageFormat.format("Task-{0}-Reader-{1}", id(), workerTaskReaderContext.getReaderParameter().getPluginName()));
         this.readerThread.setContextClassLoader(readerClassLoader);
         this.writerThread = new Thread(workerCombinedTaskWriter, MessageFormat.format("Task-{0}-CombinedWriter", id()));
@@ -81,6 +84,7 @@ public class WorkerTaskContainer extends WorkerTask {
 
         // Task最后关闭的时候，需要把PositionManager中缓存的待刷新的Position信息清理掉，否则会导致Position出现脏数据更新
         this.workerTaskReaderContext.positionManager().discardPosition(id());
+        this.taskSyncStatusManager.discardSyncStatus(id());//原理同discardPosition
     }
 
     @Override
@@ -128,7 +132,7 @@ public class WorkerTaskContainer extends WorkerTask {
         this.writerThread.interrupt();//中断writer内部阻塞，保证正常结束
     }
 
-    private WorkerTaskReader newWorkerTaskReader() {
+    private WorkerTaskReader newWorkerTaskReader(TaskSyncStatusManager taskSyncStatusManager) {
         return new WorkerTaskReader(
                 workerConfig(),
                 taskInfo(),
@@ -139,7 +143,8 @@ public class WorkerTaskContainer extends WorkerTask {
                     }
                 },
                 queue,
-                workerTaskReaderContext);
+                workerTaskReaderContext,
+                taskSyncStatusManager);
     }
 
     private WorkerCombinedTaskWriter newWorkerCombinedTaskWriter() {

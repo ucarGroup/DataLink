@@ -22,6 +22,8 @@
         <result property="skipIds" column="skip_ids"/>
         <result property="createTime" column="create_time"/>
         <result property="modifyTime" column="modify_time"/>
+        <result property="esRouting" column="es_routing"/>
+        <result property="esRoutingIgnore" column="es_routing_ignore"/>
         <association property="sourceMedia" column="SOURCE_MEDIA_ID" select="findMediaById"/>
         <association property="targetMediaSource" column="TARGET_MEDIA_SOURCE_ID" select="findMediaSourceById"/>
         <association property="taskInfo" column="task_id" select="findTaskById"/>
@@ -83,6 +85,7 @@
         </selectKey>
     </insert>
 
+
     <insert id="mediaMappingInsert" parameterType="com.ucar.datalink.domain.media.MediaMappingInfo">
         INSERT INTO t_dl_media_mapping
         (task_id,
@@ -100,7 +103,9 @@
         geo_position_conf,
         skip_ids,
         create_time,
-        modify_time)
+        modify_time,
+        es_routing,
+        es_routing_ignore)
         VALUES
         (#{taskId},
         #{sourceMediaId},
@@ -122,7 +127,9 @@
         #{geoPositionConf},
         #{skipIds},
         now(),
-        now())
+        now(),
+        #{esRouting},
+        #{esRoutingIgnore})
         <selectKey resultType="long" order="AFTER" keyProperty="id">
             SELECT LAST_INSERT_ID() AS id
         </selectKey>
@@ -275,6 +282,9 @@
         <if test="sourceMedia.name != null">
             and media.media_name LIKE concat(concat('%',#{sourceMedia.name}),'%')
         </if>
+        <if test="targetMediaName != null">
+            and mapping.target_media_name LIKE concat(concat('%',#{targetMediaName}),'%')
+        </if>
     </select>
 
     <select id="mappingCount" resultType="Integer">
@@ -292,7 +302,7 @@
         INNER JOIN t_dl_media_source ms ON m.media_source_id=ms.id
         GROUP BY ms.ms_type
     </select>
-    
+
     <select id="findTaskIdsByMediaSourceId" parameterType="Long" resultType="Long">
         SELECT
         DISTINCT task_id
@@ -300,4 +310,78 @@
         LEFT JOIN t_dl_media media ON mapping.source_media_id = media.id
         WHERE media.media_source_id = #{mediaSourceId} OR mapping.target_media_source_id = #{targetMediaSourceId}
     </select>
+
+    <select id="findMediaByMediaSourceId" parameterType="java.util.HashMap" resultMap="mediaMap">
+        select * from t_dl_media where media_source_id =#{mediaSourceId}
+    </select>
+
+    <select id="findTaskIdListByMediaSourceList" resultType="Long">
+        SELECT
+        DISTINCT task_id
+        FROM t_dl_media_mapping mapping
+        LEFT JOIN t_dl_media media ON mapping.source_media_id = media.id
+        WHERE
+        media.media_source_id in
+        <foreach collection="mediaSourceIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        OR mapping.target_media_source_id in
+        <foreach collection="mediaSourceIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getMediaMappingOfSpecial" resultMap="mediaMappingMap">
+
+        SELECT
+            m1.*, m2.media_name
+        FROM
+            t_dl_media_mapping m1
+        LEFT JOIN t_dl_media m2 ON m1.source_media_id = m2.id
+        WHERE
+            m2.media_name = #{tableName} AND m1.target_media_source_id = #{mediaSourceId}
+        LIMIT 1
+
+    </select>
+
+    <select id="findMappingListByCondition" resultMap="mediaMappingMap"
+            parameterType="com.ucar.datalink.domain.media.MediaMappingInfo">
+        SELECT mapping.*
+        from t_dl_media_mapping mapping
+        INNER JOIN t_dl_media media ON mapping.source_media_id = media.id
+        where 1=1
+        and media.media_source_id = #{sourceMedia.mediaSourceId}
+        <if test="targetMediaSourceId != null">
+            and mapping.target_media_source_id = #{targetMediaSourceId}
+        </if>
+        and media.media_name = #{sourceMedia.name}
+
+    </select>
+
+    <select id="getMappingsByTargetMediaNameAndNamespace" resultMap="mediaMappingMap">
+        SELECT *
+        from t_dl_media_mapping
+        where target_media_source_id = #{targetMediaSourceId}
+        and target_media_namespace = #{targetNamespace}
+        and target_media_name = #{targetTableName}
+    </select>
+
+    <select id="getMappingsByMediaSourceIdAndTargetTable" resultMap="mediaMappingMap">
+        SELECT * from t_dl_media_mapping mapping
+        left join t_dl_task task on mapping.task_id = task.id
+        where mapping.target_media_source_id = #{targetMediaSourceId}
+        and mapping.target_media_name = #{targetTableName}
+        and task.reader_media_source_id = #{srcMediaSourceId}
+    </select>
+
+    <select id="findMediaMappingByJoinIndex" resultMap="mediaMappingMap"
+            parameterType="com.ucar.datalink.domain.media.MediaMappingInfo">
+        SELECT *
+        from t_dl_media_mapping
+        where
+        task_id = #{taskId}
+        and source_media_id = #{sourceMediaId}
+        and target_media_source_id = #{targetMediaSourceId}
+        and target_media_name = #{targetMediaName}
+    </select>
+
 </mapper>

@@ -23,4 +23,6 @@ public interface GroupDAO {
     Integer groupCount();
 
     List<StatisDetail> getCountByName();
+
+    GroupInfo getByName(String groupName);
 }

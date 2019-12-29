@@ -30,7 +30,7 @@ public abstract class PluginWriterParameter extends PluginParameter {
     /**
      * 是否可以对数据进行合并
      */
-    private boolean merging = false;
+    private boolean merging = true;
     /**
      * 最大重试次数
      */

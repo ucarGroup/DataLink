@@ -1,15 +1,22 @@
 package com.ucar.datalink.manager.core.web.controller.user;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ucar.datalink.biz.service.RoleService;
 import com.ucar.datalink.biz.service.UserRoleService;
 import com.ucar.datalink.biz.service.UserService;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
+import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.user.UserInfo;
 import com.ucar.datalink.domain.user.UserRoleInfo;
 import com.ucar.datalink.manager.core.web.util.Page;
+import com.ucar.datalink.manager.core.web.util.UserUtil;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
@@ -17,6 +24,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by sqq on 2017/4/19.
@@ -32,6 +40,17 @@ public class UserController {
     @Autowired
     UserRoleService userRoleService;
 
+    private static AuditLogInfo getAuditLogInfo(UserInfo info, String menuCode, String operType) {
+        AuditLogInfo logInfo = new AuditLogInfo();
+        logInfo.setUserId(UserUtil.getUserIdFromRequest());
+        logInfo.setMenuCode(menuCode);
+        logInfo.setOperName(info.getUserName());
+        logInfo.setOperType(operType);
+        logInfo.setOperKey(info.getId());
+        logInfo.setOperRecord(info.toString());
+        return logInfo;
+    }
+
     @RequestMapping(value = "/userList")
     public ModelAndView userList() {
         ModelAndView mav = new ModelAndView("user/list");
@@ -40,9 +59,18 @@ public class UserController {
 
     @RequestMapping(value = "/initUser")
     @ResponseBody
-    public Page<UserInfo> initUser() {
+    public Page<UserInfo> initUser(@RequestBody Map<String, String> map) {
+        Page<UserInfo> page = new Page<>(map);
+        PageHelper.startPage(page.getPageNum(), page.getLength());
+
         List<UserInfo> listUser = userService.getList();
-        return new Page<UserInfo>(listUser);
+
+        PageInfo<UserInfo> pageInfo = new PageInfo<>(listUser);
+        page.setDraw(page.getDraw());
+        page.setAaData(listUser);
+        page.setRecordsTotal((int) pageInfo.getTotal());
+        page.setRecordsFiltered(page.getRecordsTotal());
+        return page;
     }
 
     @RequestMapping(value = "/toAdd")
@@ -57,6 +85,7 @@ public class UserController {
     public String doAdd(@ModelAttribute("userInfo") UserInfo userInfo) {
         Boolean isSuccess = userService.insert(userInfo);
         if (isSuccess) {
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(userInfo, "007001003", AuditLogOperType.insert.getValue()));
             return "success";
         } else {
             return "fail";
@@ -72,13 +101,13 @@ public class UserController {
             userInfo = userService.getById(Long.valueOf(id));
 
             //取出用户的角色
-            if(userInfo != null){
+            if (userInfo != null) {
                 List<UserRoleInfo> userRoleInfoList = userRoleService.findListByUserId(userInfo.getId());
                 List<String> roleIdList = new ArrayList<String>();
-                for(UserRoleInfo info : userRoleInfoList){
+                for (UserRoleInfo info : userRoleInfoList) {
                     roleIdList.add(String.valueOf(info.getRoleId()));
                 }
-               String roleIdStr = String.join(",",roleIdList);
+                String roleIdStr = String.join(",", roleIdList);
                 userInfo.setRoleIdStr(roleIdStr);
             }
         }
@@ -92,6 +121,7 @@ public class UserController {
     public String doEdit(@ModelAttribute("userInfo") UserInfo userInfo) {
         Boolean isSuccess = userService.update(userInfo);
         if (isSuccess) {
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(userInfo, "007001005", AuditLogOperType.update.getValue()));
             return "success";
         } else {
             return "fail";
@@ -105,8 +135,11 @@ public class UserController {
         if (StringUtils.isBlank(id)) {
             return "fail";
         }
-        Boolean isSuccess = userService.delete(Long.valueOf(id));
+        Long idLong = Long.valueOf(id);
+        UserInfo info = userService.getById(idLong);
+        Boolean isSuccess = userService.delete(idLong);
         if (isSuccess) {
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(info, "007001006", AuditLogOperType.delete.getValue()));
             return "success";
         } else {
             return "fail";

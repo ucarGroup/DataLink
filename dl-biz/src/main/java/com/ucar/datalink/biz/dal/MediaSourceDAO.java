@@ -15,9 +15,9 @@ public interface MediaSourceDAO {
 
     List<MediaSourceInfo> getList();
 
-    List<MediaSourceInfo> getListByType(@Param(value="mediaSourceType")Set mediaSourceType);
+    List<MediaSourceInfo> getListByType(@Param(value = "mediaSourceType") Set mediaSourceType);
 
-    List<MediaSourceInfo> getListForQueryPage(@Param("mediaSourceType")Set<MediaSourceType> mediaSourceType, @Param("mediaSourceName")String mediaSourceName);
+    List<MediaSourceInfo> getListForQueryPage(@Param("mediaSourceType") Set<MediaSourceType> mediaSourceType, @Param("mediaSourceName") String mediaSourceName, @Param("mediaSourceIp") String mediaSourceIp);
 
     Integer insert(MediaSourceInfo mediaSourceInfo);
 
@@ -30,4 +30,8 @@ public interface MediaSourceDAO {
     Integer msCount();
 
     List<StatisDetail> getCountByType();
+
+    List<MediaSourceInfo> getListByNameList(@Param("list") List<String> mediaSourceNameList);
+
+    List<MediaSourceInfo> getMediaSourceLikeSchema(String likeTargetNamespace);
 }

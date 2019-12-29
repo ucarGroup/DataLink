@@ -14,7 +14,7 @@ public interface MonitorService {
 
     List<MonitorInfo> getList();
 
-    List<MonitorInfo> getListForQueryPage(@Param("monitorCat") Integer monitorCat, @Param("monitorType") Integer monitorType, @Param("resourceId") Long resourceId, @Param("isEffective") Integer isEffective);
+    List<MonitorInfo> getListForQueryPage(@Param("monitorCat") Integer monitorCat, @Param("monitorType") Integer monitorType, @Param("groupId") Long groupId, @Param("resourceId") Long resourceId, @Param("isEffective") Integer isEffective);
 
     Boolean insert(MonitorInfo monitorInfo);
 

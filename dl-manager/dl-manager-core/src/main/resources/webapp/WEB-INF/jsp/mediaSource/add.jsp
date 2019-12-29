@@ -47,6 +47,8 @@
                                         <option value="MYSQL">MYSQL</option>
                                         <option value="SQLSERVER">SQLSERVER</option>
                                         <option value="POSTGRESQL">POSTGRESQL</option>
+                                        <option value="ORACLE">ORACLE</option>
+                                        <option value="HANA">HANA</option>
                                     </select>
                                 </div>
                             </div>
@@ -88,8 +90,11 @@
                             </div>
                             <input type="hidden" id="mysqlWritePsw" name="mysqlWritePsw" value="${mysql_write_psw}"/>
                             <input type="hidden" id="mysqlReadPsw" name="mysqlReadPsw" value="${mysql_read_psw}"/>
-                            <input type="hidden" id="sqlserverWritePsw" name="sqlserverWritePsw" value="${sqlserver_write_psw}"/>
-                            <input type="hidden" id="sqlserverReadPsw" name="sqlserverReadPsw" value="${sqlserver_read_psw}"/>
+                            <input type="hidden" id="sqlserverWritePsw" name="sqlserverWritePsw"
+                                   value="${sqlserver_write_psw}"/>
+                            <input type="hidden" id="sqlserverReadPsw" name="sqlserverReadPsw"
+                                   value="${sqlserver_read_psw}"/>
+
                             <div class="col-sm-4 form-group">
                                 <label class="col-sm-3 control-label no-padding-right" for="form-add-writerPassWord">写库密码</label>
 
@@ -141,7 +146,8 @@
                                 </div>
                             </div>
                             <div class="col-sm-4 form-group">
-                                <label class="col-sm-3 control-label no-padding-right" for="form-add-etlUserName">读库用户名</label>
+                                <label class="col-sm-3 control-label no-padding-right"
+                                       for="form-add-etlUserName">读库用户名</label>
 
                                 <div class="col-sm-7">
                                     <input type="text" name="xxx.etlUserName" class="col-sm-12"
@@ -149,7 +155,8 @@
                                 </div>
                             </div>
                             <div class="col-sm-4 form-group">
-                                <label class="col-sm-3 control-label no-padding-right" for="form-add-etlPassWord">读库密码</label>
+                                <label class="col-sm-3 control-label no-padding-right"
+                                       for="form-add-etlPassWord">读库密码</label>
 
                                 <div class="col-sm-7">
                                     <input type="password" name="xxx.etlPassWord"
@@ -387,6 +394,10 @@
     $('#form-add-mediaSourceType').change(function () {
         if ($(this).val() == 'SQLSERVER') {
             $('#form-add-port').val(1433);
+        } else if ($(this).val() == 'ORACLE') {
+            $('#form-add-port').val(1521);
+        } else if( $(this).val() == 'HANA' ) {
+            $('#form-add-port').val(35015);
         } else {
             $('#form-add-port').val(3306);
         }
@@ -406,7 +417,7 @@
             alert('编码不能为空');
             return false;
         }
-        var r = /^\+?[1-9][0-9]*$/;//正整数
+        var r = /^\+?[1-9][0-9]*$/;　　//正整数
         var flag = r.test($('#form-add-port').val());
         if (!flag) {
             alert("端口号必须为正整数");

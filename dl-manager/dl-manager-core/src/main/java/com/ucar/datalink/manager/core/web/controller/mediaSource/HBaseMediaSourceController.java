@@ -1,6 +1,10 @@
 package com.ucar.datalink.manager.core.web.controller.mediaSource;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ucar.datalink.biz.service.MediaSourceService;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
@@ -9,6 +13,7 @@ import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import com.ucar.datalink.manager.core.web.dto.mediaSource.HBaseMediaSourceView;
+import com.ucar.datalink.manager.core.web.util.AuditLogInfoUtil;
 import com.ucar.datalink.manager.core.web.util.Page;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -19,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
@@ -52,7 +58,10 @@ public class HBaseMediaSourceController {
 
     @RequestMapping(value = "/initHBase")
     @ResponseBody
-    public Page<HBaseMediaSourceView> initHBase() {
+    public Page<HBaseMediaSourceView> initHBase(@RequestBody Map<String, String> map) {
+        Page<HBaseMediaSourceView> page = new Page<>(map);
+        PageHelper.startPage(page.getPageNum(), page.getLength());
+
         Set<MediaSourceType> setMediaSource = new HashSet<>();
         boolean add = setMediaSource.add(MediaSourceType.HBASE);
         List<MediaSourceInfo> hbaseMediaSourceList = mediaSourceService.getListByType(setMediaSource);
@@ -64,13 +73,19 @@ public class HBaseMediaSourceController {
             view.setCreateTime(i.getCreateTime());
             view.setHbaseMediaSrcParameter(i.getParameterObj());
             view.getHbaseMediaSrcParameter().setZkMediaSourceId(((HBaseMediaSrcParameter) i.getParameterObj()).getZkMediaSourceId());
-            MediaSourceInfo zk = mediaSourceService.getById( view.getHbaseMediaSrcParameter().getZkMediaSourceId() );
+            MediaSourceInfo zk = mediaSourceService.getById(view.getHbaseMediaSrcParameter().getZkMediaSourceId());
             if (zk != null) {
                 view.setZkMediaSourceName(zk.getName());
             }
             return view;
         }).collect(Collectors.toList());
-        return new Page<>(hbaseView);
+
+        PageInfo<MediaSourceInfo> pageInfo = new PageInfo<MediaSourceInfo>(hbaseMediaSourceList);
+        page.setDraw(page.getDraw());
+        page.setAaData(hbaseView);
+        page.setRecordsTotal((int) pageInfo.getTotal());
+        page.setRecordsFiltered(page.getRecordsTotal());
+        return page;
     }
 
     @RequestMapping(value = "/toAdd")
@@ -84,9 +99,10 @@ public class HBaseMediaSourceController {
     @RequestMapping(value = "/doAdd")
     public String doAdd(@ModelAttribute("hbaseMediaSourceView") HBaseMediaSourceView hbaseMediaSourceView) {
         try {
-            checkHBaseConfig( hbaseMediaSourceView.getHbaseMediaSrcParameter() );
-            Boolean isSuccess = mediaSourceService.insert(buildHbaseMediaSourceInfo(hbaseMediaSourceView));
+            MediaSourceInfo mediaSourceInfo = buildHbaseMediaSourceInfo(hbaseMediaSourceView);
+            Boolean isSuccess = mediaSourceService.insert(mediaSourceInfo);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo, "002002003", AuditLogOperType.insert.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -111,7 +127,7 @@ public class HBaseMediaSourceController {
         view.setDesc(mediaSourceInfo.getDesc());
         view.setCreateTime(mediaSourceInfo.getCreateTime());
         view.setHbaseMediaSrcParameter(mediaSourceInfo.getParameterObj());
-        MediaSourceInfo zk = mediaSourceService.getById( view.getHbaseMediaSrcParameter().getZkMediaSourceId() );
+        MediaSourceInfo zk = mediaSourceService.getById(view.getHbaseMediaSrcParameter().getZkMediaSourceId());
         if (zk != null) {
             view.setZkMediaSourceName(zk.getName());
         }
@@ -128,12 +144,12 @@ public class HBaseMediaSourceController {
             if (hbaseMediaSourceView.getId() == null) {
                 throw new RuntimeException("hbaseMediaSourceId is empty");
             }
-            checkHBaseConfig(hbaseMediaSourceView.getHbaseMediaSrcParameter());
             MediaSourceInfo mediaSourceInfo = buildHbaseMediaSourceInfo(hbaseMediaSourceView);
             mediaSourceInfo.setId(hbaseMediaSourceView.getId());
             Boolean isSuccess = mediaSourceService.update(mediaSourceInfo);
             toReloadDB(hbaseMediaSourceView.getId().toString());
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo, "002002005", AuditLogOperType.update.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -151,8 +167,12 @@ public class HBaseMediaSourceController {
             return "fail";
         }
         try {
-            Boolean isSuccess = mediaSourceService.delete(Long.valueOf(id));
+            Long idLong = Long.valueOf(id);
+            MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(idLong);
+            Boolean isSuccess = mediaSourceService.delete(idLong);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
+                        , "002002006", AuditLogOperType.delete.getValue()));
                 return "success";
             }
         } catch (ValidationException e) {
@@ -171,7 +191,6 @@ public class HBaseMediaSourceController {
             if (StringUtils.isNotBlank(id)) {
                 mediaSourceInfo = mediaSourceService.getById(Long.valueOf(id));
             }
-            checkHBaseConfig(mediaSourceInfo.getParameterObj());
             return "success";
         } catch (Exception e) {
             return e.getMessage();
@@ -201,6 +220,9 @@ public class HBaseMediaSourceController {
                 HttpEntity request = new HttpEntity(null, headers);
                 new RestTemplate().postForObject(url, request, Map.class);
             }
+            MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(Long.valueOf(mediaSourceId));
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
+                    , "002002008", AuditLogOperType.other.getValue()));
             return "success";
         } catch (Exception e) {
             return e.getMessage();
@@ -217,31 +239,7 @@ public class HBaseMediaSourceController {
         return hbaseMediaSourceInfo;
     }
 
-    private void checkHBaseConfig(HBaseMediaSrcParameter hbaseMediaSrcParameter) {
-//        for (String host : Splitter.on(",").trimResults().omitEmptyStrings().split(hbaseMediaSrcParameter.getClusterHosts())) {
-//            String url = "http://" + host + ":" + esMediaSrcParameter.getHttpPort() + "/";
-//            verify(url, esMediaSrcParameter.getUserName(), esMediaSrcParameter.getPassword());
-//        }
-    }
-
-/*    private void verify(String url, String user, String pass) {
-        try {
-            CredentialsProvider provider = new BasicCredentialsProvider();
-            UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(user, pass);
-            provider.setCredentials(AuthScope.ANY, credentials);
-            HttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
-            HttpResponse response = client.execute(new HttpGet(url));
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                throw new ValidationException("verify HBase node [" + url + "] failure, response status: " + response);
-            }
-
-            logger.info("Verify HBase MediaSource successfully.");
-        } catch (Exception e) {
-            throw new ValidationException("verify HBase node [" + url + "] failure, cause of: " + e);
-        }
-    }*/
-
-    private List<MediaSourceInfo> initZkList(){
+    private List<MediaSourceInfo> initZkList() {
         Set<MediaSourceType> setMediaSource = new HashSet<MediaSourceType>();
         setMediaSource.add(MediaSourceType.ZOOKEEPER);
         return mediaSourceService.getListByType(setMediaSource);

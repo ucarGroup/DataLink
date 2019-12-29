@@ -8,6 +8,7 @@ import com.ucar.datalink.writer.es.client.rest.exception.ElasticSearchException;
 import com.ucar.datalink.writer.es.client.rest.vo.VoItf;
 import org.apache.commons.lang.StringUtils;
 
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
@@ -19,8 +20,10 @@ import java.net.URLEncoder;
  * Created on 2016-6-13 上午10:35:58
  * @author  孔增（kongzeng@zuche.com）
  */
-public class SimpleSearchDocumentVo extends VoItf{
-	
+public class SimpleSearchDocumentVo extends VoItf implements Serializable {
+
+	private static final long serialVersionUID = 4137252987640720308L;
+
 	private String key ;
 	/**
 	 * 请求超时时间（单位:ms）
@@ -34,7 +37,12 @@ public class SimpleSearchDocumentVo extends VoItf{
 	 * 返回条数
 	 */
 	private int size;
-	
+
+	/**
+	 * routing值
+	 */
+	private String routingValue;
+
     public SimpleSearchDocumentVo() {}
 	
 	public SimpleSearchDocumentVo(String clusterName) {
@@ -67,6 +75,15 @@ public class SimpleSearchDocumentVo extends VoItf{
 	public void setSize(int size) {
 		this.size = size;
 	}
+
+	public String getRoutingValue() {
+		return routingValue;
+	}
+
+	public void setRoutingValue(String routingValue) {
+		this.routingValue = routingValue;
+	}
+
 	public void addKey(KeyVo keyVo) {
 		if(key == null) {
 			key = keyVo.toString();
@@ -108,7 +125,11 @@ public class SimpleSearchDocumentVo extends VoItf{
 			} catch (UnsupportedEncodingException e) {
 				throw new ElasticSearchException("url编码转换错误",e);
 			}
-			lastUrl.append("q="+key);
+			lastUrl.append("q="+key).append(CharacterConstant.AND);
+		}
+
+		if (!StringUtils.isBlank(routingValue)) {
+			lastUrl.append("routing="+routingValue);
 		}
 
 		return lastUrl.toString() ;

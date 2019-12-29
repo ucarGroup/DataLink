@@ -2,26 +2,30 @@ package com.ucar.datalink.manager.core.web.controller.monitor;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.ucar.datalink.biz.service.MonitorService;
-import com.ucar.datalink.biz.service.TaskConfigService;
-import com.ucar.datalink.biz.service.UserService;
-import com.ucar.datalink.biz.service.WorkerService;
+import com.ucar.datalink.biz.service.*;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
+import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.monitor.MonitorCat;
 import com.ucar.datalink.domain.monitor.MonitorInfo;
 import com.ucar.datalink.domain.monitor.MonitorType;
 import com.ucar.datalink.domain.task.TaskInfo;
 import com.ucar.datalink.domain.user.UserInfo;
 import com.ucar.datalink.domain.worker.WorkerInfo;
-import com.ucar.datalink.manager.core.web.dto.monitor.MonitorView;
 import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;
+import com.ucar.datalink.manager.core.web.dto.monitor.MonitorView;
 import com.ucar.datalink.manager.core.web.util.Page;
+import com.ucar.datalink.manager.core.web.util.UserUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,20 +45,36 @@ public class MonitorController {
 
     @Autowired
     UserService userService;
-
+    @Autowired
+    WorkerService workerService;
+    @Autowired
+    GroupService groupService;
     @Autowired
     private MonitorService monitorService;
-
     @Autowired
     private TaskConfigService taskConfigService;
 
-    @Autowired
-    WorkerService workerService;
+    private static AuditLogInfo getAuditLogInfo(MonitorInfo info, String menuCode, String operType) {
+        AuditLogInfo logInfo = new AuditLogInfo();
+        logInfo.setUserId(UserUtil.getUserIdFromRequest());
+        logInfo.setMenuCode(menuCode);
+        logInfo.setOperName(info.getResourceName());
+        logInfo.setOperType(operType);
+        logInfo.setOperKey(info.getId());
+        logInfo.setOperRecord(info.toString());
+        return logInfo;
+    }
+
+    public static void main(String[] arg) throws ParseException {
+        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.print(sf.format(new Date()));
+    }
 
     @RequestMapping(value = "/monitorList")
     public ModelAndView monitorList() {
         ModelAndView mav = new ModelAndView("monitor/list");
         mav.addObject("monitorCatList", MonitorCat.getMonitorCatList());
+        mav.addObject("groupList", groupService.getAllGroups());
         return mav;
     }
 
@@ -63,11 +83,12 @@ public class MonitorController {
     public Page<MonitorView> initMonitor(@RequestBody Map<String, String> map) {
         Integer monitorCat = Integer.valueOf(map.get("monitorCat"));
         Integer monitorType = Integer.valueOf(map.get("monitorType"));
+        Long groupId = Long.valueOf(map.get("groupId"));
         Long resourceId = Long.valueOf(map.get("resourceId"));
         Integer isEffective = Integer.valueOf(map.get("isEffective"));
         Page<MonitorView> page = new Page<>(map);
         PageHelper.startPage(page.getPageNum(), page.getLength());
-        List<MonitorInfo> listMonitor = monitorService.getListForQueryPage(monitorCat == -1L ? null : monitorCat, monitorType == -1L ? null : monitorType, resourceId == -1L ? null : resourceId, isEffective == -1 ? null : isEffective);
+        List<MonitorInfo> listMonitor = monitorService.getListForQueryPage(monitorCat == -1L ? null : monitorCat, monitorType == -1L ? null : monitorType, groupId == -1L ? null : groupId, resourceId == -1L ? null : resourceId, isEffective == -1 ? null : isEffective);
 
         //构造view
         List<MonitorView> monitorViews = listMonitor.stream().map(i -> {
@@ -106,6 +127,7 @@ public class MonitorController {
         try {
             Boolean isSuccess = monitorService.insert(monitorInfo);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(getAuditLogInfo(monitorInfo, "006001003", AuditLogOperType.insert.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -121,8 +143,11 @@ public class MonitorController {
             return "fail";
         }
         try {
-            Boolean isSuccess = monitorService.delete(Long.valueOf(id));
+            Long idLong = Long.valueOf(id);
+            MonitorInfo info = monitorService.getById(idLong);
+            Boolean isSuccess = monitorService.delete(idLong);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(getAuditLogInfo(info, "006001006", AuditLogOperType.delete.getValue()));
                 return "success";
             } else {
                 return "fail";
@@ -139,15 +164,16 @@ public class MonitorController {
         List<UserInfo> userList = userService.getList();
         List<TaskInfo> taskList = taskConfigService.getList();
         List<WorkerInfo> workerList = workerService.getList();
-        mav.addObject("taskList", taskList);
-        mav.addObject("workerList", workerList);
-        mav.addObject("userList", userList);
-        mav.addObject("monitorCatList", MonitorCat.getMonitorCatList());
         String id = request.getParameter("id");
         MonitorInfo monitorInfo = new MonitorInfo();
         if (StringUtils.isNotBlank(id)) {
             monitorInfo = monitorService.getById(Long.valueOf(id));
         }
+
+        mav.addObject("taskList", taskList);
+        mav.addObject("workerList", workerList);
+        mav.addObject("userList", userList);
+        mav.addObject("monitorCatList", MonitorCat.getMonitorCatList());
         mav.addObject("monitorInfo", monitorInfo);
         return mav;
     }
@@ -158,6 +184,7 @@ public class MonitorController {
         try {
             Boolean isSuccess = monitorService.update(monitorInfo);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(getAuditLogInfo(monitorInfo, "006001005", AuditLogOperType.update.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -216,11 +243,6 @@ public class MonitorController {
             logger.error("doAllStop is fail", e);
         }
         return "fail";
-    }
-
-    public static void main(String[] arg) throws ParseException {
-        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        System.out.print(sf.format(new Date()));
     }
 
     @RequestMapping(value = "/getMonitorTypeListByCat")

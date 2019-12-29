@@ -12,7 +12,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class HttpUtils {
 
@@ -27,7 +30,9 @@ public class HttpUtils {
      */
     public static String doGet(String url, Map<String, String> params) throws IOException {
         CloseableHttpClient client = HttpClientBuilder.create().build();
-        url = url + "?" + map2Str(params);
+        if(params!=null && params.size()>0) {
+            url = url + "?" + map2Str(params);
+        }
         HttpGet httpGet = new HttpGet(url);
         try {
             HttpResponse httpResponse = client.execute(httpGet);
@@ -41,6 +46,34 @@ public class HttpUtils {
             }
         }
         return "";
+    }
+
+
+    /**
+     * 执行一个HTTP GET请求，返回请求响应的HTML
+     *
+     * @param url 请求的URL地址
+     * @return 返回请求响应的HTML
+     * @throws IOException
+     */
+    public static int doGetResponseCode(String url, Map<String, String> params) throws IOException {
+        CloseableHttpClient client = HttpClientBuilder.create().build();
+        if(params!=null && params.size()>0) {
+            url = url + "?" + map2Str(params);
+        }
+        HttpGet httpGet = new HttpGet(url);
+        try {
+            HttpResponse httpResponse = client.execute(httpGet);
+            return httpResponse.getStatusLine().getStatusCode();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(),e);
+            return -1;
+        }
+        finally {
+            if (client != null) {
+                client.close();
+            }
+        }
     }
 
     /**

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.TaskDecorateDAO">
+
+    <resultMap id="taskDecorateMap" type="com.ucar.datalink.domain.decorate.TaskDecorate">
+        <result property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="tableName" column="table_name"/>
+        <result property="remark" column="remark"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+        <result property="statement" column="statement"/>
+        <result property="deleted" column="deleted"/>
+        <result property="taskName" column="task_name"/>
+
+    </resultMap>
+
+    <select id="listByCondition" resultMap="taskDecorateMap"
+            parameterType="com.ucar.datalink.domain.decorate.TaskDecorate">
+        SELECT
+        t.id,
+        t.task_id,
+        t.remark,
+        t.create_time,
+        t.modify_time,
+        t.statement,
+        t.deleted,
+        l.task_name,
+        t.table_name
+        FROM t_dl_task_decorate t
+        LEFT JOIN t_dl_task l ON t.task_id = l.id
+        WHERE t.deleted = 'false'
+        <if test="taskId != null and taskId != -1 ">
+            and t.task_id = #{taskId}
+        </if>
+        <if test="tableName != null  and tableName!= ''">
+            and t.table_name = #{tableName}
+        </if>
+        order by t.id desc
+    </select>
+
+
+    <select id="findById" parameterType="long" resultMap="taskDecorateMap">
+        SELECT
+        t.id,
+        t.task_id,
+        t.remark,
+        t.create_time,
+        t.modify_time,
+        t.statement,
+        t.deleted,
+        l.task_name,
+        t.table_name
+        FROM t_dl_task_decorate t
+        LEFT JOIN t_dl_task l ON t.task_id = l.id
+        where t.id=#{id}
+    </select>
+
+
+    <insert id="insert" parameterType="com.ucar.datalink.domain.decorate.TaskDecorate" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO t_dl_task_decorate
+        (task_id,table_name,remark,create_time,modify_time,statement) VALUES
+        (#{taskId},#{tableName},#{remark},now(),now(),#{statement})
+    </insert>
+
+    <update id="update" parameterType="com.ucar.datalink.domain.decorate.TaskDecorate">
+        UPDATE t_dl_task_decorate
+        <set>
+            <if test="taskId!=null and taskId!=''">
+                task_id=#{taskId},
+            </if>
+            <if test="remark!=null">
+                remark=#{remark},
+            </if>
+            <if test="statement!=null and statement!=''">
+                statement=#{statement},
+            </if>
+            <if test="deleted!=null and deleted!=''">
+                deleted=#{deleted},
+            </if>
+            modify_time=now(),
+        </set>
+        where id = #{id}
+    </update>
+
+
+    <select id="recordCount" resultType="Integer">
+        SELECT
+        COUNT(1)
+        FROM t_dl_task_decorate
+        WHERE deleted='false'
+    </select>
+
+</mapper>

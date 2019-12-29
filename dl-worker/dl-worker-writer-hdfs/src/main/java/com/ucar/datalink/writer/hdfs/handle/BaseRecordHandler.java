@@ -225,9 +225,12 @@ public abstract class BaseRecordHandler<T extends Record> extends AbstractHandle
             hflush(fsOut);
             if (System.currentTimeMillis() - fileStreamToken.getLastHSyncTime() > hdfsWriterParameter.getHsyncInterval()) {
                 //我们必须定时进行hsync操作，否则在文件流未关闭的情况下，RDD或者MR任务读不到写入的数据
+                long start = System.currentTimeMillis();
                 hsync(fsOut);
+                long end = System.currentTimeMillis();
+
                 fileStreamToken.setLastHSyncTime(System.currentTimeMillis());
-                logger.info("A Interval HSync Triggered for file : " + fileStreamToken.getPathString());
+                logger.info("A Interval HSync Triggered for file : " + fileStreamToken.getPathString() + "; and time for hsync is : " + (end - start) + "ms");
             }
         } else if (mode.equals(CommitMode.Hsync)) {
             hsync(fsOut);

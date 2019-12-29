@@ -48,6 +48,8 @@
                                         <option value="MYSQL">MYSQL</option>
                                         <option value="SQLSERVER">SQLSERVER</option>
                                         <option value="POSTGRESQL">POSTGRESQL</option>
+                                        <option value="ORACLE">ORACLE</option>
+                                        <option value="HANA">HANA</option>
                                     </select>
                                 </div>
                             </div>
@@ -391,7 +393,7 @@
     function back2Main() {
         $("#edit").hide();
         $("#mainContentInner").show();
-        msgAlarmListMyTable.ajax.reload();
+        msgAlarmListMyTable.draw(false);
     }
 
     $('#form-update-mediaSourceType').change(function () {

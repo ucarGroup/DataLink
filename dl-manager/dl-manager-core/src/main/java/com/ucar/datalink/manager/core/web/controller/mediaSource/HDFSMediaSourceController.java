@@ -1,6 +1,8 @@
 package com.ucar.datalink.manager.core.web.controller.mediaSource;
 
 import com.ucar.datalink.biz.service.MediaSourceService;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
@@ -9,6 +11,7 @@ import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import com.ucar.datalink.manager.core.web.dto.mediaSource.HDFSMediaSourceView;
+import com.ucar.datalink.manager.core.web.util.AuditLogInfoUtil;
 import com.ucar.datalink.manager.core.web.util.Page;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -88,8 +91,11 @@ public class HDFSMediaSourceController {
     @RequestMapping(value = "/doAdd")
     public String doAdd(@ModelAttribute("hdfsMediaSourceView") HDFSMediaSourceView hdfsMediaSourceView) {
         try {
-            Boolean isSuccess = mediaSourceService.insert(buildHDFSMediaSourceInfo(hdfsMediaSourceView));
+            MediaSourceInfo mediaSourceInfo = buildHDFSMediaSourceInfo(hdfsMediaSourceView);
+            Boolean isSuccess = mediaSourceService.insert(mediaSourceInfo);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
+                        , "002007003", AuditLogOperType.insert.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -126,6 +132,8 @@ public class HDFSMediaSourceController {
             Boolean isSuccess = mediaSourceService.update(mediaSourceInfo);
             toReloadDB(hdfsMediaSourceView.getId().toString());
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
+                        , "002007005", AuditLogOperType.update.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -143,8 +151,12 @@ public class HDFSMediaSourceController {
             return "fail";
         }
         try {
-            Boolean isSuccess = mediaSourceService.delete(Long.valueOf(id));
+            Long idLong = Long.valueOf(id);
+            MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(idLong);
+            Boolean isSuccess = mediaSourceService.delete(idLong);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
+                        , "002007006", AuditLogOperType.delete.getValue()));
                 return "success";
             }
         } catch (ValidationException e) {
@@ -171,7 +183,7 @@ public class HDFSMediaSourceController {
                 return "success";
             }
             for (ClusterState.MemberData mem : memberDatas) {
-                String url = "http://" + mem.getWorkerState().url() + "/flush/reloadMediaSource/" + mediaSourceId;
+                String url = "http://" + mem.getWorkerState().url() + "/flush/reloadHDFS/" + mediaSourceId;
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 HttpEntity request = new HttpEntity(null, headers);

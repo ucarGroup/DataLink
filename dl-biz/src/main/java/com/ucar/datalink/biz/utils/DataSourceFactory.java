@@ -105,7 +105,9 @@ public class DataSourceFactory {
             Properties props = new Properties();
             props.setProperty("useServerPrepStmts", "false");
             props.setProperty("rewriteBatchedStatements", "true");
-            props.setProperty("zeroDateTimeBehavior", "convertToNull");// 将0000-00-00的时间类型返回null
+            props.setProperty("useSSL", "false");//驱动升级mysql8，连接数据库时，将证书的校验关闭
+            props.setProperty("serverTimezone", "Hongkong");//驱动升级mysql8，指定时区为东八区
+            props.setProperty("zeroDateTimeBehavior", "CONVERT_TO_NULL");//驱动升级mysql8，将0000-00-00的时间类型返回null（MySql8废弃了convertToNull写法，改为CONVERT_TO_NULL）
             props.setProperty("yearIsDateType", "false");// 直接返回字符串，不做year转换date处理
             props.setProperty("noDatetimeStringSync", "true");// 返回时间类型的字符串,不做时区处理
             if (StringUtils.isNotEmpty(parameter.getEncoding())) {

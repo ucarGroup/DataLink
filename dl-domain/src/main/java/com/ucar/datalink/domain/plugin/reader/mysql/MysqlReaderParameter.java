@@ -84,6 +84,14 @@ public class MysqlReaderParameter extends PluginReaderParameter {
      * 分组同步模式下的Event-Sink模式
      */
     private GroupSinkMode groupSinkMode = GroupSinkMode.Coordinate;
+    /**
+     * 是否Parallel
+     */
+    private boolean parallel = false;
+    /**
+     * 是否开启gtid
+     */
+    private boolean gtidEnable = false;
 
     @Override
     public String initPluginName() {
@@ -239,5 +247,21 @@ public class MysqlReaderParameter extends PluginReaderParameter {
 
     public void setGroupSinkMode(GroupSinkMode groupSinkMode) {
         this.groupSinkMode = groupSinkMode;
+    }
+
+    public boolean isParallel() {
+        return parallel;
+    }
+
+    public void setParallel(boolean parallel) {
+        this.parallel = parallel;
+    }
+
+    public boolean isGtidEnable() {
+        return gtidEnable;
+    }
+
+    public void setGtidEnable(boolean gtidEnable) {
+        this.gtidEnable = gtidEnable;
     }
 }

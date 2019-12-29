@@ -104,6 +104,7 @@ class GroupMetadata {
         assert groupId.equals(member.getGroupId());
         assert protocolType.equals(member.getProtocolType());
 
+        //随机指定group中的leader worker
         if (leaderId == null) {
             leaderId = memberId;
         }

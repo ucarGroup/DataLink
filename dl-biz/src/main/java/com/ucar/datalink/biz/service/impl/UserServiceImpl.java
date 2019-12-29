@@ -37,6 +37,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<UserInfo> getListByUserInfo(UserInfo userInfo) {
+        return userDAO.getListByUserInfo(userInfo);
+    }
+
+    @Override
     @Transactional
     public Boolean insert(UserInfo userInfo) {
         //保存用户

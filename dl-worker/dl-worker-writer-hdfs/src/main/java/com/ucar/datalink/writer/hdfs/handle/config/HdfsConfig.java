@@ -60,6 +60,7 @@ public class HdfsConfig {
         this.configuration.set("hbase.zookeeper.quorum", this.zkUrl);
         this.configuration.set("hbase.zookeeper.property.clientPort", this.zkPort);
         this.configuration.set("dfs.client-write-packet-size", String.valueOf(hdfsWriterParameter.getHdfsPacketSize()));
+        //this.configuration.set("dfs.client.socket-timeout", String.valueOf(hdfsWriterParameter.getSocketTimeout()));
 
         // 高可用设置
         String key = hdfsUri.getAuthority();

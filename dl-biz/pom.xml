@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.ucar.datalink</groupId>
         <artifactId>datalink</artifactId>
-        <version>0.0.2</version>
+        <version>1.0.0-beta</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,12 +18,12 @@
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-common</artifactId>
-            <version>0.0.2</version>
+            <version>1.0.0-beta</version>
         </dependency>
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-domain</artifactId>
-            <version>0.0.2</version>
+            <version>1.0.0-beta</version>
         </dependency>
 
         <!-- rdbms -->
@@ -96,17 +96,31 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.11</version>
         </dependency>
+
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>sqljdbc4</artifactId>
-            <scope>system</scope>
-            <systemPath>${basedir}/src/main/resources/lib/sqljdbc4-4.0.jar</systemPath>
+            <version>4.0</version>
         </dependency>
+        
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.1.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.oracle</groupId>
+            <artifactId>ojdbc6</artifactId>
+            <version>11.2.0.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sap.cloud.db.jdbc</groupId>
+            <artifactId>ngdbc</artifactId>
+            <version>2.4.51</version>
         </dependency>
 
         <dependency>
@@ -169,7 +183,7 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>
-            <version>1.0.31</version>
+            <version>1.1.16</version>
         </dependency>
 
         <dependency>
@@ -209,6 +223,18 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+        </dependency>
+
+        <!--kudu -->
+        <dependency>
+            <groupId>org.apache.kudu</groupId>
+            <artifactId>kudu-client-tools</artifactId>
+            <version>1.7.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kudu</groupId>
+            <artifactId>kudu-client</artifactId>
+            <version>1.7.1</version>
         </dependency>
     </dependencies>
 

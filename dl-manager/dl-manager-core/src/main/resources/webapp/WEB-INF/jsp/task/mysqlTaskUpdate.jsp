@@ -3,6 +3,12 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="basePath" value="${pageContext.servletContext.contextPath }"/>
 
+<script type="text/javascript">
+    var currentPageName = "mysql";
+</script>
+
+
+
 <div class="main-content-inner">
     <div class="page-content">
         <div class="row">
@@ -22,7 +28,7 @@
                 <div class="tab-content" style="border: 0px">
                     <!--基础配置-->
                     <div id="basicId" class="tab-pane in active">
-                        <jsp:include page="taskBasic.jsp"/>
+                        <jsp:include page="mysqlTaskBasic.jsp"/>
                     </div>
 
                     <!--Reader配置-->
@@ -59,6 +65,7 @@
     function back2Main() {
         $("#mysqlTaskUpdate").empty();
         $("#main-container").show();
+        oTable.draw(false);
     }
 
     function add() {
@@ -80,7 +87,6 @@
                 if (data == "success") {
                     alert("更新成功！");
                     back2Main();
-                    oTable.ajax.reload();
                 } else {
                     alert(data);
                 }

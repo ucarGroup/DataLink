@@ -14,12 +14,16 @@ case "`uname`" in
 esac
 base=${bin_abs_path}/..
 worker_conf=$base/conf/worker.properties
+worker_extend_conf_dir=$base/conf_extend
 logback_configurationFile=$base/conf/logback.xml
 java_opts_file=$base/conf/javaopts
+java_opts_file_extend=$worker_extend_conf_dir/javaopts
 export LANG=en_US.UTF-8
 export BASE=$base
 
-if [ -e $java_opts_file ]; then
+if [ -e $java_opts_file_extend ]; then
+	source $java_opts_file_extend
+elif [ -e $java_opts_file ]; then
 	source $java_opts_file
 fi
 
@@ -83,14 +87,17 @@ esac
 str=`file -L $JAVA | grep 64-bit`
 if [ -n "$JAVA_OPTS_CONF" ]; then
     JAVA_OPTS=$JAVA_OPTS_CONF
+    echo "worker if"  >> $base/bin/workerJvm.log
 elif [ -n "$str" ]; then
-	JAVA_OPTS="-server -Xms2048m -Xmx3072m -Xmn2048m -XX:SurvivorRatio=2 -Xss256k -XX:-UseAdaptiveSizePolicy -XX:MaxTenuringThreshold=15 -XX:+DisableExplicitGC -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:+UseCMSCompactAtFullCollection -XX:+UseFastAccessorMethods -XX:+UseCMSInitiatingOccupancyOnly -XX:+HeapDumpOnOutOfMemoryError -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:${BASE}/logs/gc/gc-worker-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=20 -XX:GCLogFileSize=1024K"
+    JAVA_OPTS="-server -Xms2048m -Xmx3072m -Xmn2048m -XX:SurvivorRatio=2 -Xss256k -XX:-UseAdaptiveSizePolicy -XX:MaxTenuringThreshold=15 -XX:+DisableExplicitGC -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:+UseCMSCompactAtFullCollection -XX:+UseFastAccessorMethods -XX:+UseCMSInitiatingOccupancyOnly -XX:+HeapDumpOnOutOfMemoryError -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:${BASE}/logs/gc/gc-worker-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=20 -XX:GCLogFileSize=1024K"
+    echo "worker elif" >> $base/bin/workerJvm.log
 else
-	JAVA_OPTS="-server -Xms1024m -Xmx1024m -XX:NewSize=256m -XX:MaxNewSize=256m -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:${BASE}/logs/gc/gc-worker-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=20 -XX:GCLogFileSize=1024K"
+    JAVA_OPTS="-server -Xms1024m -Xmx1024m -XX:NewSize=256m -XX:MaxNewSize=256m -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:${BASE}/logs/gc/gc-worker-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=20 -XX:GCLogFileSize=1024K"
+    echo "worker else" >> $base/bin/workerJvm.log
 fi
 
 JAVA_OPTS=" $JAVA_OPTS -Djava.awt.headless=true -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8"
-WORKER_OPTS="-DappName=datalink-worker -Dlogback.configurationFile=$logback_configurationFile -Djava.opts.file=$java_opts_file -Dworker.conf=$worker_conf -Dworker.home=$base -Dcom.sun.management.jmxremote.port=9933 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+WORKER_OPTS="-DappName=datalink-worker -Dlogback.configurationFile=$logback_configurationFile -Djava.opts.file=$java_opts_file -Dworker.extend.conf.dir=$worker_extend_conf_dir -Dworker.conf=$worker_conf -Dworker.home=$base -Dcom.sun.management.jmxremote.port=9934 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
 
 if [ -e $worker_conf -a -e $logback_configurationFile ]
 then

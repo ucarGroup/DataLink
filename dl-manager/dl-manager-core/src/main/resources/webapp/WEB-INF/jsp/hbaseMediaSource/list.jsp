@@ -52,9 +52,16 @@
 
     hbaseListMyTable = $('#hbaseMediaSourceTable').DataTable({
         "bAutoWidth": true,
+        serverSide: true,//开启服务器模式:启用服务器分页
+        paging: true,//是否分页
         "ajax": {
             "url": "${basePath}/hbase/initHBase",
-            "data": {}
+            "data": function (d) {
+                return JSON.stringify(d);
+            },
+            "dataType": 'json',
+            "contentType": 'application/json',
+            "type": 'POST'
         },
         "columns": [
 

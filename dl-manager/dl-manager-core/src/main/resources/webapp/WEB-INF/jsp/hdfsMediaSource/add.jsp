@@ -10,6 +10,7 @@
 
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-name">Hadoop集群名称</label>
+
                     <div class="col-sm-9">
                         <input type="text" style="width:350px;height:35px" name="name" class="col-xs-10 col-sm-5"
                                id="form-add-name"/>
@@ -18,6 +19,7 @@
 
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-mediaSourceType">数据源类型</label>
+
                     <div class="col-sm-9">
                         <select name="hdfsMediaSrcParameter.mediaSourceType" id="form-add-mediaSourceType"
                                 style="width:350px;height:35px"
@@ -30,6 +32,7 @@
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right"
                            for="form-add-nameServices">nameServices</label>
+
                     <div class="col-sm-9">
                         <input type="text" style="width:350px;height:35px" id="form-add-nameServices"
                                name="hdfsMediaSrcParameter.nameServices" class="col-xs-10 col-sm-5"/>
@@ -39,6 +42,7 @@
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right"
                            for="form-add-nameNode1">nameNode1</label>
+
                     <div class="col-sm-9">
                         <input type="text" style="width:350px;height:35px" id="form-add-nameNode1"
                                name="hdfsMediaSrcParameter.nameNode1" class="col-xs-10 col-sm-5"/>
@@ -48,6 +52,7 @@
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right"
                            for="form-add-nameNode2">nameNode2</label>
+
                     <div class="col-sm-9">
                         <input type="text" style="width:350px;height:35px" id="form-add-nameNode2"
                                name="hdfsMediaSrcParameter.nameNode2" class="col-xs-10 col-sm-5"/>
@@ -57,6 +62,7 @@
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right"
                            for="form-add-hadoopUser">HadoopUser</label>
+
                     <div class="col-sm-9">
                         <input type="text" style="width:350px;height:35px" id="form-add-hadoopUser"
                                name="hdfsMediaSrcParameter.hadoopUser" value="increment" class="col-xs-10 col-sm-5"/>
@@ -65,6 +71,7 @@
 
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-zkMediaSourceId">所属Zk集群</label>
+
                     <div class="col-sm-9">
                         <select name="hdfsMediaSrcParameter.zkMediaSourceId" id="form-add-zkMediaSourceId"
                                 style="width:350px;height:35px" class="chosen-select col-sm-5">
@@ -75,16 +82,9 @@
                     </div>
                 </div>
 
-                <%--<div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-add-spark_cube_meta">spark cube地址</label>
-                    <div class="col-sm-9">
-                        <input type="text" id="form-add-spark_cube_meta" name="hdfsMediaSrcParameter.sparkcubeAddress"
-                               class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50"/>
-                    </div>
-                </div>--%>
-
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-desc">描述</label>
+
                     <div class="col-sm-9">
                         <input type="text" id="form-add-desc" name="desc"
                                class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50"/>
@@ -116,7 +116,7 @@
         var nameNode1 = $.trim($("#form-add-nameNode1").val());
         var nameNode2 = $.trim($("#form-add-nameNode2").val());
         var hadoopUser = $.trim($("#form-add-hadoopUser").val());
-//        var spark_cube = $.trim($("#form-add-spark_cube_meta").val());
+
         var desc = $.trim($("#form-add-desc").val());
 
         if (name == "") {
@@ -139,10 +139,7 @@
             alert("HadoopUser不能为空!");
             return false;
         }
-        /*if(spark_cube == "") {
-            alert("Spark cube地址不能为空！");
-            return false;
-        }*/
+
         if (desc == "") {
             alert("描述不能为空!");
             return false;

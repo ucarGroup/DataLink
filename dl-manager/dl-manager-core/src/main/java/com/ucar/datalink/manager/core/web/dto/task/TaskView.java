@@ -21,6 +21,13 @@ public class TaskView {
     private String startTime;//task启动时间
     private String readerIp;//reader地址
     private String detail;//详情
+    private String latestEffectSyncLogFileName;
+    private String latestEffectSyncLogFileOffset;
+    private String taskSyncStatus;
+    private String shadowCurrentTimeStamp; //影子位点当前时间
+    private String shadowLatestEffectSyncLogFileName;//影子位点最后binlog文件
+    private String shadowLatestEffectSyncLogFileOffset;//影子位点最后binlog位点
+
 
     public Long getId() {
         return id;
@@ -124,5 +131,53 @@ public class TaskView {
 
     public void setDetail(String detail) {
         this.detail = detail;
+    }
+
+    public String getTaskSyncStatus() {
+        return taskSyncStatus;
+    }
+
+    public void setTaskSyncStatus(String taskSyncStatus) {
+        this.taskSyncStatus = taskSyncStatus;
+    }
+
+    public String getLatestEffectSyncLogFileName() {
+        return latestEffectSyncLogFileName;
+    }
+
+    public void setLatestEffectSyncLogFileName(String latestEffectSyncLogFileName) {
+        this.latestEffectSyncLogFileName = latestEffectSyncLogFileName;
+    }
+
+    public String getLatestEffectSyncLogFileOffset() {
+        return latestEffectSyncLogFileOffset;
+    }
+
+    public void setLatestEffectSyncLogFileOffset(String latestEffectSyncLogFileOffset) {
+        this.latestEffectSyncLogFileOffset = latestEffectSyncLogFileOffset;
+    }
+
+    public String getShadowCurrentTimeStamp() {
+        return shadowCurrentTimeStamp;
+    }
+
+    public void setShadowCurrentTimeStamp(String shadowCurrentTimeStamp) {
+        this.shadowCurrentTimeStamp = shadowCurrentTimeStamp;
+    }
+
+    public String getShadowLatestEffectSyncLogFileName() {
+        return shadowLatestEffectSyncLogFileName;
+    }
+
+    public void setShadowLatestEffectSyncLogFileName(String shadowLatestEffectSyncLogFileName) {
+        this.shadowLatestEffectSyncLogFileName = shadowLatestEffectSyncLogFileName;
+    }
+    
+    public String getShadowLatestEffectSyncLogFileOffset() {
+        return shadowLatestEffectSyncLogFileOffset;
+    }
+
+    public void setShadowLatestEffectSyncLogFileOffset(String shadowLatestEffectSyncLogFileOffset) {
+        this.shadowLatestEffectSyncLogFileOffset = shadowLatestEffectSyncLogFileOffset;
     }
 }

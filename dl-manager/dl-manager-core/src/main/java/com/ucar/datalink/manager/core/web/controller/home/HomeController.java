@@ -2,8 +2,8 @@ package com.ucar.datalink.manager.core.web.controller.home;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.service.*;
-import com.ucar.datalink.domain.statis.StatisDetail;
 import com.ucar.datalink.domain.statis.HomeStatistic;
+import com.ucar.datalink.domain.statis.StatisDetail;
 import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;
 import com.ucar.datalink.manager.core.web.util.Page;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -72,6 +72,11 @@ public class ServerStatusMonitor {
                 initCluster();
                 initRunning();
             }
+
+            @Override
+            public void handleSessionEstablishmentError(Throwable error) throws Exception {
+                logger.info("handleSessionEstablishmentError is : " + error);
+            }
         };
     }
 

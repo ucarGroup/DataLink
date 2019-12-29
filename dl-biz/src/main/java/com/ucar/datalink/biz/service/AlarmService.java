@@ -23,4 +23,6 @@ public interface AlarmService {
     void alarmWorkerStatus(MonitorInfo monitorInfo, WorkerInfo workerInfo);
 
     void alarmTaskStatusMismatch(MonitorInfo monitorInfo, TaskStatusMismatchLogInfo taskStatusMismatchLogInfo);
+
+    void alarmTaskSyncStatus(MonitorInfo monitorInfo, Long busyTime);
 }

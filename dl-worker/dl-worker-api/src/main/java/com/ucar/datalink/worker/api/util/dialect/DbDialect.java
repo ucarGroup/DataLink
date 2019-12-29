@@ -34,6 +34,8 @@ public interface DbDialect {
 
     boolean isGenerateSqlWithSchema();
 
+    boolean hasAutoIncrementNotKeyColumns(String schemaName, String tableName);
+
     LobHandler getLobHandler();
 
     JdbcTemplate getJdbcTemplate();

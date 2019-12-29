@@ -16,6 +16,8 @@ public interface SysPropertiesService {
 
     SysPropertiesInfo getSysPropertiesById(Long id);
 
+    SysPropertiesInfo getSysPropertiesByKey(String key);
+
     List<SysPropertiesInfo> findSysPropertieList();
 
     Boolean delete(Long id);

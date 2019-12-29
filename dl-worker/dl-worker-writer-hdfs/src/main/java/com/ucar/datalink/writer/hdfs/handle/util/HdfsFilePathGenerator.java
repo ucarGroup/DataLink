@@ -1,12 +1,18 @@
 package com.ucar.datalink.writer.hdfs.handle.util;
 
-import com.ucar.datalink.domain.plugin.writer.hdfs.*;
 import com.ucar.datalink.domain.media.MediaMappingInfo;
+import com.ucar.datalink.domain.plugin.writer.hdfs.FileSplitMode;
+import com.ucar.datalink.domain.plugin.writer.hdfs.FileSplitStrategy;
+import com.ucar.datalink.domain.plugin.writer.hdfs.HdfsMappingParameter;
+import com.ucar.datalink.domain.plugin.writer.hdfs.HdfsWriterParameter;
 import com.ucar.datalink.worker.api.task.TaskWriterContext;
 
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.TreeMap;
 
 /**
  * Created by sqq on 2017/7/17.
@@ -51,7 +57,7 @@ public class HdfsFilePathGenerator {
         }
 
         if (splitMode.equals(FileSplitMode.DAY)) {
-            return MessageFormat.format(FILE_PATH_BINLOG_PATTERN_DAY,hdfsWriterParameter.getMysqlBinlogPath(), schemaName, tableName, filename);
+            return MessageFormat.format(FILE_PATH_BINLOG_PATTERN_DAY, hdfsWriterParameter.getMysqlBinlogPath(), schemaName, tableName, filename);
         } else {
             return MessageFormat.format(FILE_PATH_BINLOG_PATTERN_DAY_SPLIT, hdfsWriterParameter.getMysqlBinlogPath(), schemaName, tableName, getDateStr(), filename);
         }
@@ -65,15 +71,15 @@ public class HdfsFilePathGenerator {
 
         if ("default".equals(schemaName)) {
             if (splitMode.equals(FileSplitMode.DAY)) {
-                return MessageFormat.format(FILE_PATH_HBASE_PATTERN_DAY,hdfsWriterParameter.getHbasePath(), tableName, dateStr, taskFileName);
+                return MessageFormat.format(FILE_PATH_HBASE_PATTERN_DAY, hdfsWriterParameter.getHbasePath(), tableName, dateStr, taskFileName);
             } else {
-                return MessageFormat.format(FILE_PATH_HBASE_PATTERN_DAY_SPLIT,hdfsWriterParameter.getHbasePath(), tableName, dateStr, buildSplitRange(splitMode), taskFileName);
+                return MessageFormat.format(FILE_PATH_HBASE_PATTERN_DAY_SPLIT, hdfsWriterParameter.getHbasePath(), tableName, dateStr, buildSplitRange(splitMode), taskFileName);
             }
         } else {
             if (splitMode.equals(FileSplitMode.DAY)) {
-                return MessageFormat.format(FILE_PATH_HBASE_NAMESPACE_PATTERN_DAY, hdfsWriterParameter.getHbasePath(),schemaName, tableName, dateStr, taskFileName);
+                return MessageFormat.format(FILE_PATH_HBASE_NAMESPACE_PATTERN_DAY, hdfsWriterParameter.getHbasePath(), schemaName, tableName, dateStr, taskFileName);
             } else {
-                return MessageFormat.format(FILE_PATH_HBASE_NAMESPACE_PATTERN_DAY_SPLIT, hdfsWriterParameter.getHbasePath(),schemaName, tableName, dateStr, buildSplitRange(splitMode), taskFileName);
+                return MessageFormat.format(FILE_PATH_HBASE_NAMESPACE_PATTERN_DAY_SPLIT, hdfsWriterParameter.getHbasePath(), schemaName, tableName, dateStr, buildSplitRange(splitMode), taskFileName);
             }
         }
     }
@@ -126,9 +132,9 @@ public class HdfsFilePathGenerator {
     }
 
     public FileSplitMode getFileSplitMode(MediaMappingInfo mappingInfo) {
-        HdfsFileParameter hdfsFileParameter = mappingInfo.getParameterObj();
-        if (hdfsFileParameter != null) {
-            List<FileSplitStrategy> fileSplitStrategieList = hdfsFileParameter.getFileSplitStrategieList();
+        HdfsMappingParameter hdfsMappingParameter = mappingInfo.getParameterObj();
+        if (hdfsMappingParameter != null) {
+            List<FileSplitStrategy> fileSplitStrategieList = hdfsMappingParameter.getFileSplitStrategieList();
             if (fileSplitStrategieList != null && fileSplitStrategieList.size() > 0) {
                 Date current = new Date();
                 TreeMap<Date, FileSplitMode> treeMap = new TreeMap<>();

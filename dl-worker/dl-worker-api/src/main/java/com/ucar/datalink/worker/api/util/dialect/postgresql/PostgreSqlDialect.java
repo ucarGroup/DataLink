@@ -59,4 +59,8 @@ public class PostgreSqlDialect extends AbstractDbDialect {
         return false;
     }
 
+    @Override
+    public boolean hasAutoIncrementNotKeyColumns(String schemaName, String tableName) {
+        return false;
+    }
 }

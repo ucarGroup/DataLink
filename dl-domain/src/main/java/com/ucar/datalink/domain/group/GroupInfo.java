@@ -51,4 +51,16 @@ public class GroupInfo {
     public void setModifyTime(Date modifyTime) {
         this.modifyTime = modifyTime;
     }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("GroupInfo{");
+        sb.append("id=").append(id);
+        sb.append(", groupName='").append(groupName).append('\'');
+        sb.append(", groupDesc='").append(groupDesc).append('\'');
+        sb.append(", createTime=").append(createTime);
+        sb.append(", modifyTime=").append(modifyTime);
+        sb.append('}');
+        return sb.toString();
+    }
 }

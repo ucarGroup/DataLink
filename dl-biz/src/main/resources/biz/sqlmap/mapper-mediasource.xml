@@ -68,6 +68,9 @@
         <if test="mediaSourceName != null">
             and ms_name LIKE concat(concat('%',#{mediaSourceName}),'%')
         </if>
+        <if test="mediaSourceIp != null">
+            and ms_parameter LIKE concat(concat('%',#{mediaSourceIp}),'%')
+        </if>
     </select>
 
     <select id="getById" resultMap="mediaSourceResult">
@@ -111,4 +114,32 @@
         FROM t_dl_media_source
         GROUP BY ms_type
     </select>
+<select id="getOneByName" resultMap="mediaSourceResult">
+        select
+        <include refid="allMediaSourceColumns"/>
+        from t_dl_media_source where ms_name=#{msName}
+    </select>
+<select id="getListByNameList" resultMap="mediaSourceResult">
+        select
+        id,
+        ms_name,
+        ms_type,
+        ms_desc,
+        ms_parameter,
+        create_time,
+        modify_time,
+        lab_id
+        from t_dl_media_source
+        where ms_name in
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getMediaSourceLikeSchema" resultMap="mediaSourceResult">
+        select <include refid="allMediaSourceColumns"/>
+        from t_dl_media_source
+        where ms_parameter like concat('%',#{likeTargetNamespace},'%')
+    </select>
+
 </mapper>

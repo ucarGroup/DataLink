@@ -20,6 +20,7 @@ public class SqlCheckItem {
     private boolean containsIndexesAdd;
     private boolean alterAffectColumn;
     private List<SqlCheckColumnInfo> columnsAddInfo;
+    private List<SqlCheckColumnInfo> columnsModifyInfo;
     private List<String> uniqueKeysDropInfo;
     private List<String> indexesAddInfo;
 
@@ -101,6 +102,14 @@ public class SqlCheckItem {
 
     public void setContainsColumnModifyAfter(boolean containsColumnModifyAfter) {
         this.containsColumnModifyAfter = containsColumnModifyAfter;
+    }
+
+    public List<SqlCheckColumnInfo> getColumnsModifyInfo() {
+        return columnsModifyInfo;
+    }
+
+    public void setColumnsModifyInfo(List<SqlCheckColumnInfo> columnsModifyInfo) {
+        this.columnsModifyInfo = columnsModifyInfo;
     }
 
     public boolean isContainsUniqueKeysDrop() {

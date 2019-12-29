@@ -27,6 +27,9 @@ public class RDBMSMapping extends AbstractMapping {
     private static final Map<String,String> toES = new ConcurrentHashMap<>();
 
 
+    private static final Map<String,String> toKudu = new ConcurrentHashMap<>();
+
+
     static {
         /**
          * toHDFS是一个映射关系表，key是关系型数据库中的列类型，value对应的是HDFS(hive)中的列类型
@@ -38,6 +41,7 @@ public class RDBMSMapping extends AbstractMapping {
         toHDFS.put("smallint", "int");
         toHDFS.put("int", "int");
         toHDFS.put("char", "string");
+        toHDFS.put("nchar", "string");
         toHDFS.put("float", "float");
         toHDFS.put("double", "double");
         toHDFS.put("text", "string");
@@ -63,6 +67,12 @@ public class RDBMSMapping extends AbstractMapping {
         toHDFS.put("real","decimal");
         toHDFS.put("numeric","string");
         toHDFS.put("smallint identity","smallint");
+
+        //oracle
+        toHDFS.put("varchar2","string");
+        toHDFS.put("nvarchar2","string");
+        toHDFS.put("number","decimal");
+
 
         /**
          * toES是一个映射关系表，key是关系型数据库中的列类型，value是ElasticSearch中的列类型
@@ -95,8 +105,37 @@ public class RDBMSMapping extends AbstractMapping {
         toES.put("nvarchar","string");
         toES.put("int4","long");
         toES.put("bit","integer");
-    }
 
+
+        toKudu.put("tinyint", "tinyint");
+        toKudu.put("smallint", "smallint");
+        toKudu.put("int", "int");
+        toKudu.put("integer", "int");
+        toKudu.put("bigint","bigint");
+        toKudu.put("bigint identity", "bigint");
+        toKudu.put("bigint unsigned", "bigint");
+        toKudu.put("int identity", "int");
+        toKudu.put("varchar","string");
+        toKudu.put("char","string");
+        toKudu.put("text","string");
+        toKudu.put("clob", "string");
+        toKudu.put("blob", "boolean");
+        toKudu.put("decimal","decimal");
+        toKudu.put("float", "double");
+        toKudu.put("double","double");
+        toKudu.put("datetime","string");
+        toKudu.put("timestamp","string");
+        toKudu.put("date", "string");
+        toKudu.put("mediumtext","string");
+        toKudu.put("longvarchar","string");
+        toKudu.put("datetime2","string");
+        toKudu.put("nvarchar","string");
+        toKudu.put("int4","bigint");
+        toKudu.put("bit","int");
+        toKudu.put("time","string");
+
+
+    }
 
     @Override
     public void processMetaMapping(MetaMappingInfo info) {
@@ -112,6 +151,21 @@ public class RDBMSMapping extends AbstractMapping {
     public ColumnMeta toRDBMS(ColumnMeta meta) {
         ColumnMeta target = new ColumnMeta();
         target = cloneColumnMeta(meta);
+        return target;
+    }
+
+
+    @Override
+    public ColumnMeta toKudu(ColumnMeta meta){
+        check(meta);
+        String name = meta.getType().toLowerCase();
+        String type = toKudu.get(name);
+        if(type == null) {
+            LOGGER.error("unsupport transform "+name+" (to Kudu)");
+            return createEmtpyColumnMeta(meta.getName());
+        }
+        ColumnMeta target = cloneColumnMeta(meta);
+        target.setType(type);
         return target;
     }
 

@@ -3,6 +3,10 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="basePath" value="${pageContext.servletContext.contextPath }"/>
 
+<script type="text/javascript">
+    var currentPageName = "hbase";
+</script>
+
 <div class="main-content-inner">
     <div class="page-content">
         <div class="row">

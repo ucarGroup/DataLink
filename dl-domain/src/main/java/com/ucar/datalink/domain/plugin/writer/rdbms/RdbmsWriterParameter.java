@@ -15,6 +15,8 @@ public class RdbmsWriterParameter extends PluginWriterParameter {
 
     private SyncMode syncMode = SyncMode.TablePartlyOrdered;
 
+    private boolean useUpsert = false;
+
     @Override
     public String initPluginName() {
         return "writer-rdbms";
@@ -56,5 +58,13 @@ public class RdbmsWriterParameter extends PluginWriterParameter {
         public static List<SyncMode> getAllModes() {
             return Lists.newArrayList(TablePartlyOrdered, DbGlobalOrdered);
         }
+    }
+
+    public boolean isUseUpsert() {
+        return useUpsert;
+    }
+
+    public void setUseUpsert(boolean useUpsert) {
+        this.useUpsert = useUpsert;
     }
 }

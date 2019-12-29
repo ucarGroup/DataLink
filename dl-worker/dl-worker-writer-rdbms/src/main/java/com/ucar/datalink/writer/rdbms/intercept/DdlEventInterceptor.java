@@ -79,7 +79,6 @@ public class DdlEventInterceptor implements Interceptor<RdbEventRecord> {
                 SQLStatementHolder holder = holders.get(0);
                 holder.check();
 
-//            String sql = buildSql(record.getSql(), record, mappingInfo);
                 String sql = record.getSql();
                 if (SqlType.CreateTable.equals(holder.getSqlType()) && srcMedia.getNameMode().getMode().isWildCard()) {
                     execute(record, sql, mappingInfo, holder.getSqlType());

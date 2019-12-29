@@ -112,6 +112,8 @@
             iDisplayLength: 10,
             ordering: true,
             "sInfoEmpty": "No entries to show",
+            serverSide: true,//开启服务器模式:启用服务器分页
+            paging: true,//是否分页
             ajax: {
                 "url": "${basePath}/hbaseTask/initHbaseTaskList",
                 "data": function (d) {

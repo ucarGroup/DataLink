@@ -1,7 +1,6 @@
 package com.ucar.datalink.worker.api.merge;
 
 import com.ucar.datalink.common.errors.DatalinkException;
-import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.contract.log.rdbms.EventColumn;
 import com.ucar.datalink.contract.log.rdbms.EventColumnIndexComparable;
 import com.ucar.datalink.contract.log.rdbms.EventType;
@@ -84,7 +83,7 @@ public class BuiltInRdbEventRecordMerger implements Merger<RdbEventRecord> {
                 result.put(rowKey, record);
             } else if (oldEventData.getEventType() == EventType.UPDATE
                     || oldEventData.getEventType() == EventType.INSERT) {
-                // insert之前出现了update逻辑上不可能，唯一的可能性是分布式DB场景下，冗余表在每个库中都有记录
+                // insert之前出现了update逻辑上不可能，一个可能的场景是：分布式DB场景下，冗余表在每个库中都有记录
                 // sql,不存在即插入
                 logger.debug("update-insert/insert-insert happend. before[{}] , after[{}]", oldEventData, record);
                 // 如果上一条变更是update的，就用insert替换，并且把上一条存在而这一条不存在的字段值拷贝到这一条中

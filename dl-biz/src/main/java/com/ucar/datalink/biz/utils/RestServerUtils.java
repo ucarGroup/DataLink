@@ -9,6 +9,8 @@ import com.google.common.cache.LoadingCache;
 import com.ucar.datalink.common.zookeeper.ManagerMetaData;
 import com.ucar.datalink.common.zookeeper.DLinkZkPathDef;
 import com.ucar.datalink.common.zookeeper.DLinkZkUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -21,6 +23,8 @@ import java.util.concurrent.TimeUnit;
  * Created by csf on 17/4/27.
  */
 public class RestServerUtils {
+
+    private static final Logger logger = LoggerFactory.getLogger(RestServerUtils.class);
 
     private static final RestTemplate restTemplate = new RestTemplate();
 

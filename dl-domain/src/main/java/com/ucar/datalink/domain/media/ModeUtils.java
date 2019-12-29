@@ -22,6 +22,8 @@ public class ModeUtils {
     private static final String MODE_PATTERN = "(.*)(\\[(\\d+)\\-(\\d+)\\])(.*)"; // 匹配类似"offer[0000-0031]"的分库分表模式
     private static final String YEAR_SUFFIX = "${yyyy}";
     private static final String MONTH_SUFFIX = "${yyyyMM}";
+    //非负整数（正整数 + 0）
+    private static final String NUMBER_REG = "^\\d+$";
 
     private static LoadingCache<String, Pattern> patterns = CacheBuilder.newBuilder().build(new CacheLoader<String, Pattern>() {
         @Override
@@ -177,6 +179,22 @@ public class ModeUtils {
         return false;
     }
 
+    public static boolean isMonthlySuffix(String value) {
+        try {
+            String valueSuffix = StringUtils.substring(value, value.length() - 6);
+            DateUtils.parseDate(valueSuffix, new String[]{"yyyyMM"});
+            return true;
+        } catch (ParseException e) {
+        }
+        try {
+            String valueSuffix = StringUtils.substring(value, value.length() - 7);
+            DateUtils.parseDate(valueSuffix, new String[]{"yyyy-MM", "yyyy/MM", "yyyy.MM"});
+            return true;
+        } catch (ParseException e) {
+        }
+        return false;
+    }
+
     public static String getYearlyPrefix(String value) {
         return StringUtils.substringBeforeLast(value, YEAR_SUFFIX);
     }
@@ -191,5 +209,17 @@ public class ModeUtils {
 
     public static boolean isMonthlyPattern(String value) {
         return StringUtils.endsWith(value, MONTH_SUFFIX);
+    }
+
+    /**
+     * 判断字符串是否是整数
+     * @param value
+     * @return
+     */
+    public static boolean isNumber(String value) {
+        if(StringUtils.isEmpty(value)){
+            return false;
+        }
+        return value.matches(NUMBER_REG);
     }
 }

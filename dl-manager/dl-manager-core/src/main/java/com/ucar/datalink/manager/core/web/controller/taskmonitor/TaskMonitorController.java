@@ -5,11 +5,8 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.ucar.datalink.biz.service.*;
 import com.ucar.datalink.domain.monitor.TaskMonitorInfo;
-import com.ucar.datalink.domain.task.TaskDelayTimeInfo;
-import com.ucar.datalink.domain.task.TaskExceptionInfo;
-import com.ucar.datalink.domain.task.TaskInfo;
-import com.ucar.datalink.domain.task.TaskStatisticInfo;
-import com.ucar.datalink.domain.task.TaskStatus;
+import com.ucar.datalink.domain.task.*;
+import com.ucar.datalink.manager.core.monitor.impl.TaskExceptionMonitor;
 import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
 import com.ucar.datalink.manager.core.server.ServerContainer;
@@ -20,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -52,6 +50,9 @@ public class TaskMonitorController {
     private TaskStatusService taskStatusService;
 
     @Autowired
+    private TaskExceptionMonitor taskExceptionMonitor;
+
+    @Autowired
     private TaskStatisticService taskStatisticService;
 
     @Autowired
@@ -59,6 +60,9 @@ public class TaskMonitorController {
 
     @Autowired
     private GroupService groupService;
+
+    @Autowired
+    TaskTraceService taskTraceService;
 
     @RequestMapping(value = "/taskMonitorList")
     public ModelAndView taskMonitorList() {
@@ -297,4 +301,34 @@ public class TaskMonitorController {
         }
         return "";
     }
+
+    @RequestMapping(value = "/toTaskTrace")
+    public String toTaskTrace(HttpServletRequest request, Model model) {
+        Long taskId = Long.valueOf(request.getParameter("taskId"));
+        model.addAttribute("taskId", taskId);
+        return "taskMonitor/taskTrace";
+    }
+
+    @RequestMapping(value = "/initTaskTrace")
+    @ResponseBody
+    public Page<TaskTraceInfo> initTaskTrace(@RequestBody Map<String, String> map) {
+        Long taskId = Long.valueOf(map.get("taskId"));
+        String start = map.get("startTime");
+        String end = map.get("endTime");
+        Date startTime = StringUtils.isBlank(start) ? null : new Date(Long.valueOf(start));
+        Date endTime = StringUtils.isBlank(end) ? null : new Date(Long.valueOf(end));
+        List<TaskTraceInfo> taskTraceInfoList = new ArrayList<TaskTraceInfo>();
+        Page<TaskTraceInfo> page = new Page<TaskTraceInfo>(map);
+        if (taskId != null) {
+            PageHelper.startPage(page.getPageNum(), page.getLength());
+            taskTraceInfoList = taskTraceService.findListByTaskId(taskId,startTime,endTime);
+        }
+        PageInfo<TaskTraceInfo> pageInfo = new PageInfo<TaskTraceInfo>(taskTraceInfoList);
+        page.setDraw(page.getDraw());
+        page.setAaData(taskTraceInfoList);
+        page.setRecordsTotal((int) pageInfo.getTotal());
+        page.setRecordsFiltered(page.getRecordsTotal());
+        return page;
+    }
+
 }

@@ -15,6 +15,8 @@ public class HBaseParameterVO {
 
     private int splitCount;
 
+    private int onceFethAmount;
+
     public String getZkAddress() {
         return zkAddress;
     }
@@ -53,6 +55,14 @@ public class HBaseParameterVO {
 
     public void setSplitCount(int splitCount) {
         this.splitCount = splitCount;
+    }
+
+    public int getOnceFethAmount() {
+        return onceFethAmount;
+    }
+
+    public void setOnceFethAmount(int onceFethAmount) {
+        this.onceFethAmount = onceFethAmount;
     }
 
     @Override

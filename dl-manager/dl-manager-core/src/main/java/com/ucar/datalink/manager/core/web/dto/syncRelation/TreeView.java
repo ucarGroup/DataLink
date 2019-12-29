@@ -10,12 +10,17 @@ import java.util.*;
  * Created by lubiao on 2017/7/17.
  */
 public class TreeView {
+    private String timeStamp;
     private String sqlString;
     private String tableName;
     private NodeView rootNode;
     private SqlExeDirection sqlExeDirection;
     private Set<SqlCheckNote> sqlCheckNotes;
     private List<String> hierarchy;
+
+    public String getTimeStamp() {
+        return String.valueOf(System.currentTimeMillis());
+    }
 
     public String getSqlString() {
         return sqlString;
@@ -99,6 +104,15 @@ public class TreeView {
         private String name;
         private String tableAliasName;
         private List<NodeView> children;
+        private Long mappingId;
+
+        public Long getMappingId() {
+            return mappingId;
+        }
+
+        public void setMappingId(Long mappingId) {
+            this.mappingId = mappingId;
+        }
 
         public Long getMediaSourceId() {
             return mediaSourceId;

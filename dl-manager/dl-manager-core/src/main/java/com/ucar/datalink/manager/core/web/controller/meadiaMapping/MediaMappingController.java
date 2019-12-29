@@ -6,42 +6,35 @@ import com.github.pagehelper.PageInfo;
 import com.google.common.collect.Sets;
 import com.ucar.datalink.biz.meta.RDBMSUtil;
 import com.ucar.datalink.biz.service.*;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
+import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.interceptor.InterceptorInfo;
 import com.ucar.datalink.domain.media.*;
 import com.ucar.datalink.domain.media.parameter.MediaSrcParameter;
-import com.ucar.datalink.domain.media.parameter.rdb.RdbMediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
 import com.ucar.datalink.domain.plugin.PluginWriterParameter;
 import com.ucar.datalink.domain.task.TaskInfo;
-import com.ucar.datalink.manager.core.coordinator.ClusterState;
-import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
-import com.ucar.datalink.manager.core.server.ServerContainer;
 import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;
 import com.ucar.datalink.manager.core.web.dto.mediaMapping.MediaMappingView;
 import com.ucar.datalink.manager.core.web.dto.mediaSource.MediaSourceView;
+import com.ucar.datalink.manager.core.web.util.MediaMappingConfigUtil;
 import com.ucar.datalink.manager.core.web.util.Page;
+import com.ucar.datalink.manager.core.web.util.UserUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 /**
@@ -88,13 +81,20 @@ public class MediaMappingController {
         if (StringUtils.isBlank(mediaName)) {
             mediaName = null;
         }
+        //目标端表名
+        String targetMediaName = map.get("targetMediaName");
+        if (StringUtils.isBlank(targetMediaName)) {
+            targetMediaName = null;
+        }
+
         Page<MediaMappingView> page = new Page<>(map);
         PageHelper.startPage(page.getPageNum(), page.getLength());
         List<MediaMappingInfo> mappingListsForQueryPage = mediaService.mappingListsForQueryPage(
                 mediaSourceId == -1L ? null : mediaSourceId,
                 targetMediaSourceId == -1L ? null : targetMediaSourceId,
                 taskId == -1 ? null : taskId,
-                mediaName);
+                mediaName,
+                targetMediaName);
 
         //构造view
         List<MediaMappingView> mediaMappingViews = mappingListsForQueryPage.stream().map(i -> {
@@ -147,26 +147,16 @@ public class MediaMappingController {
         TaskInfo taskInfo = taskConfigService.getTask(taskId);
         //源端
         MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(taskInfo.getTaskReaderParameterObj().getMediaSourceId());
-        RdbMediaSrcParameter rdbParameter = null;
-        if (mediaSourceInfo.getType() == MediaSourceType.MYSQL) {
-            rdbParameter = mediaSourceInfo.getParameterObj();
-        } else if (mediaSourceInfo.getType() == MediaSourceType.SDDL) {
+        if (mediaSourceInfo.getType() == MediaSourceType.SDDL) {
             SddlMediaSrcParameter sddlParameter = mediaSourceInfo.getParameterObj();
             mediaSourceInfo = mediaSourceService.getById(sddlParameter.getProxyDbId());
         }
-        Map<String, Object> mapParam = new HashMap<>();
-        mapParam.put("taskId", taskId);
-        mapParam.put("targetMediaSourceId", targetMediaNamespaceId);
-        List<MediaMappingInfo> mediaMappingList = mediaService.findMediaMappingsByTaskIdAndTargetMediaSourceId(mapParam);
-        List<String> tableList = new ArrayList<>();
-        for (MediaMappingInfo media : mediaMappingList) {
-            tableList.add(media.getSourceMedia().getName());
-        }
-        List<String> tableNameList = null;
+
+        List<String> tableNameList;
         if (mediaSourceInfo.getType() == MediaSourceType.HBASE) {
-            tableNameList = mediaSourceService.getHbaseTableName(mediaSourceInfo);
+            tableNameList = mediaSourceService.getHbaseTableNames(mediaSourceInfo);
         } else {
-            tableNameList = mediaSourceService.getRdbTableName(mediaSourceInfo);
+            tableNameList = mediaSourceService.getRdbTableNames(mediaSourceInfo);
         }
 
         Set<String> set = Sets.newLinkedHashSet();
@@ -184,10 +174,6 @@ public class MediaMappingController {
             }
         });
         tableNameList = set.stream().map(i -> i).collect(Collectors.toList());
-
-        for (String tableName : tableList) {
-            tableNameList.remove(tableName);
-        }
 
         //目标端
         MediaSourceInfo targetMediaSourceInfo = mediaSourceService.getById(targetMediaNamespaceId);
@@ -217,7 +203,7 @@ public class MediaMappingController {
         sourceMedia.setName(mediaSourceInfo.getName());
         if (mediaSourceList != null && mediaSourceList.size() > 0) {
             for (MediaSourceInfo targetMedias : mediaSourceList) {
-                if (targetMedias.getId() == mediaSourceInfo.getId()) {
+                if (targetMedias.getId().equals(mediaSourceInfo.getId())) {
                     continue;
                 }
                 MediaSourceView targetMedia = new MediaSourceView();
@@ -236,29 +222,35 @@ public class MediaMappingController {
     @AuthIgnore
     public List<String> getColumnName(Long id, String tableName) {
         MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(id);
-        RdbMediaSrcParameter rdbParameter = null;
-        if (mediaSourceInfo.getType() == MediaSourceType.MYSQL || mediaSourceInfo.getType() == MediaSourceType.SQLSERVER) {
-            rdbParameter = mediaSourceInfo.getParameterObj();
-        } else if (mediaSourceInfo.getType() == MediaSourceType.SDDL) {
-            SddlMediaSrcParameter sddlParameter = mediaSourceInfo.getParameterObj();
-            rdbParameter = mediaSourceService.getById(sddlParameter.getProxyDbId()).getParameterObj();
+
+        if (mediaSourceInfo.getType() == MediaSourceType.HBASE) {
+            return mediaSourceService.getHbaseColumnNames(mediaSourceInfo, tableName);
+        } else {
+            if (mediaSourceInfo.getType() == MediaSourceType.SDDL) {
+                SddlMediaSrcParameter sddlParameter = mediaSourceInfo.getParameterObj();
+                mediaSourceInfo = mediaSourceService.getById(sddlParameter.getProxyDbId());
+            }
+            return mediaSourceService.getRdbColumnNames(mediaSourceInfo, tableName);
         }
-        return mediaSourceService.getRdbColumnName(mediaSourceInfo, tableName);
     }
 
     @ResponseBody
     @RequestMapping(value = "/doAdd")
     public String doAdd(HttpServletRequest request) {
+
         try {
             String id = request.getParameter("srcMediaSourceId");
             MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(Long.valueOf(id));
-            MediaSrcParameter mediaSource = mediaSourceInfo.getParameterObj();
+            List<MediaMappingInfo> mediaMappingList = buildMediaMappingInfo(request, id);
             mediaService.insert(
-                    buildMediaInfo(request, mediaSource, id),
-                    buildMediaMappingInfo(request, id),
+                    buildMediaInfo(request, mediaSourceInfo, id),
+                    mediaMappingList,
                     buildMediaColumnMappingInfo(request, id)
             );
-            cleanTableMapping(Long.valueOf(request.getParameter("taskId")));
+            mediaService.cleanTableMapping(Long.valueOf(request.getParameter("taskId")));
+            for (MediaMappingInfo mediaMappingInfo : mediaMappingList) {
+                AuditLogUtils.saveAuditLog(getAuditLogInfo(mediaMappingInfo, "004020300", AuditLogOperType.insert.getValue()));
+            }
             return "success";
         } catch (Exception e) {
             logger.error("Add media-mapping failed.", e);
@@ -317,9 +309,10 @@ public class MediaMappingController {
         mediaMappingView.setWritePriority(mediaMappingInfo.getWritePriority());
         mediaMappingView.setJoinColumn(mediaMappingInfo.getJoinColumn());
         mediaMappingView.setEsUsePrefix(mediaMappingInfo.isEsUsePrefix());
+        mediaMappingView.setEsRouting(mediaMappingInfo.getEsRouting());
+        mediaMappingView.setEsRoutingIgnore(mediaMappingInfo.getEsRoutingIgnore());
         mediaMappingView.setGeoPositionConf(mediaMappingInfo.getGeoPositionConf());
         mediaMappingView.setSkipIds(mediaMappingInfo.getSkipIds());
-//        mediaMappingInfo.setParameter(mediaMappingInfo.getParameter());
         mediaMappingView.setTargetMediaSourceId(mediaMappingInfo.getTargetMediaSourceId());
         return mediaMappingView;
     }
@@ -337,12 +330,41 @@ public class MediaMappingController {
             }
             mediaService.update(columnMappingInfo, mediaMappingInfo);
             MediaMappingInfo mediaMapping = mediaService.findMediaMappingsById(mediaMappingInfo.getId());
-            cleanTableMapping(mediaMapping.getTaskId());
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(mediaMappingInfo, "004020500", AuditLogOperType.update.getValue()));
+            mediaService.cleanTableMapping(mediaMapping.getTaskId());
         } catch (Exception e) {
             logger.error("Edit media-mapping failed.", e);
             return e.getMessage();
         }
         return "success";
+    }
+
+    @RequestMapping(value = "/toView")
+    public ModelAndView toView(HttpServletRequest request) {
+        String id = request.getParameter("id");
+        ModelAndView mav = new ModelAndView("mediaMapping/view");
+        MediaMappingInfo mediaMappingInfo = mediaService.findMediaMappingsById(Long.valueOf(id));
+        List<MediaColumnMappingInfo> mediaColumnMapping = mediaService.findMediaColumnByMappingId(mediaMappingInfo.getId());
+
+        String sourceColumn = "";
+        String targetColumn = "";
+        for (MediaColumnMappingInfo mappingColumn : mediaColumnMapping) {
+            sourceColumn += mappingColumn.getSourceColumn() + ",";
+            targetColumn += mappingColumn.getTargetColumn() + ",";
+        }
+        if (StringUtils.isNotBlank(sourceColumn)) {
+            sourceColumn = sourceColumn.substring(0, sourceColumn.length() - 1);
+        }
+        if (StringUtils.isNotBlank(targetColumn)) {
+            targetColumn = targetColumn.substring(0, targetColumn.length() - 1);
+        }
+
+        List<InterceptorInfo> interceptorList = interceptorService.getList();
+        mav.addObject("interceptorList", interceptorList);
+        mav.addObject("mediaMappingInfo", buildMediaMappingView(mediaMappingInfo));
+        mav.addObject("sourceColumn", sourceColumn);
+        mav.addObject("targetColumn", targetColumn);
+        return mav;
     }
 
     @ResponseBody
@@ -355,7 +377,9 @@ public class MediaMappingController {
         try {
             MediaMappingInfo mediaMappingInfo = mediaService.findMediaMappingsById(Long.valueOf(id));
             mediaService.delete(Long.valueOf(id));
-            cleanTableMapping(mediaMappingInfo.getTaskId());
+            mediaService.cleanTableMapping(mediaMappingInfo.getTaskId());
+
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(mediaMappingInfo, "004020600", AuditLogOperType.delete.getValue()));
         } catch (Exception e) {
             logger.error("Delete media-mapping failed.", e);
             return e.getMessage();
@@ -376,19 +400,68 @@ public class MediaMappingController {
         return JSON.toJSONString(result);
     }
 
-    private List<MediaInfo> buildMediaInfo(HttpServletRequest request, MediaSrcParameter rbdParameter, String id) {
+    @RequestMapping(value = "/getAllMediaMappings")
+    @ResponseBody
+    public Map<String, Object> getAllMediaMappings(String taskId) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            List<MediaMappingInfo> mappingLists = mediaService.getAllMediaMappingsByTaskId(Long.valueOf(taskId));
+
+            //构造view
+            List<MediaMappingView> mediaMappingViews = mappingLists.stream().map(i -> {
+                MediaMappingView view = new MediaMappingView();
+                view.setId(i.getId());
+                view.setSrcMediaNamespace(i.getSourceMedia().getNamespace());
+                view.setSrcMediaName(i.getSourceMedia().getName());
+                view.setSrcMediaSourceName(i.getSourceMedia().getMediaSource().getName());
+                view.setTargetMediaNamespace(i.getTargetMediaNamespace());
+                view.setTargetMediaName(i.getTargetMediaName());
+                view.setTargetMediaSourceName(i.getTargetMediaSource().getName());
+                view.setTaskName(i.getTaskInfo().getTaskName());
+                return view;
+            }).collect(Collectors.toList());
+            map.put("mediaMappingList", mediaMappingViews);
+        } catch (Exception e) {
+            logger.error("校验失败：", e);
+        }
+        return map;
+    }
+
+    private List<MediaInfo> buildMediaInfo(HttpServletRequest request, MediaSourceInfo mediaSourceInfo, String id) throws Exception {
         String[] sourceTableName = request.getParameterValues("sourceTableName");
+        String[] targetTableName = request.getParameterValues("targetTableName");
+
+        Long targetMediaSourceId = null;
+        if (StringUtils.isNotBlank(request.getParameter("targetMediaNamespaceId"))) {
+            targetMediaSourceId = Long.valueOf(request.getParameter("targetMediaNamespaceId"));
+        }
         if (sourceTableName == null && sourceTableName.length == 0) {
             throw new RuntimeException("sourceTableName is empty");
         }
+        if (mediaSourceInfo.getId().longValue() == targetMediaSourceId) {
+            throw new RuntimeException("源端和目标端不能是同一个库");
+        }
+
         List<MediaInfo> tablelist = new ArrayList<MediaInfo>();
+
+
+        MediaSourceInfo targetMediaSourceInfo = mediaSourceService.getById(targetMediaSourceId);
+        MediaSrcParameter mediaSrcParameter = mediaSourceInfo.getParameterObj();
+
+        Set<String> tableNameSet = new HashSet<>();
+        //校验mysql数据库表是否有主键
+        MediaMappingConfigUtil.validateMysqlTablePk(mediaSourceInfo, sourceTableName, tableNameSet);
+        //校验目标数据源是否存在
+        MediaMappingConfigUtil.validateExistsTargetMedia(targetMediaSourceInfo, sourceTableName, tableNameSet, targetTableName);
+
+        //TODO,如果namespace为空，则设置为default，此处只是临时支持hbase，暂时这么用，
+        //TODO 后续整个MediaMappingController都需要进行深度重构
+        String namespace = StringUtils.isBlank(mediaSrcParameter.getNamespace()) ? "default" : mediaSrcParameter.getNamespace();
         for (String tableName : sourceTableName) {
             MediaInfo mediaInfo = new MediaInfo();
             mediaInfo.setName(tableName);
             mediaInfo.setMediaSourceId(Long.valueOf(id));
-            //TODO,如果namespace为空，则设置为default，此处只是临时支持hbase，暂时这么用，
-            //TODO 后续整个MediaMappingController都需要进行深度重构
-            mediaInfo.setNamespace(StringUtils.isBlank(rbdParameter.getNamespace()) ? "default" : rbdParameter.getNamespace());
+            mediaInfo.setNamespace(namespace);
             tablelist.add(mediaInfo);
         }
         return tablelist;
@@ -400,6 +473,8 @@ public class MediaMappingController {
         String[] writePriority = request.getParameterValues("writePriorityHidden");
         String[] joinColumn = request.getParameterValues("joinColumnHidden");
         String[] esUsePrefix = request.getParameterValues("esUsePrefixHidden");
+        String[] esRouting = request.getParameterValues("esRoutingHidden");
+        String[] esRoutingIgnore = request.getParameterValues("esRoutingIgnoreHidden");
         String[] geoPositionConf = request.getParameterValues("geoPositionConfHidden");
         String[] skipIds = request.getParameterValues("skipIdsHidden");
         String[] parameter = request.getParameterValues("parameterHidden");
@@ -408,6 +483,7 @@ public class MediaMappingController {
         if (targetTableName == null && targetTableName.length == 0) {
             throw new RuntimeException("targetTableName is empty");
         }
+
         List<MediaMappingInfo> mediaMappingList = new ArrayList<MediaMappingInfo>();
         for (int i = 0; i < targetTableName.length; i++) {
             MediaMappingInfo mediaMapping = new MediaMappingInfo();
@@ -438,6 +514,9 @@ public class MediaMappingController {
             }
             mediaMapping.setTargetMediaNamespace(request.getParameter("targetMediaNamespace"));
             mediaMapping.setTargetMediaName(targetTableName[i]);
+            mediaMapping.setEsRouting(esRouting[i]);
+            mediaMapping.setEsRoutingIgnore(esRoutingIgnore[i]);
+
             mediaMappingList.add(mediaMapping);
         }
         return mediaMappingList;
@@ -459,59 +538,15 @@ public class MediaMappingController {
         return mappingList;
     }
 
-    private void cleanTableMapping(Long taskId) {
-        syncRelationService.clearSyncRelationCache();//清空同步检测关系中的缓存
-
-        GroupMetadataManager groupManager = ServerContainer.getInstance().getGroupCoordinator().getGroupManager();
-        ClusterState clusterState = groupManager.getClusterState();
-        if (clusterState == null) {
-            return;
-        }
-
-        ClusterState.MemberData memberData = clusterState.getMemberData(Long.valueOf(taskId));
-        if (memberData == null) {
-            return;
-        }
-
-        ClusterState.GroupData groupData = clusterState.getGroupData(Long.valueOf(memberData.getGroupId()));
-        List<ClusterState.MemberData> list = groupData.getMembers();
-        ExecutorService pool = null;
-        List<Future<?>> futures = new ArrayList<>();
-        if (list != null && list.size() > 0) {
-            pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-            for (ClusterState.MemberData mem : list) {
-                String url = "http://" + mem.getWorkerState().url() + "/tasks/" + taskId + "/clearMediaMappingCache";
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-                HttpEntity request = new HttpEntity(null, headers);
-                futures.add(pool.submit(new RestFeture(url, request)));
-                logger.info("Prepare to send a ClearMediaMappingCache request to woker, url is : " + url);
-                //new RestTemplate().postForObject(url, request, Map.class);
-            }
-            for(Future f: futures) {
-                try {
-                    f.get();
-                } catch (Exception e) {
-                    logger.error(e.getMessage(),e);
-                }
-            }
-            pool.shutdown();
-        }
-    }
-
-    private class RestFeture implements Callable{
-        final String url;
-        final HttpEntity request;
-
-        RestFeture(String url,HttpEntity request) {
-            this.url = url;
-            this.request = request;
-        }
-
-        @Override
-        public Object call() throws Exception {
-            return new RestTemplate().postForObject(url, request, Map.class);
-        }
+    private AuditLogInfo getAuditLogInfo(MediaMappingInfo mediaMappingInfo, String menuCode, String operType) {
+        AuditLogInfo logInfo = new AuditLogInfo();
+        logInfo.setUserId(UserUtil.getUserIdFromRequest());
+        logInfo.setMenuCode(menuCode);
+        logInfo.setOperName("MediaMapping");
+        logInfo.setOperType(operType);
+        logInfo.setOperKey(mediaMappingInfo.getId());
+        logInfo.setOperRecord(mediaMappingInfo.toString());
+        return logInfo;
     }
 
 }

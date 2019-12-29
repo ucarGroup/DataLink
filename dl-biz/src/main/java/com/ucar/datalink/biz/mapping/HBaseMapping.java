@@ -8,11 +8,17 @@ import com.ucar.datalink.domain.meta.ColumnMeta;
 public class HBaseMapping extends AbstractMapping {
 
     public ColumnMeta toRDBMS(ColumnMeta meta) {
-        throw new UnsupportedOperationException();
+        check(meta);
+        ColumnMeta target = cloneColumnMeta(meta);
+        target.setType("string");
+        return target;
     }
 
     public ColumnMeta toES(ColumnMeta meta) {
-        throw new UnsupportedOperationException();
+        check(meta);
+        ColumnMeta target = cloneColumnMeta(meta);
+        target.setType("string");
+        return target;
     }
 
     public ColumnMeta toHBase(ColumnMeta meta) {

@@ -1,9 +1,9 @@
 package com.ucar.datalink.biz.service.impl;
 
+import com.ucar.datalink.biz.dal.GroupDAO;
 import com.ucar.datalink.biz.dal.TaskDAO;
 import com.ucar.datalink.biz.dal.WorkerDAO;
 import com.ucar.datalink.biz.service.GroupService;
-import com.ucar.datalink.biz.dal.GroupDAO;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.domain.group.GroupInfo;
 import com.ucar.datalink.domain.statis.StatisDetail;
@@ -90,5 +90,10 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public List<StatisDetail> getCountByName() {
         return groupDAO.getCountByName();
+    }
+
+    @Override
+    public GroupInfo getByName(String groupName) {
+        return groupDAO.getByName(groupName);
     }
 }

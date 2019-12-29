@@ -18,7 +18,13 @@ import java.util.List;
 public class DdlSqlUtils {
 
     public static List<SQLStatementHolder> buildSQLStatement(MediaSourceType mediaSourceType, String sqls) {
-        sqls = preHandleBeforeCheck(sqls);
+        return buildSQLStatement(mediaSourceType,sqls,true);
+    }
+
+    public static List<SQLStatementHolder> buildSQLStatement(MediaSourceType mediaSourceType, String sqls,boolean isPreHandle) {
+        if(isPreHandle){
+            sqls = preHandleBeforeCheck(sqls);
+        }
 
         List<SQLStatement> list = null;
         if (MediaSourceType.MYSQL.equals(mediaSourceType) || MediaSourceType.SDDL.equals(mediaSourceType)) {

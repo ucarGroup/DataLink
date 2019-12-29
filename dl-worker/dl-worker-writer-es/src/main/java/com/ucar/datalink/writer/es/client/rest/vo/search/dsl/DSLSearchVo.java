@@ -1,5 +1,6 @@
 package com.ucar.datalink.writer.es.client.rest.vo.search.dsl;
 
+import com.ucar.datalink.writer.es.client.rest.constant.CharacterConstant;
 import com.ucar.datalink.writer.es.client.rest.exception.ElasticSearchException;
 import com.ucar.datalink.writer.es.client.rest.vo.VoItf;
 import org.apache.commons.lang.StringUtils;
@@ -26,6 +27,11 @@ public class DSLSearchVo extends VoItf{
 	private SearchContext searchContext;
 
 	private String templateName;
+
+	/**
+	 * routing值
+	 */
+	private String routingValue;
 
 	public DSLSearchVo() {}
 
@@ -78,6 +84,14 @@ public class DSLSearchVo extends VoItf{
 		this.templateName = templateName;
 	}
 
+	public String getRoutingValue() {
+		return routingValue;
+	}
+
+	public void setRoutingValue(String routingValue) {
+		this.routingValue = routingValue;
+	}
+
 	@Override
 	public String getUrl() {
 		StringBuffer lastUrl =  new StringBuffer("http://" + host);
@@ -94,6 +108,17 @@ public class DSLSearchVo extends VoItf{
 		}
 
 		lastUrl.append("/").append(metaType);
+
+		if (lastUrl.indexOf(CharacterConstant.QUEST) < 0) {
+			// 不包含？时，
+			lastUrl.append(CharacterConstant.QUEST);
+		} else {
+			lastUrl.append(CharacterConstant.AND);
+		}
+
+		if (!StringUtils.isBlank(routingValue)) {
+			lastUrl.append("routing="+routingValue);
+		}
 
 		return lastUrl.toString();
 	}

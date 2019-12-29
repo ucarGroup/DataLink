@@ -1,5 +1,6 @@
 package com.ucar.datalink.biz.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -7,12 +8,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.ucar.datalink.biz.dal.MediaDAO;
 import com.ucar.datalink.biz.dal.MediaSourceDAO;
+import com.ucar.datalink.biz.dal.SysPropertiesDAO;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.biz.service.SyncRelationService;
 import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.biz.utils.DataSourceFactory;
-import com.ucar.datalink.biz.utils.ddl.DdlUtils;
 import com.ucar.datalink.biz.utils.ddl.DdlSqlUtils;
+import com.ucar.datalink.biz.utils.ddl.DdlUtils;
 import com.ucar.datalink.biz.utils.ddl.SQLStatementHolder;
 import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.domain.media.*;
@@ -20,9 +22,12 @@ import com.ucar.datalink.domain.media.parameter.MediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.rdb.RdbMediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
 import com.ucar.datalink.domain.relationship.*;
+import com.ucar.datalink.domain.sysProperties.SysPropertiesInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ddlutils.model.Table;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -36,8 +41,14 @@ import java.util.stream.Collectors;
  */
 @Service
 public class SyncRelationServiceImpl implements SyncRelationService {
+    private static final Logger logger = LoggerFactory.getLogger(SyncRelationServiceImpl.class);
 
     private static final String ALL_MAPPING = "ALL_MAPPING";
+
+    private static final String columnRenameOrDrop = "columnRenameOrDrop";
+
+    @Autowired
+    SysPropertiesDAO sysPropertiesDAO;
 
     private LoadingCache<String, List<MediaMappingInfo>> mediaMappingCache = CacheBuilder.newBuilder().build(
             new CacheLoader<String, List<MediaMappingInfo>>() {
@@ -122,6 +133,17 @@ public class SyncRelationServiceImpl implements SyncRelationService {
 
         holder.check();
 
+        //是否允许Column-Rename、Column-Drop，测试环境支持，其他环境不支持
+        SysPropertiesInfo propertiesInfo = sysPropertiesDAO.getSysPropertiesByKey(columnRenameOrDrop);
+        boolean ifColumnRenameOrDropTemp = false;
+        if (propertiesInfo != null) {
+            String value = propertiesInfo.getPropertiesValue();
+            if (StringUtils.equals(value, "true")) {
+                ifColumnRenameOrDropTemp = true;
+            }
+        }
+        final boolean ifColumnRenameOrDrop = ifColumnRenameOrDropTemp;
+
         if (holder.getSqlType().equals(SqlType.CreateTable)) {
             holder.getSqlCheckItems().forEach(i -> {
                         List<SqlCheckTree> trees = buildSqlCheckTrees(i, mediaSourceInfo);
@@ -167,17 +189,21 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                                 }
 
                                 if (i.isContainsColumnRename()) {
-                                    t.getSqlCheckNotes().add(new SqlCheckNote(
-                                            "参与数据同步的表，不支持[Column-Rename]操作",
-                                            SqlCheckNote.RoleType.ALL,
-                                            SqlCheckNote.NoteLevel.ERROR));
+                                    if (!ifColumnRenameOrDrop) {
+                                        t.getSqlCheckNotes().add(new SqlCheckNote(
+                                                "参与数据同步的表，不支持[Column-Rename]操作",
+                                                SqlCheckNote.RoleType.ALL,
+                                                SqlCheckNote.NoteLevel.ERROR));
+                                    }
                                 }
 
                                 if (i.isContainsColumnDrop()) {
-                                    t.getSqlCheckNotes().add(new SqlCheckNote(
-                                            "参与数据同步的表，不支持[Column-Drop]操作.",
-                                            SqlCheckNote.RoleType.ALL,
-                                            SqlCheckNote.NoteLevel.ERROR));
+                                    if (!ifColumnRenameOrDrop) {
+                                        t.getSqlCheckNotes().add(new SqlCheckNote(
+                                                "参与数据同步的表，不支持[Column-Drop]操作.",
+                                                SqlCheckNote.RoleType.ALL,
+                                                SqlCheckNote.NoteLevel.ERROR));
+                                    }
                                 }
 
                                 if (i.isContainsColumnAddAfter()) {
@@ -260,7 +286,7 @@ public class SyncRelationServiceImpl implements SyncRelationService {
         return sqlCheckResult.getSqlCheckTrees().isEmpty() ? null : sqlCheckResult;
     }
 
-    private Long isSDDLSubDB(Long mediaSourceId) {
+    public Long isSDDLSubDB(Long mediaSourceId) {
         Long sddlMediaSourceId = null;
 
         //必须先判断sddl，因为有些库是分布式数据库的子库
@@ -325,6 +351,7 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                     if (!sqlCheckItem.isContainsColumnModify() &&
                             (mediaSourceType == MediaSourceType.HBASE ||
                                     mediaSourceType == MediaSourceType.HDFS ||
+                                    mediaSourceType == MediaSourceType.KUDU ||
                                     mediaSourceType == MediaSourceType.ELASTICSEARCH)
                             ) {
                         return null;//对于非关系型数据库，如果配置了白名单，并且不包含【列修改操作】，则直接忽略
@@ -380,6 +407,7 @@ public class SyncRelationServiceImpl implements SyncRelationService {
     private Set<SqlCheckNote> buildSqlCheckNotes(MediaSourceInfo mediaSourceForCheck, SqlCheckItem sqlCheckItem, SyncNode syncNode, boolean isRootNode) {
         Set<SqlCheckNote> result = new HashSet<>();
 
+        boolean isCreateOrAlter = false;
         if (sqlCheckItem.getSqlType().equals(SqlType.CreateTable)) {
             MediaSourceInfo mediaSourceInfo = syncNode.getMediaSource();
             if (mediaSourceInfo.getType().equals(MediaSourceType.SDDL) && !((SddlMediaSrcParameter) mediaSourceInfo.getParameterObj()).getSecondaryDbsId().isEmpty()) {
@@ -388,6 +416,7 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                         SqlCheckNote.RoleType.DLA,
                         SqlCheckNote.NoteLevel.WARN));
             }
+            isCreateOrAlter = true;
         } else if (sqlCheckItem.getSqlType().equals(SqlType.AlterTable)) {
             if (!isRootNode && syncNode.getMappingInfo().getColumnMappingMode().equals(ColumnMappingMode.INCLUDE)) {
                 result.add(new SqlCheckNote(
@@ -408,14 +437,29 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                         SqlCheckNote.NoteLevel.WARN
                 ));
             }
+
+            if (sqlCheckItem.isContainsColumnRename() || sqlCheckItem.isContainsColumnDrop() || sqlCheckItem.isContainsColumnAdd() || sqlCheckItem.isContainsColumnModify()) {
+                isCreateOrAlter = true;
+            }
         }
 
-        if (isRootNode && !mediaSourceForCheck.equals(syncNode.getMediaSource())) {
-            result.add(new SqlCheckNote(
-                    String.format("数据源[%s]在同步关系中并不是根节点，请确认都需要在哪些库执行脚本.", mediaSourceForCheck.getName()),
-                    SqlCheckNote.RoleType.DBA,
-                    SqlCheckNote.NoteLevel.WARN
-            ));
+        //根节点才能执行表创建、列增加、列修改、列删除、列重命名
+        if (isCreateOrAlter) {
+            if (isRootNode && !mediaSourceForCheck.equals(syncNode.getMediaSource())) {
+                result.add(new SqlCheckNote(
+                        String.format("数据源[%s]在同步关系中不是根节点，不能执行脚本.", mediaSourceForCheck.getName()),
+                        SqlCheckNote.RoleType.DBA,
+                        SqlCheckNote.NoteLevel.ERROR
+                ));
+            }
+        } else {
+            if (isRootNode && !mediaSourceForCheck.equals(syncNode.getMediaSource())) {
+                result.add(new SqlCheckNote(
+                        String.format("数据源[%s]在同步关系中并不是根节点，请确认都需要在哪些库执行脚本.", mediaSourceForCheck.getName()),
+                        SqlCheckNote.RoleType.DBA,
+                        SqlCheckNote.NoteLevel.WARN
+                ));
+            }
         }
         if (!isRootNode && syncNode.getMappingInfo().getTargetMediaSource().getType().equals(MediaSourceType.ELASTICSEARCH)) {
             result.add(new SqlCheckNote(
@@ -499,10 +543,10 @@ public class SyncRelationServiceImpl implements SyncRelationService {
         }
 
         if (isRootNode) {
-            if (rootNode.getMediaSource().getId().equals(mediaSourceId) && (rootNode.getMappingInfo().getSourceMedia().getName().equalsIgnoreCase(mediaName) || rootNode.getMappingInfo().getSourceMedia().getName().equals("(.*)"))) {
+            if (rootNode.getMediaSource().getId().equals(mediaSourceId) && (rootNode.getMappingInfo().getSourceMedia().getName().equalsIgnoreCase(mediaName) || "(.*)".equals(rootNode.getMappingInfo().getSourceMedia().getName()) || rootNode.getMappingInfo().getSourceMedia().getNameMode().isAbsoluteContain(mediaName))) {
                 return true;
             }
-        } else if (rootNode.getMediaSource().getId().equals(mediaSourceId) && rootNode.getMappingInfo().getTargetMediaName().equalsIgnoreCase(mediaName)) {
+        } else if (rootNode.getMediaSource().getId().equals(mediaSourceId) && (rootNode.getMappingInfo().getTargetMediaName().equalsIgnoreCase(mediaName) || "(.*)".equals(rootNode.getMappingInfo().getSourceMedia().getName()) || rootNode.getMappingInfo().getSourceMedia().getNameMode().isAbsoluteContain(mediaName))) {
             return true;
         }
 
@@ -570,13 +614,65 @@ public class SyncRelationServiceImpl implements SyncRelationService {
             }
         }
 
+        logger.info("缓存中的同步关系树是：{}", JSON.toJSONString(rootNodeList));
+
+        //针对一对多情况，对构建的树手动增加节点
+        ListIterator<SyncNode> iterator = rootNodeList.listIterator();
+        while (iterator.hasNext()) {
+            SyncNode rootNode = iterator.next();
+            autoAddChildNode(rootNode, mediaName);
+        }
+
         return rootNodeList;
+    }
+
+    /**
+     * 针对一对多情况，对构建的树手动增加节点
+     */
+    public void autoAddChildNode(SyncNode rootNode, String mediaName) {
+
+        if (CollectionUtils.isNotEmpty(rootNode.getChildren())) {
+            List<SyncNode> childNodeList = rootNode.getChildren();
+            ListIterator<SyncNode> childIterator = childNodeList.listIterator();
+            while (childIterator.hasNext()) {
+                SyncNode childNode = childIterator.next();
+                String childNodeTableName = StringUtils.isNotBlank(childNode.getTableNameAlias()) ? childNode.getTableNameAlias() : mediaName;
+                MediaMappingInfo mappingInfo = new MediaMappingInfo();
+                MediaInfo sourceMedia = new MediaInfo();
+                sourceMedia.setMediaSourceId(rootNode.getMediaSource().getId());
+                sourceMedia.setName(mediaName);
+                mappingInfo.setSourceMedia(sourceMedia);
+                mappingInfo.setTargetMediaSourceId(childNode.getMediaSource().getId());
+                List<MediaMappingInfo> tempList = mediaDAO.findMappingListByCondition(mappingInfo);
+                if (CollectionUtils.isNotEmpty(tempList) && tempList.size() > 1) {
+                    tempList = tempList.stream().filter(item -> !StringUtils.equals(item.getTargetMediaName(), childNodeTableName)).collect(Collectors.toList());
+                    for (MediaMappingInfo tempMapping : tempList) {
+                        SyncNode tempNode = new SyncNode(childNode.getMediaSource(), tempMapping);
+                        childIterator.add(tempNode);
+                    }
+                }
+
+                if (CollectionUtils.isNotEmpty(childNode.getChildren())) {
+                    autoAddChildNode(childNode, childNodeTableName);
+                }
+            }
+        }
     }
 
     private boolean isMatch(String mediaName, MediaMappingInfo mappingInfo) {
         MediaInfo mediaInfo = mappingInfo.getSourceMedia();
         if (mediaInfo.getNameMode().getMode().isSingle()) {
-            return mediaInfo.getName().equalsIgnoreCase(mediaName);
+            //解决如下场景，前面同步有表别名，前面又往外同步
+            //A t1 -> B t2
+            //B t2 -> C t2
+            boolean result = mediaInfo.getName().equalsIgnoreCase(mediaName);
+            if (!result) {
+                MediaMappingInfo info = mediaDAO.getMediaMappingOfSpecial(mediaName, mediaInfo.getMediaSourceId());
+                if (info != null) {
+                    result = info.getTargetMediaName().equalsIgnoreCase(mediaInfo.getName());
+                }
+            }
+            return result;
         } else if (mediaInfo.getNameMode().getMode().isMulti()) {
             return (ModeUtils.indexIgnoreCase(mediaInfo.getNameMode().getMultiValue(), mediaName) != -1)
                     && !existOverride(mediaName, mappingInfo);

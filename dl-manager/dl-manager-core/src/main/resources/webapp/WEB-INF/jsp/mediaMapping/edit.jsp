@@ -81,6 +81,10 @@
                                    value="${mediaMappingInfo.valid}">
                             <input type="hidden" name="esUsePrefixHidden" id="esUsePrefixHidden"
                                    value="${mediaMappingInfo.esUsePrefix}">
+                            <input type="hidden" name="esRoutingHidden" id="esRoutingHidden"
+                                   value="${mediaMappingInfo.esRouting}">
+                            <input type="hidden" name="esRoutingIgnoreHidden" id="esRoutingIgnoreHidden"
+                                   value="${mediaMappingInfo.esRoutingIgnore}">
                             <input type="hidden" name="geoPositionConfHidden" id="geoPositionConfHidden"
                                    value='${mediaMappingInfo.geoPositionConf}'>
                             <input type="hidden" name="skipIdsHidden" id="skipIdsHidden"
@@ -215,6 +219,34 @@
                                                         </select>
                                                     </div>
                                                 </div>
+
+                                                <div class="col-sm-12">
+                                                    <div class="col-sm-6 form-group">
+                                                        <label class="col-sm-4 control-label no-padding-right"
+                                                               for="form-add-esRouting">esRouting</label>
+
+                                                        <div class="col-sm-8">
+                                                            <input type="text" name="esRouting" id="form-add-esRouting"
+                                                                   value=""
+                                                                   style="width:100%;" readonly="false">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 form-group">
+                                                        <label class="col-sm-4 control-label no-padding-right"
+                                                               for="form-add-esRoutingIgnore">esRouting<br>是否忽略</label>
+
+                                                        <div class="col-sm-8">
+                                                            <select name="esRoutingIgnore" class="col-sm-12"
+                                                                    id="form-add-esRoutingIgnore"
+                                                                    style="width:100%;" disabled="false">
+                                                                <option value="">请选择</option>
+                                                                <option value="true">是</option>
+                                                                <option value="false">否</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                             </div>
                                         </div>
                                         <div class="form-group" id="duallistbox_demo1" style="display: none;">
@@ -355,6 +387,10 @@
         infoTextFiltered: '<span class="label label-purple label-lg">Filtered</span>',
         infoText: false
     });
+
+    //映射模式设置值
+    $("#form-add-columnMappingMode").val('${mediaMappingInfo.columnMappingMode}');
+
     var container = dualList.bootstrapDualListbox('getContainer');
 
     $('#dualList').on('change', function () {
@@ -433,6 +469,16 @@
         var esUsePrefix = $('#esUsePrefixHidden').val();
         if (esUsePrefix != null && esUsePrefix != '') {
             $('#form-add-esUsePrefix').val(esUsePrefix);
+        }
+
+        var esRouting = $('#esRoutingHidden').val();
+        if (esRouting != null && esRouting != '') {
+            $('#form-add-esRouting').val(esRouting);
+        }
+
+        var esRoutingIgnore = $('#esRoutingIgnoreHidden').val();
+        if (esRoutingIgnore != null && esRoutingIgnore != '') {
+            $('#form-add-esRoutingIgnore').val(esRoutingIgnore);
         }
 
         var geoPositionConf = $('#geoPositionConfHidden').val();
@@ -593,7 +639,7 @@
     function back2Main() {
         $("#edit").hide();
         $("#mainContentInner").show();
-        msgAlarmListMyTable.ajax.reload();
+        msgAlarmListMyTable.draw(false);
     }
 
     function checkForSave() {

@@ -56,4 +56,16 @@ public class RoleInfo implements Serializable, Storable {
     public void setModifyTime(Date modifyTime) {
         this.modifyTime = modifyTime;
     }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("RoleInfo{");
+        sb.append("id=").append(id);
+        sb.append(", code='").append(code).append('\'');
+        sb.append(", name='").append(name).append('\'');
+        sb.append(", createTime=").append(createTime);
+        sb.append(", modifyTime=").append(modifyTime);
+        sb.append('}');
+        return sb.toString();
+    }
 }

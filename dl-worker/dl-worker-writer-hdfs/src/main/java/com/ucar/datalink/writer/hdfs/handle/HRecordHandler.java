@@ -12,6 +12,7 @@ import com.ucar.datalink.writer.hdfs.HdfsTaskWriter;
 import com.ucar.datalink.writer.hdfs.handle.config.HdfsConfig;
 import com.ucar.datalink.writer.hdfs.handle.config.HdfsConfigManager;
 import com.ucar.datalink.writer.hdfs.handle.util.Dict;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -37,8 +38,11 @@ public class HRecordHandler extends BaseRecordHandler<HRecord> {
         List<String> values = records.stream().map(r -> {
             Map<String, String> map = Maps.newHashMap();
             map.put("rowkey", HUtil.toString(r.getRowKey()));
+            map.put("binlog_eventtime", String.valueOf(getMaxTimestamp(r)));
             r.getColumns().stream().forEach(c -> {
-                String columnName = HUtil.toString(c.getFamily()) + "_" + HUtil.toString(c.getQualifier());
+                String hName = HUtil.toString(c.getQualifier());
+                String hFamily = HUtil.toString(c.getFamily());
+                String columnName = (StringUtils.isEmpty(hFamily) ? "" : hFamily.replaceAll("\\.", "_")) + "_" + (StringUtils.isEmpty(hName) ? "" : hName.replaceAll("\\.", "_"));
                 String columnValue = HUtil.toString(c.getValue());
                 map.put(columnName, columnValue);
             });
@@ -48,5 +52,9 @@ public class HRecordHandler extends BaseRecordHandler<HRecord> {
         Map<String, List<String>> result = Maps.newHashMap();
         result.put(hdfsFilePath, values);
         return result;
+    }
+
+    private static long getMaxTimestamp(HRecord record) {
+        return record.getColumns().stream().mapToLong(c -> c.getTimestamp()).max().getAsLong();
     }
 }

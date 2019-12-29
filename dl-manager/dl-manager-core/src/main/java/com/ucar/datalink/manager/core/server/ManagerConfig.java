@@ -1,7 +1,6 @@
 package com.ucar.datalink.manager.core.server;
 
 import com.ucar.datalink.common.errors.DatalinkException;
-import com.ucar.datalink.common.utils.DbConfigEncryption;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 
@@ -12,8 +11,6 @@ import java.util.Properties;
  */
 public class ManagerConfig extends AbstractConfig {
     private static final ConfigDef configDef;
-    private static ManagerConfig instance;
-
     //---------host config------------
     private static final String HostNameProp = "host.name";
     private static final String PortProp = "port";
@@ -28,8 +25,15 @@ public class ManagerConfig extends AbstractConfig {
     private static final String GroupMaxSessionTimeoutMsProp = "group.max.session.timeout.ms";
     //---------other configs-------------
     private static final String CurrentEnv = "currentEnv";
-
-
+    /**
+     * 检测频率
+     */
+    private static final String monitorCheckIntervalTime = "monitor.check.intervalTime";
+    /**
+     * 是否开启读端数据多路复用
+     */
+    private static final String multiplexingRead = "multiplexingRead";
+    private static ManagerConfig instance;
 
     static {
         configDef = new ConfigDef()
@@ -42,7 +46,9 @@ public class ManagerConfig extends AbstractConfig {
                 .define(ZkConnectionTimeoutMsProp, ConfigDef.Type.INT, Defaults.ZkConnectionTimeout, ConfigDef.Importance.HIGH, "")
                 .define(GroupMinSessionTimeoutMsProp, ConfigDef.Type.INT, Defaults.GroupMinSessionTimeoutMs, ConfigDef.Importance.MEDIUM, "")
                 .define(GroupMaxSessionTimeoutMsProp, ConfigDef.Type.INT, Defaults.GroupMaxSessionTimeoutMs, ConfigDef.Importance.MEDIUM, "")
-                .define(CurrentEnv, ConfigDef.Type.STRING, null, ConfigDef.Importance.HIGH, "");
+                .define(CurrentEnv, ConfigDef.Type.STRING, null, ConfigDef.Importance.HIGH, "")
+                .define(monitorCheckIntervalTime, ConfigDef.Type.INT, Defaults.monitorCheckIntervalTime, ConfigDef.Importance.HIGH, "")
+                .define(multiplexingRead, ConfigDef.Type.BOOLEAN, Defaults.multiplexingRead, ConfigDef.Importance.HIGH, "");
     }
 
     private ManagerConfig(Properties props, boolean doLog) {
@@ -103,6 +109,13 @@ public class ManagerConfig extends AbstractConfig {
         return getString(CurrentEnv);
     }
 
+    public int getMonitorCheckIntervalTime() {
+        return getInt(monitorCheckIntervalTime);
+    }
+
+    public boolean getMultiplexingRead() {
+        return getBoolean(multiplexingRead);
+    }
 
     static class Defaults {
         public static final String HostName = "";
@@ -114,6 +127,7 @@ public class ManagerConfig extends AbstractConfig {
         public static final int ZkConnectionTimeout = 10000;
         public static final int GroupMinSessionTimeoutMs = 6000;
         public static final int GroupMaxSessionTimeoutMs = 300000;
-
+        public static final int monitorCheckIntervalTime = 30;
+        public static final boolean multiplexingRead = false;
     }
 }

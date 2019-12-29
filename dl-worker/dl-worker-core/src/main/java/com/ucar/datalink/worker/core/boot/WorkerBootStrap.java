@@ -82,6 +82,7 @@ public class WorkerBootStrap {
                     time,
                     config,
                     new TaskPositionManager(buildTaskPositionService(bootMode), config),
+                    new TaskSyncStatusManager(DataLinkFactory.getObject(TaskSyncStatusService.class), config),
                     ProbeManager.getInstance()
             );
 

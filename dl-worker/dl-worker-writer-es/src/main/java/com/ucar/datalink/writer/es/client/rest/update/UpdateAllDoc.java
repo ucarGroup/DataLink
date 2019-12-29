@@ -4,6 +4,7 @@
 package com.ucar.datalink.writer.es.client.rest.update;
 
 import com.ucar.datalink.writer.es.client.rest.AbstractRequestEs;
+import com.ucar.datalink.writer.es.client.rest.constant.CharacterConstant;
 import com.ucar.datalink.writer.es.client.rest.vo.SimpleDocVo;
 import com.ucar.datalink.writer.es.client.rest.constant.ESEnum.ParseEnum;
 import com.ucar.datalink.writer.es.client.rest.result.ProcessResult;
@@ -41,7 +42,11 @@ public class UpdateAllDoc extends AbstractRequestEs {
 		if (vo instanceof SimpleDocVo) {
 			SimpleDocVo simpleDocVo = (SimpleDocVo)vo;
 			if (simpleDocVo.getVersion() != null && !simpleDocVo.getVersion().isEmpty()) {
-				url += "?version_type=external&version="+simpleDocVo.getVersion();
+				if (url.indexOf(CharacterConstant.QUEST) < 0) {
+					url += "?version_type=external&version="+simpleDocVo.getVersion();
+				} else {
+					url += CharacterConstant.AND + "version_type=external&version="+simpleDocVo.getVersion();
+				}
 			}
 		}
 

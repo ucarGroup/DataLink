@@ -11,8 +11,27 @@
     <div class="page-content">
         <div class="row">
             <div class="col-xs-12">
-                <div class="col-xs-12" id="OperPanel">
+                <div class="row">
+                    <form class="form-horizontal">
+               
+                        <div class="form-group col-xs-3">
+                            <label class="col-sm-4 control-label">角色</label>
 
+                            <div class="col-sm-8">
+                                <select class="taskId width-100 chosen-select" id="roleId"
+                                        style="width:100%">
+                                    <option value="" selected=selected>全部</option>
+                                    <c:forEach items="${roleList}" var="role">
+                                        <option value="${role.id}">${role.name}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-xs-2">
+                            <button type="button" id="search" class="btn btn-sm btn-purple">查询</button>
+                        </div>
+                    </form>
                 </div>
 
                 <div class="row">
@@ -20,8 +39,8 @@
                            style="text-align: left;width:100%">
                         <thead>
                         <tr>
-                            <td>用户名称</td>
-                            <td>集团邮箱</td>
+                            <td>用户名</td>
+                            <td>邮箱</td>
                             <td>手机号</td>
                             <td>角色</td>
                             <td>是否接收报警</td>
@@ -51,9 +70,14 @@
 
     msgAlarmListMyTable = $('#userTable').DataTable({
         "bAutoWidth": true,
+        serverSide: true,//开启服务器模式:启用服务器分页
+        paging: true,//是否分页
         "ajax": {
             "url": "${basePath}/user/initUser",
-            "data": {}
+            "data": function (d) {},
+            "dataType": 'json',
+            "contentType": 'application/json',
+            "type": 'POST'
         },
         "columns": [
 
@@ -131,6 +155,10 @@
                 }
             }
         ]
+    });
+
+    $("#search").click(function () {
+        msgAlarmListMyTable.ajax.reload();
     });
 
     function toAdd() {

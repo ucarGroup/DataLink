@@ -60,4 +60,10 @@
         FROM t_dl_group
         GROUP BY group_name
     </select>
+
+    <select id="getByName" parameterType="String" resultMap="groupResult">
+        select <include refid="allGroupColumns"/>
+        from t_dl_group
+        where group_name = #{groupName}
+    </select>
 </mapper>

@@ -1,15 +1,21 @@
 package com.ucar.datalink.manager.core.web.controller.role;
 
 import com.alibaba.fastjson.JSONArray;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ucar.datalink.biz.service.AuthorityService;
 import com.ucar.datalink.biz.service.MenuService;
 import com.ucar.datalink.biz.service.RoleService;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
+import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.authority.RoleAuthorityInfo;
 import com.ucar.datalink.domain.menu.MenuInfo;
 import com.ucar.datalink.domain.user.RoleInfo;
 import com.ucar.datalink.manager.core.web.dto.login.RoleView;
 import com.ucar.datalink.manager.core.web.dto.menu.MenuView;
 import com.ucar.datalink.manager.core.web.util.Page;
+import com.ucar.datalink.manager.core.web.util.UserUtil;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +59,10 @@ public class RoleController {
 
     @RequestMapping(value = "/initRole")
     @ResponseBody
-    public Page<RoleView> initRole() {
+    public Page<RoleView> initRole(@RequestBody Map<String, String> map) {
+        Page<RoleView> page = new Page<>(map);
+        PageHelper.startPage(page.getPageNum(), page.getLength());
+
         List<RoleInfo> roleInfos = roleService.getList();
         List<RoleView> roleViews = roleInfos.stream().map(i -> {
             RoleView roleView = new RoleView();
@@ -62,7 +71,13 @@ public class RoleController {
             roleView.setName(i.getName());
             return roleView;
         }).collect(Collectors.toList());
-        return new Page<RoleView>(roleViews);
+
+        PageInfo<RoleInfo> pageInfo = new PageInfo<RoleInfo>(roleInfos);
+        page.setDraw(page.getDraw());
+        page.setAaData(roleViews);
+        page.setRecordsTotal((int) pageInfo.getTotal());
+        page.setRecordsFiltered(page.getRecordsTotal());
+        return page;
     }
 
     @RequestMapping(value = "/toAdd")
@@ -76,6 +91,7 @@ public class RoleController {
         try {
             Boolean isSuccess = roleService.insert(roleInfo);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(getAuditLogInfo(roleInfo, "007003003", AuditLogOperType.insert.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -83,7 +99,16 @@ public class RoleController {
         }
         return "fail";
     }
-
+    private static AuditLogInfo getAuditLogInfo(RoleInfo info, String menuCode, String operType){
+        AuditLogInfo logInfo=new AuditLogInfo();
+        logInfo.setUserId(UserUtil.getUserIdFromRequest());
+        logInfo.setMenuCode(menuCode);
+        logInfo.setOperName(info.getName());
+        logInfo.setOperType(operType);
+        logInfo.setOperKey(info.getId());
+        logInfo.setOperRecord(info.toString());
+        return logInfo;
+    }
     @RequestMapping(value = "/toEdit")
     public ModelAndView toEdit(HttpServletRequest request) {
         String id = request.getParameter("id");
@@ -106,6 +131,7 @@ public class RoleController {
             }
             Boolean isSuccess = roleService.update(roleInfo);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(getAuditLogInfo(roleInfo, "007003005", AuditLogOperType.update.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -169,8 +195,11 @@ public class RoleController {
             if (StringUtils.isBlank(id)) {
                 return "fail";
             }
-            Boolean isSuccess = roleService.delete(Long.valueOf(id));
+            Long idLong = Long.valueOf(id);
+            RoleInfo info = roleService.getById(idLong);
+            Boolean isSuccess = roleService.delete(idLong);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(getAuditLogInfo(info, "007003006", AuditLogOperType.delete.getValue()));
                 return "success";
             }
         } catch (Exception e) {

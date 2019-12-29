@@ -62,4 +62,8 @@ public class OracleDialect extends AbstractDbDialect {
                                                     String.class);
     }
 
+    @Override
+    public boolean hasAutoIncrementNotKeyColumns(String schemaName, String tableName) {
+        return false;
+    }
 }

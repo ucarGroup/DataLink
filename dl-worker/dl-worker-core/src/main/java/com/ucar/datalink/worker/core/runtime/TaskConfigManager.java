@@ -1,8 +1,9 @@
 package com.ucar.datalink.worker.core.runtime;
 
-import com.ucar.datalink.domain.ClusterConfigState;
-import com.ucar.datalink.domain.task.TaskInfo;
 import com.ucar.datalink.biz.service.TaskConfigService;
+import com.ucar.datalink.domain.ClusterConfigState;
+import com.ucar.datalink.domain.task.ActiveTasks;
+import com.ucar.datalink.domain.task.TaskInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Task配置信息管理器，负责发现Task配置变更并进行事件通知.
  * 以组为单位进行监控管理，不属于本组的变更不予关注.
- *
+ * <p>
  * Created by lubiao on 2016/12/20.
  */
 public class TaskConfigManager {
@@ -68,10 +69,16 @@ public class TaskConfigManager {
      * if config has changed return true,else return false.
      */
     public synchronized boolean tryRefresh() {
-        Long version = taskConfigService.getTaskConfigVersion();
-        if (version > this.version) {
-            ClusterConfigState oldConfigState = snapshot();
-            refresh();
+        Long currentVersion;
+        try {
+            currentVersion = taskConfigService.getTaskConfigVersion();
+        } catch (Throwable t) {
+            currentVersion = -1L;
+            logger.error("get version failed.", t);
+        }
+
+        ClusterConfigState oldConfigState = snapshot();
+        if (currentVersion > this.version && refresh()) {
             List<TaskInfo> addAndUpdateTasks = taskInfoList.stream().filter(t -> t.getModifyTimeMillSeconds() > oldConfigState.version()).collect(Collectors.toList());
 
             for (TaskInfo newConfig : addAndUpdateTasks) {
@@ -103,9 +110,16 @@ public class TaskConfigManager {
     }
 
     //初始化了taskConfigList和version
-    private synchronized void refresh() {
-        taskInfoList = taskConfigService.getActiveTaskConfigsByGroup(Long.valueOf(groupId));
-        version = taskInfoList.isEmpty() ? 0 : taskInfoList.get(0).getVersion();
+    private synchronized boolean refresh() {
+        try {
+            ActiveTasks activeTasks = taskConfigService.getActiveTaskConfigsByGroup(Long.valueOf(groupId));
+            taskInfoList = activeTasks.getTasks();
+            version = activeTasks.getVersion();
+            return true;
+        } catch (Throwable t) {
+            logger.error("refresh failed.", t);
+            return false;
+        }
     }
 
     private boolean isRestartableUpdate(TaskInfo newConfig, TaskInfo oldConfig) {

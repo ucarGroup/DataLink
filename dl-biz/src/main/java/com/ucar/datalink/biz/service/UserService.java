@@ -13,6 +13,8 @@ public interface UserService {
 
     List<UserInfo> getList();
 
+    List<UserInfo> getListByUserInfo(UserInfo userInfo);
+
     Boolean insert(UserInfo userInfo);
 
     Boolean update(UserInfo userInfo);
@@ -26,16 +28,14 @@ public interface UserService {
     Map<Long, UserInfo> getUserWidthLocalCache();
 
     void clearUserLocalCache();
-
+    
     List<UserInfo> getUserInfoByRoleType(RoleType roleType);
 
     List<UserInfo> getUserInfoByRoleTypeAndIsAlarm(RoleType roleType);
 
     /**
-     * //是否超级管理员
-     *
-     * @return
+     * 是否超级管理员
      */
-    public Boolean isSuper(UserInfo user);
+    Boolean isSuper(UserInfo user);
 
 }

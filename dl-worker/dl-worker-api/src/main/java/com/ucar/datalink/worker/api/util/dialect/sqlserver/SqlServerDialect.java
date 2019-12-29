@@ -1,6 +1,8 @@
 package com.ucar.datalink.worker.api.util.dialect.sqlserver;
 
 import com.ucar.datalink.worker.api.util.dialect.AbstractDbDialect;
+import org.apache.ddlutils.model.Column;
+import org.apache.ddlutils.model.Table;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.lob.LobHandler;
 
@@ -60,4 +62,19 @@ public class SqlServerDialect extends AbstractDbDialect {
         return false;
     }
 
+    @Override
+    public boolean hasAutoIncrementNotKeyColumns(String schemaName, String tableName) {
+        Table table = findTable(schemaName, tableName);
+        Column[] columns = table.getAutoIncrementColumns();
+        boolean flag = false;
+        if (columns != null) {
+            for (Column column : columns) {
+                if (!column.isPrimaryKey()) {
+                    flag = true;
+                    break;
+                }
+            }
+        }
+        return flag;
+    }
 }

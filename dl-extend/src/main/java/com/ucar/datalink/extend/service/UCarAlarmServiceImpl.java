@@ -113,6 +113,16 @@ public class UCarAlarmServiceImpl implements AlarmService {
         }
     }
 
+    @Override
+    public void alarmTaskSyncStatus(MonitorInfo monitorInfo, Long busyTime) {
+        String content = AlarmTemplate.buildTaskSyncStatusEmailContent(String.format("任务%s:ID = %s,同步状态Busy持续时间:%s毫秒", monitorInfo.getResourceName(), monitorInfo.getResourceId(), busyTime), envName);
+        sendEmail(monitorInfo,content,"DataLink任务同步状态为Busy [ "+envName+" ]");
+        if(isSendSms) {
+            String smsContent = AlarmTemplate.buildTaskSyncStatusSmsContent(String.format("任务%s:ID = %s,同步状态Busy持续时间:%s毫秒", monitorInfo.getResourceName(), monitorInfo.getResourceId(), busyTime), envName);
+            sendSMS(monitorInfo,"DataLink任务同步状态为Busy [ " + envName + " ]",smsUrl);
+        }
+    }
+
     public void sendEmail(String content, String subject) {
         try {
             MailInfo mailInfo = buildMailInfo(getMailAddress(), content, subject);
@@ -296,6 +306,14 @@ public class UCarAlarmServiceImpl implements AlarmService {
 
         public static String buildTaskStatusMismatchSmsContent(String msg, String envName) {
             return MessageFormat.format(SMS_TEMPLATE, envName, "TaskStatusMismatchLog", msg);
+        }
+
+        public static String buildTaskSyncStatusEmailContent(String msg, String envName) {
+            return MessageFormat.format(EMAIL_TEMPLATE, envName, "TaskSyncStatus-Busy", msg);
+        }
+
+        public static String buildTaskSyncStatusSmsContent(String msg, String envName) {
+            return MessageFormat.format(SMS_TEMPLATE, envName, "TaskSyncStatus-Busy", msg);
         }
     }
 

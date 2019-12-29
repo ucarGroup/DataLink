@@ -5,6 +5,9 @@ import com.ucar.datalink.contract.log.rdbms.EventType;
 import com.ucar.datalink.contract.log.rdbms.RdbEventRecord;
 import com.ucar.datalink.domain.RecordMeta;
 import com.ucar.datalink.domain.media.MediaMappingInfo;
+import com.ucar.datalink.domain.media.MediaSourceInfo;
+import com.ucar.datalink.domain.plugin.writer.rdbms.RdbmsWriterParameter;
+import com.ucar.datalink.worker.api.task.TaskWriterContext;
 import com.ucar.datalink.worker.api.util.dialect.DbDialect;
 import com.ucar.datalink.worker.api.util.dialect.DbDialectFactory;
 import com.ucar.datalink.worker.api.util.dialect.SqlTemplate;
@@ -14,11 +17,13 @@ import java.util.List;
 
 public class SqlBuilder {
 
-    public static void buildSql(RdbEventRecord record) {
+    public static void buildSql(RdbEventRecord record, TaskWriterContext context) {
         // 初步构建sql
         MediaMappingInfo mappingInfo = RecordMeta.mediaMapping(record);
+        MediaSourceInfo targetMediaSource = mappingInfo.getTargetMediaSource();
 
-        DbDialect dbDialect = DbDialectFactory.getDbDialect(mappingInfo.getTargetMediaSource());
+        DbDialect dbDialect = DbDialectFactory.getDbDialect(targetMediaSource);
+
         SqlTemplate sqlTemplate = dbDialect.getSqlTemplate();
         EventType type = record.getEventType();
         String sql = null;
@@ -26,13 +31,13 @@ public class SqlBuilder {
         String schemaName = dbDialect.isGenerateSqlWithSchema() ? record.getSchemaName() : null;
         // 注意insert/update语句对应的字段数序都是将主键排在后面
         if (type.isInsert()) {
-            if(dbDialect.isSupportMergeSql()){
+            if (dbDialect.isSupportMergeSql()) {
                 sql = sqlTemplate.getMergeSql(schemaName,
                         record.getTableName(),
                         buildColumnNames(record.getKeys()),
                         buildColumnNames(record.getColumns()),
                         new String[]{});
-            }else{
+            } else {
                 sql = sqlTemplate.getInsertSql(schemaName,
                         record.getTableName(),
                         buildColumnNames(record.getKeys()),
@@ -42,17 +47,33 @@ public class SqlBuilder {
             boolean existOldKeys = !CollectionUtils.isEmpty(record.getOldKeys());
             String[] keyColumns;
             String[] otherColumns;
-            if (existOldKeys) {
-                // 需要考虑主键变更的场景
-                // 构造sql如下：update table xxx set pk = newPK where pk = oldPk
-                keyColumns = buildColumnNames(record.getOldKeys());
-                otherColumns = buildColumnNames(record.getUpdatedColumns(), record.getKeys());
-            } else {
+            RdbmsWriterParameter parameter = (RdbmsWriterParameter) context.getWriterParameter();
+            boolean hasAutoIncrementNotKeyColumns = dbDialect.hasAutoIncrementNotKeyColumns(schemaName, record.getTableName());
+            if (!existOldKeys && parameter.isUseUpsert() && dbDialect.isSupportMergeSql() && !hasAutoIncrementNotKeyColumns) {
                 keyColumns = buildColumnNames(record.getKeys());
-                otherColumns = buildColumnNames(record.getUpdatedColumns());
-            }
+                otherColumns = buildColumnNames(record.getColumns());
+                sql = sqlTemplate.getMergeSql(schemaName, record.getTableName(), keyColumns, otherColumns, new String[]{});
+            } else {
+                if (existOldKeys) {
+                    // 需要考虑主键变更的场景
+                    // 构造sql如下：update table xxx set pk = newPK where pk = oldPk
+                    keyColumns = buildColumnNames(record.getOldKeys());
+                    if (hasAutoIncrementNotKeyColumns) {
+                        otherColumns = buildColumnNames(record.getUpdatedColumns(), record.getKeys());
+                    } else {
+                        otherColumns = buildColumnNames(record.getColumns(), record.getKeys());
+                    }
+                } else {
+                    keyColumns = buildColumnNames(record.getKeys());
+                    if (hasAutoIncrementNotKeyColumns) {
+                        otherColumns = buildColumnNames(record.getUpdatedColumns());
+                    } else {
+                        otherColumns = buildColumnNames(record.getColumns());
+                    }
+                }
 
-            sql = sqlTemplate.getUpdateSql(schemaName, record.getTableName(), keyColumns, otherColumns);
+                sql = sqlTemplate.getUpdateSql(schemaName, record.getTableName(), keyColumns, otherColumns);
+            }
 
         } else if (type.isDelete()) {
             sql = sqlTemplate.getDeleteSql(schemaName,

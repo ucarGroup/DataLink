@@ -7,7 +7,7 @@ import com.ucar.datalink.domain.media.MediaSourceInfo;
 /**
  * Created by qianqian.shi on 2018/11/21.
  */
-public class HBaseConfigClearEvent extends CallbackEvent {
+public class HBaseConfigClearEvent extends CallbackEvent{
 
     private MediaSourceInfo mediaSourceInfo;
 

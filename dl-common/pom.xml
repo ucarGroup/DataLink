@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.ucar.datalink</groupId>
         <artifactId>datalink</artifactId>
-        <version>0.0.2</version>
+        <version>1.0.0-beta</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -16,7 +16,7 @@
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-contract</artifactId>
-            <version>0.0.2</version>
+            <version>1.0.0-beta</version>
         </dependency>
         <!-- rdbms -->
         <dependency>
@@ -40,6 +40,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
+            <version>0.10.1.0</version>
         </dependency>
 
         <!--fastjson-->
@@ -60,8 +61,14 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.github.sgroschupf</groupId>
+            <groupId>com.101tec</groupId>
             <artifactId>zkclient</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.zookeeper</groupId>
+                    <artifactId>zookeeper</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!--google guava-->
@@ -91,5 +98,15 @@
             <artifactId>sigar</artifactId>
             <version>1.6.4</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+
     </dependencies>
 </project>

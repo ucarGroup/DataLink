@@ -18,7 +18,7 @@ import java.util.List;
  * Created by lubiao on 2016/12/20.
  */
 @Alias("task")
-public class TaskInfo implements Serializable, Storable {
+public class TaskInfo implements Serializable, Storable,Comparable<TaskInfo>,Cloneable {
 
     //------------------------------------------------------------------------------------------------------------------
     // ----------------------------------------------fields mapping to database-----------------------------------------
@@ -228,5 +228,19 @@ public class TaskInfo implements Serializable, Storable {
             throw new DatalinkException("Task-parameter can not be null.");
         }
         return taskParameterObj;
+    }
+@Override
+    public int compareTo(TaskInfo o) {
+        if(this.getId().longValue() > o.getId().longValue() ){
+            return 1;
+        }else if(this.getId().longValue() == o.getId().longValue()){
+            return 0;
+        }else{
+            return -1;
+        }
+    }
+	@Override
+    public TaskInfo clone() throws CloneNotSupportedException{
+        return (TaskInfo) super.clone();
     }
 }

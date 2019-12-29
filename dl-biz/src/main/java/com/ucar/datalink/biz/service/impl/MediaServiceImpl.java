@@ -4,12 +4,17 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
+import com.google.common.eventbus.EventBus;
 import com.ucar.datalink.biz.dal.MediaDAO;
 import com.ucar.datalink.biz.dal.MediaSourceDAO;
 import com.ucar.datalink.biz.dal.TaskDAO;
 import com.ucar.datalink.biz.meta.MetaManager;
 import com.ucar.datalink.biz.service.MediaService;
+import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.common.errors.ValidationException;
+import com.ucar.datalink.common.event.EventBusFactory;
+import com.ucar.datalink.common.utils.FutureCallback;
+import com.ucar.datalink.domain.event.MediaMappingChangeEvent;
 import com.ucar.datalink.domain.media.*;
 import com.ucar.datalink.domain.meta.ColumnMeta;
 import com.ucar.datalink.domain.statis.StatisDetail;
@@ -67,6 +72,7 @@ public class MediaServiceImpl implements MediaService {
                 } else {
                     list = mediaDAO.findMediaMappingsByTaskId(taskId);
                 }
+
                 return list == null ? Lists.newArrayList() : list;
             }
         });
@@ -85,13 +91,18 @@ public class MediaServiceImpl implements MediaService {
                         .collect(Collectors.groupingBy(MediaMappingInfo::getTargetMediaSourceId))
                         .entrySet()
                         .stream()
-                        .map(m ->
+                        .flatMap(fm ->
                                 {
-                                    if (m.getValue().size() > 1) {
-                                        //如果有多个，说明既有通配符配置，又有Single配置，保留Single配置，重载掉通配符配置
-                                        return m.getValue().stream().filter(i -> i.getSourceMedia().getNameMode().getMode().isSingle()).findFirst().get();
+                                    if (fm.getValue().size() > 1) {
+                                        //如果有多个，有Single配置，且又有通配符配置，则保留Single配置，重载掉通配符配置，其他情况原样返回
+                                        long singleCount = fm.getValue().stream().filter(i -> i.getSourceMedia().getNameMode().getMode().isSingle()).count();
+                                        if (singleCount >= 1 && singleCount < fm.getValue().size()) {
+                                            return fm.getValue().stream().filter(i -> i.getSourceMedia().getNameMode().getMode().isSingle());
+                                        } else {
+                                            return fm.getValue().stream();
+                                        }
                                     } else {
-                                        return m.getValue().get(0);
+                                        return fm.getValue().stream();
                                     }
                                 }
                         )
@@ -102,9 +113,10 @@ public class MediaServiceImpl implements MediaService {
 
     @Override
     @Transactional
-    public void insert(List<MediaInfo> mediaList, List<MediaMappingInfo> mediaMappingList, List<MediaColumnMappingInfo> mediaColumnMappingList) throws Exception {
+    public List<Long> insert(List<MediaInfo> mediaList, List<MediaMappingInfo> mediaMappingList, List<MediaColumnMappingInfo> mediaColumnMappingList) throws Exception {
         checkConsistency(mediaList, mediaMappingList);
         Long mediaId = null;
+        List<Long> mappingIdList = new ArrayList<Long>();
         Map<String, Object> map = new HashMap<>();
         for (int i = 0; i < mediaList.size(); i++) {
             map.put("mediaSourceId", mediaList.get(i).getMediaSourceId());
@@ -120,8 +132,17 @@ public class MediaServiceImpl implements MediaService {
             }
 
             //处理MediaMapping
-            mediaMappingList.get(i).setSourceMediaId(mediaId);
-            mediaDAO.mediaMappingInsert(mediaMappingList.get(i));
+            MediaMappingInfo mediaMappingInfoAdd = mediaMappingList.get(i);
+            mediaMappingInfoAdd.setSourceMediaId(mediaId);
+
+            //判断映射是否已经存在
+            MediaMappingInfo mediaMappingInfoExists = mediaDAO.findMediaMappingByJoinIndex(mediaMappingInfoAdd);
+            if (mediaMappingInfoExists != null) {
+                throw new DatalinkException("该映射已经存在");
+            }
+
+            mediaDAO.mediaMappingInsert(mediaMappingInfoAdd);
+            mappingIdList.add(mediaMappingInfoAdd.getId());
 
             //处理MediaMappingColumn
             MediaColumnMappingInfo columnMappingInfo = mediaColumnMappingList.get(i);
@@ -136,6 +157,7 @@ public class MediaServiceImpl implements MediaService {
                 mediaDAO.mediaColumnInsert(columnForInsert);
             }
         }
+        return mappingIdList;
     }
 
     @Override
@@ -146,8 +168,9 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public List<MediaMappingInfo> findMediaMappingsByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam) {
-        return mediaDAO.findMediaMappingsByTaskIdAndTargetMediaSourceId(mapParam);
+    public List<MediaMappingInfo> getMappingByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam) {
+        List<MediaMappingInfo> mediaMappingList = mediaDAO.findMediaMappingsByTaskIdAndTargetMediaSourceId(mapParam);
+        return mediaMappingList;
     }
 
     @Override
@@ -194,6 +217,7 @@ public class MediaServiceImpl implements MediaService {
         }
 
         mediaMappingsCache.invalidate(taskId);
+        //taskMediaMappingsCache的懒加载不涉及DB操作，没有性能问题，简单起见，直接执行invalidateAll即可，保证同一个Task的mappinginfo的读一致
         taskMediaMappingsCache.invalidateAll();
         logger.info("Mapping cache has been cleared for taskId:" + taskId);
     }
@@ -249,6 +273,11 @@ public class MediaServiceImpl implements MediaService {
     @Override
     public List<MediaSourceInfo> getMediaSourcesByTypes(MediaSourceType... types) {
         return mediaDAO.findMediaSourcesByTypes(types);
+    }
+
+    @Override
+    public List<MediaMappingInfo> findMediaMappingsByTask(Long taskId) {
+        return mediaMappingsCache.getUnchecked(taskId);
     }
 
     @Override
@@ -366,7 +395,7 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public List<MediaMappingInfo> mappingListsForQueryPage(Long mediaSourceId, Long targetMediaSourceId, Long taskId, String mediaName) {
+    public List<MediaMappingInfo> mappingListsForQueryPage(Long mediaSourceId, Long targetMediaSourceId, Long taskId, String mediaName, String targetMediaName) {
         MediaMappingInfo mappingInfo = new MediaMappingInfo();
         MediaInfo sourceMedia = new MediaInfo();
         sourceMedia.setMediaSourceId(mediaSourceId);
@@ -374,8 +403,19 @@ public class MediaServiceImpl implements MediaService {
         mappingInfo.setSourceMedia(sourceMedia);
         mappingInfo.setTargetMediaSourceId(targetMediaSourceId);
         mappingInfo.setTaskId(taskId);
+        mappingInfo.setTargetMediaName(targetMediaName);
         List<MediaMappingInfo> result = mediaDAO.mappingListsForQueryPage(mappingInfo);
         return result == null ? Lists.newArrayList() : result;
+    }
+
+    @Override
+    public List<String> getMappingTableNameByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam) {
+        List<MediaMappingInfo> mediaMappingList = mediaDAO.findMediaMappingsByTaskIdAndTargetMediaSourceId(mapParam);
+        List<String> tableList = new ArrayList<>();
+        for (MediaMappingInfo media : mediaMappingList) {
+            tableList.add(media.getSourceMedia().getName());
+        }
+        return tableList;
     }
 
     @Override
@@ -391,6 +431,14 @@ public class MediaServiceImpl implements MediaService {
     @Override
     public List<Long> findTaskIdsByMediaSourceId(Long mediaSourceId) {
         return mediaDAO.findTaskIdsByMediaSourceId(mediaSourceId);
+    }
+
+    @Override
+    public void cleanTableMapping(Long taskId) throws Exception {
+        EventBus eventBus = EventBusFactory.getEventBus();
+        MediaMappingChangeEvent event = new MediaMappingChangeEvent(new FutureCallback(), taskId);
+        eventBus.post(event);
+        event.getCallback().get();
     }
 
     private void checkConsistency(List<MediaInfo> mediaList, List<MediaMappingInfo> mediaMappingList) throws Exception {
@@ -430,6 +478,26 @@ public class MediaServiceImpl implements MediaService {
                 }
             }
         }
+    }
+
+    @Override
+    public List<MediaMappingInfo> getMappingsByTargetMediaNameAndNamespace(Long targetMediaSourceId, String targetNamespace, String targetTableName) {
+        return mediaDAO.getMappingsByTargetMediaNameAndNamespace(targetMediaSourceId, targetNamespace, targetTableName);
+    }
+
+    @Override
+    public List<MediaMappingInfo> getMappingsByMediaSourceIdAndTargetTable(Long srcMediaSourceId, Long targetMediaSourceId, String targetTableName) {
+        return mediaDAO.getMappingsByMediaSourceIdAndTargetTable(srcMediaSourceId, targetMediaSourceId, targetTableName);
+    }
+
+    @Override
+    public List<MediaMappingInfo> getAllMediaMappingsByTaskId(Long taskId) {
+        return mediaDAO.findMediaMappingsByTaskId(taskId);
+    }
+
+    @Override
+    public List<Long> findTaskIdListByMediaSourceList(List<Long> mediaSourceIdList) {
+        return mediaDAO.findTaskIdListByMediaSourceList(mediaSourceIdList);
     }
 
 }

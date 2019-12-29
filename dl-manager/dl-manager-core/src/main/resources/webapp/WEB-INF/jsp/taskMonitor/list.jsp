@@ -11,6 +11,8 @@
 </div>
 <div id="taskException" class="main-container">
 </div>
+<div id="taskTrace" class="main-container">
+</div>
 <div class="main-container" id="mainContentInner">
     <div class="page-content">
         <div class="row">
@@ -215,6 +217,17 @@
                             "</div> &nbsp; &nbsp;"
                             return str;
                         }
+                    },
+                    {
+                        code: '006002005',
+                        html: function () {
+                            var str;
+                            str = "<div class='radio'>" +
+                                "<a href='javascript:toTaskTrace(" + oData.taskId + ")' class='grey'  title='任务轨迹'>" +
+                                "<i class='ace-icon fa fa-retweet bigger-130'></i>" + "</a>" +
+                                "</div> &nbsp; &nbsp;"
+                            return str;
+                        }
                     }
                 ], $(nTd));
 
@@ -286,6 +299,13 @@
         reset();
         $("#taskException").load("${basePath}/taskMonitor/toTaskException?taskId=" + taskId + "&random=" + Math.random());
         $("#taskException").show();
+        $("#mainContentInner").hide();
+    }
+
+    function toTaskTrace(taskId) {
+        reset();
+        $("#taskTrace").load("${basePath}/taskMonitor/toTaskTrace?taskId=" + taskId + "&random=" + Math.random());
+        $("#taskTrace").show();
         $("#mainContentInner").hide();
     }
 

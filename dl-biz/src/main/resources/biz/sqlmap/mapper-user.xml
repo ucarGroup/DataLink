@@ -35,6 +35,21 @@
         FROM t_dl_user
     </select>
 
+    <select id="getListByUserInfo" resultMap="userResult">
+        SELECT
+        distinct u.*
+        FROM t_dl_user u,
+        t_dl_user_role ur
+        <where>
+            u.id = ur.user_id
+            <if test="ucarEmail != null and ucarEmail !=''">
+                and u.ucar_email=#{ucarEmail}
+            </if>
+            <if test="roleIdStr != null and roleIdStr !=''">
+                and ur.role_id=#{roleIdStr}
+            </if>
+        </where>
+    </select>
     <insert id="insert" parameterType="user" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO t_dl_user
         (user_name,

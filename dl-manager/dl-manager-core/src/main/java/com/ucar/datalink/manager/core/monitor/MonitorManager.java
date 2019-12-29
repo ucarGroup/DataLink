@@ -2,6 +2,7 @@ package com.ucar.datalink.manager.core.monitor;
 
 import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.common.utils.NamedThreadFactory;
+import com.ucar.datalink.manager.core.server.ManagerConfig;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,11 +24,12 @@ public class MonitorManager {
     public void startup() {
         this.monitorMap = DataLinkFactory.getBeansOfType(Monitor.class);
         this.executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Monitor-Manager"));
+        int monitorCheckIntervalTime = ManagerConfig.current().getMonitorCheckIntervalTime();
         this.executor.scheduleAtFixedRate(() -> {
                     check();
                 },
                 30,
-                30,
+                monitorCheckIntervalTime,
                 TimeUnit.SECONDS);
 
         LOGGER.info("MonitorManager is started.");

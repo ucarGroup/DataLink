@@ -42,6 +42,27 @@
                        onchange="hbaseClicked();"/>
                 <span class="lbl">HBase</span>
             </label>
+            
+
+             <label class="middle col-sm-2">
+                 <input class="ace" type="checkbox" id="kudu-checkbox"
+                         <c:if test="${taskModel.currentWriters['writer-kudu']==1}">
+                             checked
+                         </c:if>
+                        onchange="kuduClicked();" disabled/>
+                 <span class="lbl">Kudu</span>
+             </label>
+
+              <label class="middle col-sm-2">
+                  <input class="ace" type="checkbox" id="kafka-checkbox"
+                          <c:if test="${taskModel.currentWriters['writer-kafka']==1}">
+                              checked
+                          </c:if>
+                         onchange="kafkaClicked();"/>
+                  <span class="lbl">Kafka</span>
+              </label>
+
+
         </span>
     </div>
 
@@ -51,6 +72,11 @@
 <script type="text/javascript">
     $(document).ready(function () {
         rdbmsSyncModeChange();
+
+        if (currentPageName == "mysql") {
+            $('#kudu-checkbox').attr("disabled", false);
+        }
+
     });
 
     $("#taskWriter").ready(function () {
@@ -58,6 +84,8 @@
         esClicked();
         hdfsClicked();
         hbaseClicked();
+        kuduClicked();
+        kafkaClicked();
     });
 
     function rdbmsSyncModeChange() {
@@ -74,7 +102,7 @@
 
     function rdbmsMergingChange() {
         var merging = $('#rdbms-merging').val();
-        if (merging=='true') {
+        if (merging == 'true') {
             $('#rdbms-useBatch').attr("disabled", false);
         } else {
             $('#rdbms-useBatch').attr("disabled", true);
@@ -114,6 +142,24 @@
         }
     }
 
+
+    function kuduClicked() {
+        if ($('#kudu-checkbox').prop("checked") == true) {
+            $('#div-kudu').show();
+        } else {
+            $('#div-kudu').hide();
+        }
+    }
+
+    function kafkaClicked() {
+        if ($('#kafka-checkbox').prop("checked") == true) {
+            $('#div-kafka').show();
+        } else {
+            $('#div-kafka').hide();
+        }
+    }
+
+
     function getWritersObj() {
         var obj = {};
         if ($('#rdbms-checkbox').prop("checked") == true) {
@@ -127,7 +173,8 @@
                 maxRetryTimes: $("#rdbms-maxRetryTimes").val(),
                 retryMode: $("#rdbms-retryMode").val(),
                 perfStatistic: $("#rdbms-perfStatistic").val(),
-                syncMode: $("#rdbms-syncMode").val()
+                syncMode: $("#rdbms-syncMode").val(),
+                useUpsert: $("#rdbms-useUpsert").val()
             };
         }
         if ($('#es-checkbox').prop("checked") == true) {
@@ -160,7 +207,8 @@
                 hbasePath: $("#hdfs-hbasePath").val(),
                 mysqlBinlogPath: $("#hdfs-mysqlBinlogPath").val(),
                 binlogPathPrefix: $("#hdfs-binlogPathPrefix").val(),
-                hsyncInterval: $("#hdfs-hsyncInterval").val()
+                hsyncInterval: $("#hdfs-hsyncInterval").val(),
+                socketTimeout: $("#hdfs-socketTimeout").val()
             };
         }
         if ($('#hbase-checkbox').prop("checked") == true) {
@@ -176,6 +224,32 @@
                 perfStatistic: $("#hbase-perfStatistic").val()
             };
         }
+
+        if ($('#kudu-checkbox').prop("checked") == true) {
+            obj['writer-kudu'] = {
+                "@type": "com.ucar.datalink.domain.plugin.writer.kudu.KuduWriterParameter",
+                poolSize: $("#kudu-poolSize").val(),
+                batchSize: $("#kudu-batchSize").val()
+            };
+        }
+        if ($('#kafka-checkbox').prop("checked") == true) {
+            obj['writer-kafka'] = {
+                "@type": "com.ucar.datalink.domain.plugin.writer.kafka.KafkaWriterParameter",
+                poolSize: $("#kafka-poolSize").val(),
+                dryRun: $("#kafka-dryRun").val(),
+                useBatch: $("#kafka-useBatch").val(),
+                batchSize: $("#kafka-batchSize").val(),
+                merging: $("#kafka-merging").val(),
+                maxRetryTimes: $("#kafka-maxRetryTimes").val(),
+                retryMode: $("#kafka-retryMode").val(),
+                perfStatistic: $("#kafka-perfStatistic").val(),
+                serializeMode: $("#kafka-serializeMode").val(),
+                partitionMode: $("#kafka-partitionMode").val()
+            };
+        }
+        ;
+
+
         return obj;
     }
 </script>

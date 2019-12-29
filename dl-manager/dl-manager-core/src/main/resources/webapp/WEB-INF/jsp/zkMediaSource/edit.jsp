@@ -140,6 +140,6 @@
     function refresh() {
         $("#edit").hide();
         $("#mainContentInner").show();
-        zkListMyTable.ajax.reload();
+        zkListMyTable.draw(false);
     }
 </script>

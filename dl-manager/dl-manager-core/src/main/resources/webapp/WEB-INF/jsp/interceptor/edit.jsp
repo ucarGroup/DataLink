@@ -114,6 +114,6 @@
     function refresh() {
         $("#edit").hide();
         $("#mainContentInner").show();
-        msgAlarmListMyTable.ajax.reload();
+        msgAlarmListMyTable.draw(false);
     }
 </script>

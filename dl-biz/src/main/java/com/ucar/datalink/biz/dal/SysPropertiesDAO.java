@@ -17,5 +17,7 @@ public interface SysPropertiesDAO {
 
     SysPropertiesInfo getSysPropertiesById(Long id);
 
+    SysPropertiesInfo getSysPropertiesByKey(String propertiesKey);
+
     List<SysPropertiesInfo> findSysPropertieList();
 }

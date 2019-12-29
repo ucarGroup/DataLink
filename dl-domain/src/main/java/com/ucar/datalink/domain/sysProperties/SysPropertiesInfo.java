@@ -56,4 +56,16 @@ public class SysPropertiesInfo implements Serializable, Storable {
     public void setModifyTime(Date modifyTime) {
         this.modifyTime = modifyTime;
     }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("SysPropertiesInfo{");
+        sb.append("id=").append(id);
+        sb.append(", propertiesKey='").append(propertiesKey).append('\'');
+        sb.append(", propertiesValue='").append(propertiesValue).append('\'');
+        sb.append(", createTime=").append(createTime);
+        sb.append(", modifyTime=").append(modifyTime);
+        sb.append('}');
+        return sb.toString();
+    }
 }

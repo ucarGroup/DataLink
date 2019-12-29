@@ -46,6 +46,12 @@ public class SysPropertiesServiceImpl implements SysPropertiesService {
         return sysPropertiesInfo;
     }
 
+    @Override
+    public SysPropertiesInfo getSysPropertiesByKey(String key) {
+        SysPropertiesInfo sysPropertiesInfo = sysPropertiesDAO.getSysPropertiesByKey(key);
+        return sysPropertiesInfo;
+    }
+
     public List<SysPropertiesInfo> findSysPropertieList(){
         return sysPropertiesDAO.findSysPropertieList();
     }

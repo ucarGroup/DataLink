@@ -1,7 +1,12 @@
 package com.ucar.datalink.manager.core.web.controller.task;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.google.common.collect.Lists;
 import com.ucar.datalink.biz.service.*;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
+import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.domain.Parameter;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
@@ -14,6 +19,8 @@ import com.ucar.datalink.domain.plugin.writer.es.EsWriterParameter;
 import com.ucar.datalink.domain.plugin.writer.hbase.HBaseWriterParameter;
 import com.ucar.datalink.domain.plugin.writer.hdfs.CommitMode;
 import com.ucar.datalink.domain.plugin.writer.hdfs.HdfsWriterParameter;
+import com.ucar.datalink.domain.plugin.writer.kafka.PartitionMode;
+import com.ucar.datalink.domain.plugin.writer.kafka.SerializeMode;
 import com.ucar.datalink.domain.plugin.writer.rdbms.RdbmsWriterParameter;
 import com.ucar.datalink.domain.task.TargetState;
 import com.ucar.datalink.domain.task.TaskInfo;
@@ -23,10 +30,11 @@ import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
 import com.ucar.datalink.manager.core.server.ManagerConfig;
 import com.ucar.datalink.manager.core.server.ServerContainer;
+import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;
 import com.ucar.datalink.manager.core.web.dto.task.HBaseTaskModel;
 import com.ucar.datalink.manager.core.web.dto.task.TaskModel;
 import com.ucar.datalink.manager.core.web.dto.task.TaskView;
-import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;
+import com.ucar.datalink.manager.core.web.util.AuditLogInfoUtil;
 import com.ucar.datalink.manager.core.web.util.Page;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -72,7 +80,8 @@ public class HBaseTaskController extends BaseTaskController {
     public ModelAndView hbaseTaskList() {
         ModelAndView mav = new ModelAndView("task/hbaseTaskList");
         List<TaskInfo> taskList = taskService.getList();
-        mav.addObject("taskList", CollectionUtils.isEmpty(taskList) ? taskList : taskList.stream().filter(t -> t.getLeaderTaskId() == null).collect(Collectors.toList()));
+
+        mav.addObject("taskList", CollectionUtils.isEmpty(taskList) ? taskList : taskList.stream().filter(t -> t.getTaskType() == TaskType.HBASE).collect(Collectors.toList()));
         mav.addObject("groupList", groupService.getAllGroups());
         mav.addObject("mediaSourceList", mediaService.getMediaSourcesByTypes(MediaSourceType.HBASE));
         return mav;
@@ -81,6 +90,9 @@ public class HBaseTaskController extends BaseTaskController {
     @RequestMapping(value = "/initHbaseTaskList")
     @ResponseBody
     public Page<TaskView> initHbaseTaskList(@RequestBody Map<String, String> map) {
+        Page<TaskView> page = new Page<>(map);
+        PageHelper.startPage(page.getPageNum(), page.getLength());
+
         Long readerMediaSourceId = Long.valueOf(map.get("readerMediaSourceId"));
         Long groupId = Long.valueOf(map.get("groupId"));
         Long id = Long.valueOf(map.get("id"));
@@ -118,16 +130,21 @@ public class HBaseTaskController extends BaseTaskController {
 
             //启动时间
             TaskStatus taskStatus = taskStatusService.getStatus(i.getId().toString());
-            if(taskStatus != null){
+            if (taskStatus != null) {
                 String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(taskStatus.getStartTime()));
                 i.setStartTime(time);
-            }else{
+            } else {
                 i.setStartTime("");
             }
 
         });
 
-        return new Page<>(taskViews);
+        PageInfo<TaskInfo> pageInfo = new PageInfo<>(taskInfos);
+        page.setDraw(page.getDraw());
+        page.setAaData(taskViews);
+        page.setRecordsTotal((int) pageInfo.getTotal());
+        page.setRecordsFiltered(page.getRecordsTotal());
+        return page;
     }
 
     @RequestMapping(value = "/toAddHbaseTask")
@@ -143,7 +160,10 @@ public class HBaseTaskController extends BaseTaskController {
                 PluginWriterParameter.RetryMode.getAllModes(),
                 RdbmsWriterParameter.SyncMode.getAllModes(),
                 new HBaseReaderParameter(),
-                CommitMode.getAllCommitModes()
+                CommitMode.getAllCommitModes(),
+                SerializeMode.getAllSerializeModes(),
+                PartitionMode.getAllPartitionModes(),
+                ""
         );
         mav.addObject("taskModel", hbaseTaskModel);
         return mav;
@@ -155,6 +175,11 @@ public class HBaseTaskController extends BaseTaskController {
         try {
             checkRequired(hbaseTaskModel);
             checkZNode(hbaseTaskModel);
+
+            TaskInfo leaderTask = getLeaderTask(hbaseTaskModel);
+            if (leaderTask != null) {
+                checkWriter(leaderTask, hbaseTaskModel);
+            }
 
             TaskInfo taskInfo = new TaskInfo();
             taskInfo.setGroupId(hbaseTaskModel.getTaskBasicInfo().getGroupId());
@@ -171,9 +196,10 @@ public class HBaseTaskController extends BaseTaskController {
                                     .collect(Collectors.toList()))
             );
             taskInfo.setTaskParameter("{}");
-            taskInfo.setLeaderTaskId(getLeaderTaskId(hbaseTaskModel));
+            taskInfo.setLeaderTaskId(leaderTask == null ? null : leaderTask.getId());
             taskInfo.setIsLeaderTask(isLeaderTask(hbaseTaskModel));
             taskService.addTask(taskInfo);
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo, "004010203", AuditLogOperType.insert.getValue()));
         } catch (Exception e) {
             logger.error("Add HbaseTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -203,7 +229,10 @@ public class HBaseTaskController extends BaseTaskController {
                 PluginWriterParameter.RetryMode.getAllModes(),
                 RdbmsWriterParameter.SyncMode.getAllModes(),
                 (HBaseReaderParameter) taskInfo.getTaskReaderParameterObj(),
-                CommitMode.getAllCommitModes()
+                CommitMode.getAllCommitModes(),
+                SerializeMode.getAllSerializeModes(),
+                PartitionMode.getAllPartitionModes(),
+                taskInfo.isLeaderTask() ? "1" : "0"
         );
         hbaseTaskModel.setCurrentWriters(taskInfo.getTaskWriterParameterObjs().stream().collect(Collectors.toMap(PluginWriterParameter::getPluginName, i -> "1")));
         mav.addObject("taskModel", hbaseTaskModel);
@@ -212,12 +241,18 @@ public class HBaseTaskController extends BaseTaskController {
 
     @RequestMapping(value = "/doUpdateHbaseTask")
     @ResponseBody
-    public synchronized String doUpdateHbaseTask(@RequestBody HBaseTaskModel hbaseTaskModel) {
+    public synchronized String doUpdateHbaseTask(@RequestBody HBaseTaskModel hbaseTaskModel, String sync) {
         try {
             checkRequired(hbaseTaskModel);
             checkZNode(hbaseTaskModel);
 
             TaskInfo taskInfo = taskService.getTask(hbaseTaskModel.getTaskBasicInfo().getId());
+
+            if (!taskInfo.isLeaderTask()) {
+                TaskInfo leaderTask = taskService.getTask(taskInfo.getLeaderTaskId());
+                checkWriter(leaderTask, hbaseTaskModel);
+            }
+
             taskInfo.setId(hbaseTaskModel.getTaskBasicInfo().getId());
             taskInfo.setGroupId(hbaseTaskModel.getTaskBasicInfo().getGroupId());
             taskInfo.setTaskName(hbaseTaskModel.getTaskBasicInfo().getTaskName());
@@ -231,7 +266,8 @@ public class HBaseTaskController extends BaseTaskController {
                                     .map(i -> i.getValue())
                                     .collect(Collectors.toList()))
             );
-            taskService.updateTask(taskInfo);
+            taskService.updateTask(taskInfo, sync);
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo, "004010205", AuditLogOperType.update.getValue()));
         } catch (Exception e) {
             logger.error("Update HbaseTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -244,7 +280,10 @@ public class HBaseTaskController extends BaseTaskController {
     public String deleteHbaseTask(HttpServletRequest request) {
         try {
             Long id = Long.valueOf(request.getParameter("id"));
+            TaskInfo taskInfo = taskService.getTask(id);
             taskService.deleteTask(id);
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo
+                    , "004010206", AuditLogOperType.delete.getValue()));
         } catch (Exception e) {
             logger.error("Delete HbaseTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -270,6 +309,10 @@ public class HBaseTaskController extends BaseTaskController {
         try {
             Long id = Long.valueOf(request.getParameter("id"));
             taskService.pauseTask(id);
+
+            TaskInfo taskInfo = taskService.getTask(id);
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo
+                    , "004010207", AuditLogOperType.other.getValue()));
         } catch (Exception e) {
             logger.error("Pause HbaseTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -283,6 +326,10 @@ public class HBaseTaskController extends BaseTaskController {
         try {
             Long id = Long.valueOf(request.getParameter("id"));
             taskService.resumeTask(id);
+
+            TaskInfo taskInfo = taskService.getTask(id);
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo
+                    , "004010208", AuditLogOperType.other.getValue()));
         } catch (Exception e) {
             logger.error("Pause HbaseTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -294,7 +341,12 @@ public class HBaseTaskController extends BaseTaskController {
     @ResponseBody
     public String restartHbaseTask(HttpServletRequest request) {
         try {
-            sendRestartCommand(request.getParameter("id"), null);
+            String id = request.getParameter("id");
+            sendRestartCommand(id, null);
+
+            TaskInfo taskInfo = taskService.getTask(Long.valueOf(id));
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo
+                    , "004010209", AuditLogOperType.other.getValue()));
         } catch (Exception e) {
             logger.error("Pause HbaseTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -331,7 +383,7 @@ public class HBaseTaskController extends BaseTaskController {
         return true;
     }
 
-    private Long getLeaderTaskId(HBaseTaskModel taskModel) {
+    private TaskInfo getLeaderTask(HBaseTaskModel taskModel) {
         List<TaskInfo> list = taskService.getTasksByReaderMediaSourceId(taskModel.getHbaseReaderParameter().getMediaSourceId());
         if (CollectionUtils.isNotEmpty(list)) {
             List<TaskInfo> tasksOfThisPeer = list.stream().filter(i -> {
@@ -347,7 +399,7 @@ public class HBaseTaskController extends BaseTaskController {
                 } else if (leaderTasks.size() < 1) {
                     throw new ValidationException(String.format("发现[%s]下的Task-Leader的个数小于1，程序可能出现了bug，请排查。", taskModel.getHbaseReaderParameter().getReplZnodeParent()));
                 } else {
-                    return leaderTasks.get(0).getId();
+                    return leaderTasks.get(0);
                 }
             }
         }
@@ -393,6 +445,28 @@ public class HBaseTaskController extends BaseTaskController {
                     );
                 }
             });
+        }
+    }
+
+    private void checkWriter(TaskInfo leaderTask, HBaseTaskModel hbaseTaskModel) {
+        List<PluginWriterParameter> leaderWriterList = leaderTask.getTaskWriterParameterObjs();
+        Map<String, PluginWriterParameter> writerParameterMap = hbaseTaskModel.getWriterParameterMap();
+        if (leaderWriterList.size() != writerParameterMap.size()) {
+            throw new DatalinkException("follower task必须和leader task的writer保持一致!");
+        }
+        for (Map.Entry<String, PluginWriterParameter> entry : writerParameterMap.entrySet()) {
+            PluginWriterParameter pluginWriterParameter = entry.getValue();
+            String pluginName = pluginWriterParameter.getPluginName();
+            boolean flag = false;
+            for (PluginWriterParameter leaderWriter : leaderWriterList) {
+                if (pluginName.equals(leaderWriter.getPluginName())) {
+                    flag = true;
+                    break;
+                }
+            }
+            if (!flag) {
+                throw new DatalinkException("follower task必须和leader task的writer保持一致!");
+            }
         }
     }
 }

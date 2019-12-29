@@ -1,17 +1,27 @@
 package com.ucar.datalink.manager.core.web.controller.group;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ucar.datalink.biz.service.GroupService;
+import com.ucar.datalink.biz.service.WorkerService;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.common.errors.ValidationException;
+import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.group.GroupInfo;
 import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import com.ucar.datalink.manager.core.web.dto.group.GroupView;
 import com.ucar.datalink.manager.core.web.util.Page;
+import com.ucar.datalink.manager.core.web.util.UserUtil;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
@@ -19,6 +29,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -28,8 +39,23 @@ import java.util.stream.Collectors;
 @RequestMapping(value = "/group/")
 public class GroupController {
 
+    private static final Logger logger = LoggerFactory.getLogger(GroupController.class);
+
     @Autowired
     private GroupService groupService;
+    @Autowired
+    private WorkerService workerService;
+
+    private static AuditLogInfo getAuditLogInfo(GroupInfo groupInfo, String menuCode, String operType) {
+        AuditLogInfo logInfo = new AuditLogInfo();
+        logInfo.setUserId(UserUtil.getUserIdFromRequest());
+        logInfo.setMenuCode(menuCode);
+        logInfo.setOperName(groupInfo.getGroupName());
+        logInfo.setOperType(operType);
+        logInfo.setOperKey(groupInfo.getId());
+        logInfo.setOperRecord(groupInfo.toString());
+        return logInfo;
+    }
 
     @RequestMapping(value = "/groupList")
     public ModelAndView groupList() {
@@ -39,7 +65,11 @@ public class GroupController {
 
     @RequestMapping(value = "/initGroup")
     @ResponseBody
-    public Page<GroupView> initGroup() {
+    public Page<GroupView> initGroup(@RequestBody Map<String, String> map) {
+
+        Page<GroupView> page = new Page<>(map);
+        PageHelper.startPage(page.getPageNum(), page.getLength());
+
         List<GroupInfo> listGroup = groupService.getAllGroups();
         GroupMetadataManager groupManager = ServerContainer.getInstance().getGroupCoordinator().getGroupManager();
         ClusterState clusterState = groupManager.getClusterState();
@@ -60,9 +90,15 @@ public class GroupController {
             view.setGenerationId(groupData != null ? groupData.getGenerationId() : 0);
             return view;
         }).collect(Collectors.toList());
-        return new Page<GroupView>(groupViews);
-    }
 
+        PageInfo<GroupInfo> pageInfo = new PageInfo<GroupInfo>(listGroup);
+        page.setDraw(page.getDraw());
+        page.setAaData(groupViews);
+        page.setRecordsTotal((int) pageInfo.getTotal());
+        page.setRecordsFiltered(page.getRecordsTotal());
+
+        return page;
+    }
 
     @RequestMapping(value = "/toAdd")
     public ModelAndView toAdd() {
@@ -75,6 +111,7 @@ public class GroupController {
     public String doAdd(@ModelAttribute("groupInfo") GroupInfo groupInfo) {
         Boolean isSuccess = groupService.insert(groupInfo);
         if (isSuccess) {
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(groupInfo, "001001003", AuditLogOperType.insert.getValue()));
             return "success";
         } else {
             return "fail";
@@ -98,6 +135,7 @@ public class GroupController {
     public String doEdit(@ModelAttribute("groupInfo") GroupInfo groupInfo) {
         Boolean isSuccess = groupService.update(groupInfo);
         if (isSuccess) {
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(groupInfo, "001001005", AuditLogOperType.update.getValue()));
             return "success";
         } else {
             return "fail";
@@ -112,8 +150,11 @@ public class GroupController {
             return "fail";
         }
         try {
-            Boolean isSuccess = groupService.delete(Long.valueOf(id));
+            Long idLong = Long.valueOf(id);
+            GroupInfo groupInfo = groupService.getById(idLong);
+            Boolean isSuccess = groupService.delete(idLong);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(getAuditLogInfo(groupInfo, "001001006", AuditLogOperType.delete.getValue()));
                 return "success";
             }
         } catch (ValidationException e) {
@@ -121,6 +162,25 @@ public class GroupController {
         }
 
         return "fail";
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "/doReBalance")
+    private String doReBalance(HttpServletRequest requestPara) {
+        String groupId = requestPara.getParameter("id");
+        try {
+            if (StringUtils.isEmpty(groupId)) {
+                return "groupId不能为空";
+            }
+            ServerContainer.getInstance().getGroupCoordinator().forceRebalance(groupId);
+            GroupInfo groupInfo = groupService.getById(Long.valueOf(groupId));
+            AuditLogUtils.saveAuditLog(getAuditLogInfo(groupInfo, "001001007", AuditLogOperType.other.getValue()));
+
+        } catch (Exception e) {
+            logger.info("错误信息是：{}", e);
+        }
+        return "success";
+
     }
 
 }

@@ -37,7 +37,6 @@ public class CommunicationController {
     @ResponseBody
     public void putExceptionAndSend(@RequestBody final Map<Long, String> map) {
         logger.debug("Receive Exception Monitor Info : {}", map);
-
         if (map != null && map.size() > 0) {
             taskExceptionMonitor.sendException(map);
         }

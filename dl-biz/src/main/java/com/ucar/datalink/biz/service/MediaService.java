@@ -13,11 +13,9 @@ import java.util.Set;
  */
 public interface MediaService {
 
-    void insert(List<MediaInfo> mediaList, List<MediaMappingInfo> mediaMappingList, List<MediaColumnMappingInfo> mediaColumnMappingList) throws Exception;
+    List<Long> insert(List<MediaInfo> mediaList, List<MediaMappingInfo> mediaMappingList, List<MediaColumnMappingInfo> mediaColumnMappingList) throws Exception;
 
     void delete(long id);
-
-    List<MediaMappingInfo> findMediaMappingsByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam);
 
     void update(MediaColumnMappingInfo mediaColumnMappingInfo, MediaMappingInfo mediaMappingInfo) throws Exception;
 
@@ -49,6 +47,12 @@ public interface MediaService {
     List<MediaSourceInfo> getMediaSourcesByTypes(MediaSourceType... types);
 
     /**
+     * /**
+     * 获取某个Task下所有的Mapping配置
+     */
+    List<MediaMappingInfo> findMediaMappingsByTask(Long taskId);
+
+    /**
      * 获取某个Task下所有的Mapping配置
      *
      * @param justValid 是否只获取当前状态为有效的配置
@@ -69,11 +73,49 @@ public interface MediaService {
      */
     List<MediaMappingInfo> getMediaMappingsByMedia(Long taskId, String namespace, String mediaName, boolean justValid);
 
-    List<MediaMappingInfo> mappingListsForQueryPage(Long mediaSourceId, Long targetMediaSourceId, Long taskId, String tableName);
+    List<MediaMappingInfo> mappingListsForQueryPage(Long mediaSourceId, Long targetMediaSourceId, Long taskId, String tableName, String targetMediaName);
+
+    List<String> getMappingTableNameByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam);
+
+    List<MediaMappingInfo> getMappingByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam);
 
     Integer mappingCount();
 
     List<StatisDetail> getCountByType();
 
     List<Long> findTaskIdsByMediaSourceId(Long mediaSourceId);
+
+    void cleanTableMapping(Long taskId) throws Exception;
+
+    /**
+     * 传入批量数据源
+     * 获取DB关联的任务id
+     *
+     * @param mediaSourceIdList
+     * @return
+     */
+    List<Long> findTaskIdListByMediaSourceList(List<Long> mediaSourceIdList);
+
+
+    /**
+     * 根据目标端库和表获取mapping
+     *
+     * @param targetMediaSourceId
+     * @param targetNamespace
+     * @param targetTableName
+     * @return
+     */
+    List<MediaMappingInfo> getMappingsByTargetMediaNameAndNamespace(Long targetMediaSourceId, String targetNamespace, String targetTableName);
+
+    /**
+     * 根据目标端库和表获取mapping
+     *
+     * @param srcMediaSourceId
+     * @param targetMediaSourceId
+     * @param targetTableName
+     * @return
+     */
+    List<MediaMappingInfo> getMappingsByMediaSourceIdAndTargetTable(Long srcMediaSourceId, Long targetMediaSourceId, String targetTableName);
+
+    List<MediaMappingInfo> getAllMediaMappingsByTaskId(Long taskId);
 }

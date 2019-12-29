@@ -1,7 +1,11 @@
 package com.ucar.datalink.manager.core.web.controller.mediaSource;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.google.common.base.Splitter;
 import com.ucar.datalink.biz.service.MediaSourceService;
+import com.ucar.datalink.biz.utils.AuditLogOperType;
+import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
@@ -10,6 +14,7 @@ import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import com.ucar.datalink.manager.core.web.dto.mediaSource.EsMediaSourceView;
+import com.ucar.datalink.manager.core.web.util.AuditLogInfoUtil;
 import com.ucar.datalink.manager.core.web.util.Page;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
@@ -29,6 +34,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
@@ -61,7 +67,10 @@ public class EsMediaSourceController {
 
     @RequestMapping(value = "/initEs")
     @ResponseBody
-    public Page<EsMediaSourceView> initEs() {
+    public Page<EsMediaSourceView> initEs(@RequestBody Map<String, String> map) {
+        Page<EsMediaSourceView> page = new Page<>(map);
+        PageHelper.startPage(page.getPageNum(), page.getLength());
+
         Set<MediaSourceType> setMediaSource = new HashSet<>();
         setMediaSource.add(MediaSourceType.ELASTICSEARCH);
         List<MediaSourceInfo> esMediaSourceList = mediaSourceService.getListByType(setMediaSource);
@@ -74,7 +83,13 @@ public class EsMediaSourceController {
             view.setEsMediaSrcParameter(i.getParameterObj());
             return view;
         }).collect(Collectors.toList());
-        return new Page<>(esView);
+
+        PageInfo<MediaSourceInfo> pageInfo = new PageInfo<>(esMediaSourceList);
+        page.setDraw(page.getDraw());
+        page.setAaData(esView);
+        page.setRecordsTotal((int) pageInfo.getTotal());
+        page.setRecordsFiltered(page.getRecordsTotal());
+        return page;
     }
 
     @RequestMapping(value = "/toAdd")
@@ -88,8 +103,10 @@ public class EsMediaSourceController {
     public String doAdd(@ModelAttribute("esMediaSourceView") EsMediaSourceView esMediaSourceView) {
         try {
             checkEsConfig(esMediaSourceView.getEsMediaSrcParameter());
-            Boolean isSuccess = mediaSourceService.insert(buildEsMediaSourceInfo(esMediaSourceView));
+            MediaSourceInfo mediaSourceInfo = buildEsMediaSourceInfo(esMediaSourceView);
+            Boolean isSuccess = mediaSourceService.insert(mediaSourceInfo);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo, "002003003", AuditLogOperType.insert.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -131,6 +148,7 @@ public class EsMediaSourceController {
             Boolean isSuccess = mediaSourceService.update(mediaSourceInfo);
             toReloadES(esMediaSourceView.getId().toString());
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo, "002003005", AuditLogOperType.update.getValue()));
                 return "success";
             }
         } catch (Exception e) {
@@ -148,8 +166,11 @@ public class EsMediaSourceController {
             return "fail";
         }
         try {
-            Boolean isSuccess = mediaSourceService.delete(Long.valueOf(id));
+            Long idLong = Long.valueOf(id);
+            MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(idLong);
+            Boolean isSuccess = mediaSourceService.delete(idLong);
             if (isSuccess) {
+                AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo, "002003006", AuditLogOperType.delete.getValue()));
                 return "success";
             }
         } catch (ValidationException e) {

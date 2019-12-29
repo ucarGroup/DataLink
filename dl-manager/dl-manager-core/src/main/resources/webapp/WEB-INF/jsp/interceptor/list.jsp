@@ -20,6 +20,7 @@
                            style="text-align: left;width:100%">
                         <thead>
                         <tr>
+                            <td>id</td>
                             <td>名称</td>
                             <td>描述</td>
                             <td>类型</td>
@@ -49,12 +50,19 @@
 
     msgAlarmListMyTable = $('#interceptorTable').DataTable({
         "bAutoWidth": true,
+        serverSide: true,//开启服务器模式:启用服务器分页
+        paging: true,//是否分页
         "ajax": {
             "url": "${basePath}/interceptor/initInterceptor",
-            "data": {}
+            "data": function (d) {
+                return JSON.stringify(d);
+            },
+            "dataType": 'json',
+            "contentType": 'application/json',
+            "type": 'POST'
         },
         "columns": [
-
+            {"data": "id"},
             {"data": "name"},
             {"data": "desc"},
             {"data": "type"},

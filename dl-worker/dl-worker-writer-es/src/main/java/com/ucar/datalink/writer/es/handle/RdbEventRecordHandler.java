@@ -9,6 +9,7 @@ import com.ucar.datalink.common.errors.DataLoadException;
 import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.contract.log.rdbms.RdbEventRecord;
 import com.ucar.datalink.domain.RecordMeta;
+import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.worker.api.handle.AbstractHandler;
 import com.ucar.datalink.worker.api.task.RecordChunk;
@@ -26,7 +27,9 @@ import com.ucar.datalink.writer.es.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -40,13 +43,12 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RdbEventRecordHandler.class);
     private static final int MAX_TRIES = 3;
+    private Transformer<RdbEventRecord> transformer = new RdbEventRecordTransformer();
 
     public RdbEventRecordHandler() {
         super();
         this.addInterceptorBefore(new DdlEventInterceptor());
     }
-
-    private Transformer<RdbEventRecord> transformer = new RdbEventRecordTransformer();
 
     @Override
     protected void doWrite(List<RdbEventRecord> records, TaskWriterContext context) {
@@ -100,7 +102,9 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
 
     private void writeData(List<RdbEventRecord> records) {
         //框架层会保证传入的records都是同一个数据源的，so，取第一条数据的即可
-        MediaSourceInfo targetMediaSource = RecordMeta.mediaMapping(records.get(0)).getTargetMediaSource();
+        MediaMappingInfo mediaMappingInfo = RecordMeta.mediaMapping(records.get(0));
+        MediaSourceInfo targetMediaSource = mediaMappingInfo.getTargetMediaSource();
+
         // 构建批量提交 动作描述信息
         List<BatchContentVo> contents = BatchContentBuilder.buildContents(records);
 
@@ -162,6 +166,7 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
                 LOGGER.error("sync to elasticsearch failed,the error is :", e);
                 if (i == (MAX_TRIES - 1)) {
                     //最后一次还有错，抛异常
+                    LOGGER.error("the last try contents: " + contents);
                     throw new DataLoadException("sync to elasticsearch failed.", e);
                 }
             }

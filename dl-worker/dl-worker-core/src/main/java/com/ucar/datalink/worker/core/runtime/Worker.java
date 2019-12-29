@@ -2,6 +2,8 @@ package com.ucar.datalink.worker.core.runtime;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.ucar.datalink.biz.service.MediaService;
+import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.common.Constants;
 import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.common.utils.NamedThreadFactory;
@@ -38,16 +40,19 @@ public class Worker {
     private final String workerId;
     private final WorkerConfig config;
     private final TaskPositionManager taskPositionManager;
+    private final TaskSyncStatusManager taskSyncStatusManager;
     private ProbeManager probeManager;
 
     private HashMap<String, WorkerTask> tasks = new HashMap<>();
 
-    public Worker(String workerId, Time time, WorkerConfig config, TaskPositionManager taskPositionManager, ProbeManager probeManager) {
+    public Worker(String workerId, Time time, WorkerConfig config, TaskPositionManager taskPositionManager, TaskSyncStatusManager taskSyncStatusManager,
+                  ProbeManager probeManager) {
         this.executor = Executors.newCachedThreadPool(new NamedThreadFactory("Task-Container"));
         this.workerId = workerId;
         this.time = time;
         this.config = config;
         this.taskPositionManager = taskPositionManager;
+        this.taskSyncStatusManager = taskSyncStatusManager;
         this.probeManager = probeManager;
     }
 
@@ -55,6 +60,7 @@ public class Worker {
         log.info("Worker starting");
 
         taskPositionManager.start();
+        taskSyncStatusManager.start();
         String probeBlackList = WorkerConfig.current().getString(WorkerConfig.WORKER_PROBE_BLACKLIST_CONFIG);
         probeManager.start(StringUtils.isNotBlank(probeBlackList) ? Arrays.asList(probeBlackList.split(",")) : Lists.newArrayList());
 
@@ -70,6 +76,7 @@ public class Worker {
         }
 
         taskPositionManager.stop();
+        taskSyncStatusManager.stop();
         probeManager.stop();
 
         log.info("Worker stopped");
@@ -90,9 +97,12 @@ public class Worker {
             final WorkerTask workerTask;
             final String taskExecutionId = UUID.randomUUID().toString();
             try {
+                log.info("Preparing task {}.", taskId);
+                prepareTaskStart(taskId);
+
                 log.info("Creating task {}.", taskId);
                 workerTask = new WorkerTaskContainer(config, taskInfo, statusListener,
-                        taskPositionManager, taskExecutionId);
+                        taskPositionManager, taskSyncStatusManager, taskExecutionId);
 
                 log.info("Initializing task {}, reader parameter is {}, writer parameter is {}.",
                         taskId,
@@ -170,6 +180,12 @@ public class Worker {
             task.cancel();
         }
         tasks.remove(task.id());
+    }
+
+    private void prepareTaskStart(String taskId) {
+        //Task每次启动之前，把缓存的mapping信息进行一下clear，以保证拿到最新的配置信息，避免脏读
+        MediaService mediaService = DataLinkFactory.getObject("mediaServiceImpl");
+        mediaService.clearMediaMappingCache(Long.valueOf(taskId));
     }
 
     public void setTargetState(String taskId, TargetState state) {

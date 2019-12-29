@@ -31,6 +31,8 @@ public class MediaMappingView {
     private Long interceptorId;
     private String joinColumn;
     private boolean esUsePrefix;
+    private String esRouting;
+    private String esRoutingIgnore;
     private String geoPositionConf;
     private String skipIds;
     private Date createTime;
@@ -186,6 +188,22 @@ public class MediaMappingView {
 
     public void setEsUsePrefix(boolean esUsePrefix) {
         this.esUsePrefix = esUsePrefix;
+    }
+
+    public String getEsRouting() {
+        return esRouting;
+    }
+
+    public void setEsRouting(String esRouting) {
+        this.esRouting = esRouting;
+    }
+
+    public String getEsRoutingIgnore() {
+        return esRoutingIgnore;
+    }
+
+    public void setEsRoutingIgnore(String esRoutingIgnore) {
+        this.esRoutingIgnore = esRoutingIgnore;
     }
 
     public String getGeoPositionConf() {

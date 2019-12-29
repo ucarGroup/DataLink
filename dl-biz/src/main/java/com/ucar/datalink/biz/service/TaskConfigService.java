@@ -2,6 +2,7 @@ package com.ucar.datalink.biz.service;
 
 import com.ucar.datalink.domain.monitor.TaskMonitorInfo;
 import com.ucar.datalink.domain.statis.StatisDetail;
+import com.ucar.datalink.domain.task.ActiveTasks;
 import com.ucar.datalink.domain.task.TaskInfo;
 import com.ucar.datalink.domain.task.TaskType;
 import org.apache.ibatis.annotations.Param;
@@ -35,7 +36,7 @@ public interface TaskConfigService {
      * @param groupId 分组id
      * @return
      */
-    List<TaskInfo> getActiveTaskConfigsByGroup(Long groupId);
+    ActiveTasks getActiveTaskConfigsByGroup(Long groupId);
 
     /**
      * 获取某个LeaderTask的FollowerTask列表
@@ -76,6 +77,13 @@ public interface TaskConfigService {
     void addTask(TaskInfo taskInfo);
 
     /**
+     * 增加一个mysql同步任务
+     *
+     * @param taskInfo
+     */
+    TaskInfo addMySqlTask(TaskInfo taskInfo);
+
+    /**
      * 更新Task配置内容
      *
      * @param taskInfo
@@ -87,7 +95,7 @@ public interface TaskConfigService {
      *
      * @param id
      */
-    void deleteTask(long id);
+    void deleteTask(long id) throws Exception;
 
     /**
      * 暂停Task
@@ -146,8 +154,18 @@ public interface TaskConfigService {
 
     /**
      * 获取某分组的Task列表
+     *
      * @param groupId
      * @return
      */
     List<TaskInfo> getTaskListByGroupId(Long groupId);
+
+    /**
+     * 修改hbase主task时，支持从task同步修改
+     *
+     * @param taskInfo
+     * @param sync
+     */
+    void updateTask(TaskInfo taskInfo, String sync);
+
 }

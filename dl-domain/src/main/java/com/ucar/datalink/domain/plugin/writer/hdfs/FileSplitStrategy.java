@@ -1,11 +1,14 @@
 package com.ucar.datalink.domain.plugin.writer.hdfs;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 import java.util.Date;
 
 /**
  * Created by sqq on 2017/7/18.
  */
 public class FileSplitStrategy {
+    @JSONField(format = "yyyy-MM-dd")
     private Date effectiveDate;
     private FileSplitMode fileSplitMode;
 
@@ -24,4 +27,5 @@ public class FileSplitStrategy {
     public void setFileSplitMode(FileSplitMode fileSplitMode) {
         this.fileSplitMode = fileSplitMode;
     }
+
 }

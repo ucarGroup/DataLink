@@ -57,7 +57,7 @@
                         <label class="col-sm-3 control-label no-padding-right" for="form-add-threshold">阀值</label>
 
                         <div class="col-sm-9">
-                            <input type="text" id="form-add-threshold" value="3" name="threshold"
+                            <input type="text" id="form-add-threshold" value="5" name="threshold"
                                    class="col-xs-10 col-sm-5"/>
 
                             <div id="unit"></div>
@@ -155,7 +155,7 @@
 
     $('#form-add-monitorType').on('change', function () {
         var type = $('#form-add-monitorType').val();
-        if (type == '1') {
+        if (type == '1'|| type == '8') {
             $('#unit').html('(单位:毫秒)')
         } else if (type == '2' || type == '3'|| type == '6') {
             $('#unit').html('(单位:个数)')

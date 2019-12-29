@@ -49,6 +49,13 @@
         WHERE id=#{id}
     </select>
 
+    <select id="getSysPropertiesByKey" resultMap="result" parameterType="String">
+        SELECT
+        <include refid="allColumns"/>
+        FROM t_dl_sys_properties
+        WHERE properties_key=#{propertiesKey}
+    </select>
+
     <select id="findSysPropertieList" resultMap="result">
         SELECT
         <include refid="allColumns"/>

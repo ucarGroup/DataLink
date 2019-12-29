@@ -46,7 +46,7 @@ public class WorkerKeeper implements Keeper, Runnable, TaskStatusListener {
 
     // To handle most external requests, like creating or destroying a task, we can use a generic request where
     // the caller specifies all the code that should be executed.
-    private final Queue<KeeperRequest> requests = new PriorityQueue<>();
+    private final Queue<KeeperRequest> requests = new PriorityBlockingQueue<>();
 
     private Set<String> taskConfigUpdates = new HashSet<>();
     private Set<String> taskTargetStateChanges = new HashSet<>();
@@ -608,5 +608,6 @@ public class WorkerKeeper implements Keeper, Runnable, TaskStatusListener {
             }
         }
     }
+
 
 }

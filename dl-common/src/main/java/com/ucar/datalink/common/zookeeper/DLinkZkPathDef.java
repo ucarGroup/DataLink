@@ -31,6 +31,8 @@ public class DLinkZkPathDef {
 
     public static final String TaskPositionNode;
 
+    public static final String TaskSyncStatusNode;
+
     public static final String ServiceRoot;
 
     public static final String ServiceMailRoot;
@@ -52,6 +54,7 @@ public class DLinkZkPathDef {
         TaskNode = TaskRoot + "/{0}";
         TaskStatusNode = TaskNode + "/status";
         TaskPositionNode = TaskNode + "/position";
+        TaskSyncStatusNode = TaskNode + "/syncstatus";
 
         ServiceRoot = Root + "/service";
         ServiceMailRoot = ServiceRoot + "/mail";
@@ -76,6 +79,10 @@ public class DLinkZkPathDef {
 
     public static String getTaskPositionNode(String taskId) {
         return MessageFormat.format(TaskPositionNode, taskId);
+    }
+
+    public static String getTaskSyncStatusNode(String taskId) {
+        return MessageFormat.format(TaskSyncStatusNode, taskId);
     }
 
     public static String getServiceMailNode(String msg) {
