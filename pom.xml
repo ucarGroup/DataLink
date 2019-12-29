@@ -7,7 +7,7 @@
     <name>datalink</name>
     <version>1.0.0-beta</version>
     <inceptionYear>2016</inceptionYear>
-    <url>https://github.com/ucar/datalink</url>
+    <url>https://github.com/ucarGroup/DataLink</url>
 
     <modules>
         <module>dl-common</module>
