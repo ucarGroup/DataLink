@@ -13,7 +13,7 @@ DataLink开发时间从2016年12月开始，第一版于2017年5月份上线，�
 * 100台Worker+2台Manager机器的集群规模
 * 日均数据同步量TB级
 #### 当前规划
-当前正在开发的功能为，重构内部版本，开源全量同步能力，实现增量和全量同步的全覆盖
+当前正在开发的功能为：重构内部版本，开源全量同步能力，实现增量和全量同步的全覆盖
 ## 相关文章
 神州优车数据交换平台的架构、建设与痛点难点详解 <br>
 https://mp.weixin.qq.com/s/BVuDbS-2Ra5pIJ7oV78FBA <br>
@@ -38,7 +38,7 @@ otter：https://github.com/alibaba/otter<br>
 Kafka-Connect：https://github.com/apache/kafka<br>
 DataBus：https://github.com/linkedin/databus
 ## 版本历史
-当前最新版本为1.0.0-beta<br>，版本发布历史如下：<br>
+当前最新版本为1.0.0-beta，版本发布历史如下：<br>
 https://github.com/ucarGroup/DataLink/releases/
 ## 问题反馈
 目前有关DataLink的问题交流方式有如下几种，欢迎各位加入进行技术讨论。<br>
