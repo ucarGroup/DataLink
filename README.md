@@ -1,13 +1,13 @@
-# DataLink
+## DataLink
 DataLink是一个满足各种异构数据源之间的实时增量同步，分布式、可扩展的数据交换平台。
-### 相关文章
+#### 相关文章
 神州优车数据交换平台的架构、建设与痛点难点详解 <br>
 https://mp.weixin.qq.com/s/BVuDbS-2Ra5pIJ7oV78FBA
 （神州优车）大数据平台建设经验分享 <br>
 https://www.cnblogs.com/ucarinc/p/12091053.html
-# 当前规划
+## 当前规划
 当前正在开发的功能，改造DataX，集成全量同步能力，实现增量全量的全覆盖
-# 项目背景
+## 项目背景
 着眼于未来，我们的目标是打造一个平台，满足各种异构数据源之间的实时增量同步，支撑公司业务的快速发展。在充分调研的基础之上，我们发现，没有任何一款开源产品能轻易的满足我们的目标，每个产品都有其明显的短板和局限性，所以最终的选项只有"自行设计"。但自行设计并不是凭空设计，现有的数据交换平台、已有的经验、大大小小的开源产品都是我们的设计根基，与其说是自行设计，倒不如说是站在巨人的肩膀上做了一次飞跃。由此诞生了DataLink这样一个产品：
 * 满足各种异构数据源之间的实时增量同步
 * 平台提供统一的基础设施（高可用、动态负载、同步任务管理、插件管理、监控报警、公用业务组件等等），让设计人员专注于同步插件开发，一次投入，长久受益
@@ -19,12 +19,12 @@ DataLink开发时间从2016年12月开始，第一版于2017年5月份上线，�
 * 涉及500多个数据库实例之间的6000+个同步映射
 * 100台Worker+2台Manager机器的集群规模
 * 日均数据同步量TB级
-# 项目介绍
+## 项目介绍
 名称：DataLink['deitə liŋk]<br><br>
 译意： 数据链路，数据（自动）传输器<br><br>
 语言： 纯java开发<br><br>
 定位： 完成各种异构数据源之间的实时增量同步，一个分布式、可扩展的数据库同步系统
-# 工作原理
+## 工作原理
 ![基础架构](https://github.com/ucarGroup/DataLink/blob/master/img/0-0.%E6%9E%B6%E6%9E%84%E5%8E%9F%E7%90%86.png)
 原理描述：
 * 典型Master-Slave式系统架构，Manager(Web管理)+Worker(工作节点)<br>
@@ -32,22 +32,22 @@ DataLink开发时间从2016年12月开始，第一版于2017年5月份上线，�
     b. Worker核心功能是管理Task的生命周期，并配合Manager进行Re-Balance<br>
 * Zookeeper：Manager的高可用需要依赖于Zookeeper，另外，Task会将运行时信息注册到Zookeeper
 * Mysql：Datalink的运行需要依赖各种配置信息、以及在运行过程中会动态产生监控和统计数据，统一保存到Mysql中
-# QuickStart
+## QuickStart
 See the page for quick start: [QuickStart](https://github.com/ucarGroup/DataLink/wiki/0.0_QuickStart)
-# 架构&文档
+## 架构&文档
 See the page for introduction: [架构&文档](https://github.com/ucarGroup/DataLink/wiki/1.0_DataLink%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84)
-# 常见问题
+## 常见问题
 See the page for FAQ: [FAQ](https://github.com/ucarGroup/DataLink/wiki/FAQ)
-# 相关开源
+## 相关开源
 canal：http://github.com/alibaba/canal<br>
 otter：https://github.com/alibaba/otter<br>
 Kafka-Connect：https://github.com/apache/kafka<br>
 DataBus：https://github.com/linkedin/databus
-# 版本历史
+## 版本历史
 当前最新版本1.0.0-beta<br>
 版本发布历史如下：<br>
 https://github.com/ucarGroup/DataLink/releases/
-# 问题反馈
+## 问题反馈
 目前有关DataLink的问题交流方式有如下几种，欢迎各位加入进行技术讨论。<br>
 qq交流群： 758937055<br>
 邮件交流： tech_plat_data@ucarinc.com<br>
