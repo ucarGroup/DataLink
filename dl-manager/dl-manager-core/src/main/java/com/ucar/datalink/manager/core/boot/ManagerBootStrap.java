@@ -1,5 +1,6 @@
 package com.ucar.datalink.manager.core.boot;
 
+import com.alibaba.fastjson.parser.ParserConfig;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -17,6 +18,10 @@ import java.util.Properties;
 public class ManagerBootStrap {
     private static final Logger logger = LoggerFactory.getLogger(ManagerBootStrap.class);
     private static final String CLASSPATH_URL_PREFIX = "classpath:";
+
+    static{
+        ParserConfig.getGlobalInstance().setAutoTypeSupport(true);
+    }
 
     public static void main(String args[]) {
         ManagerBootStrap bootStrap = new ManagerBootStrap();

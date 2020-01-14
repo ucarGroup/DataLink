@@ -1,5 +1,6 @@
 package com.ucar.datalink.worker.core.boot;
 
+import com.alibaba.fastjson.parser.ParserConfig;
 import com.ucar.datalink.biz.service.*;
 import com.ucar.datalink.common.utils.IPUtils;
 import com.ucar.datalink.domain.worker.WorkerInfo;
@@ -35,6 +36,10 @@ public class WorkerBootStrap {
     private static final Logger logger = LoggerFactory.getLogger(WorkerBootStrap.class);
 
     private static final String CLASSPATH_URL_PREFIX = "classpath:";
+
+    static{
+        ParserConfig.getGlobalInstance().setAutoTypeSupport(true);
+    }
 
     public void boot(String[] args) {
         try {

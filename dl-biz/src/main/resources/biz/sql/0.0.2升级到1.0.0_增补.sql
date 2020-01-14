@@ -125,6 +125,7 @@ ALTER TABLE `t_dl_media_mapping` ADD COLUMN `es_routing` VARCHAR(100) DEFAULT NU
 COMMENT 'esRouting字段';
 ALTER TABLE `t_dl_media_mapping` ADD COLUMN `es_routing_ignore` VARCHAR(5) DEFAULT NULL
 COMMENT '如果routing字段值不存在，写入的数据是否可忽略写入,true：可以忽略，false：不可以忽略';
+ALTER TABLE `t_dl_sys_properties` MODIFY `properties_key` VARCHAR(30);
 
 
 INSERT INTO t_dl_menu (CODE, NAME, parent_code, type, url, icon, create_time, modify_time) VALUES

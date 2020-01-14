@@ -123,8 +123,7 @@
         SELECT
         <include refid="allTaskColumns"/>
         from t_dl_task t
-        LEFT JOIN t_dl_media_source m ON t.READER_MEDIA_SOURCE_ID = m.id
-        where is_delete='false'
+        where t.is_delete='false'
         <if test="groupId != null">
             and t.GROUP_ID = #{groupId}
         </if>

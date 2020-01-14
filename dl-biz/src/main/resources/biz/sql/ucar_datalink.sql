@@ -332,7 +332,7 @@ DROP TABLE IF EXISTS `t_dl_sys_properties`;
 CREATE TABLE `t_dl_sys_properties` (
   `id`               BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT
   COMMENT '主键',
-  `properties_key`   VARCHAR(20)         NOT NULL
+  `properties_key`   VARCHAR(30)         NOT NULL
   COMMENT '参数key',
   `properties_value` VARCHAR(50)         NOT NULL
   COMMENT '参数值',
