@@ -1238,5 +1238,3 @@ INSERT INTO `t_dl_user` (`id`, `user_name`, `ucar_email`, `phone`, `create_time`
 VALUES (1, 'admin', 'admin', '18800000000', now(), now(), '1');
 
 INSERT INTO `t_dl_user_role` (`id`, `user_id`, `role_id`, `create_time`, `modify_time`) VALUES (1, 1, 1, now(), now());
-INSERT INTO `t_dl_sys_properties` (`properties_key`, `properties_value`, `create_time`, `modify_time`) VALUES
-  ('multiplexingReadGlobal', 'false', now(), now());
