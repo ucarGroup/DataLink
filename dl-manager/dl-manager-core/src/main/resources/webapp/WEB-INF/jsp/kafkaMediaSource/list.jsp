@@ -42,7 +42,7 @@
     $(".chosen-select").chosen();
 
     getButtons([{
-        code: "002011001",
+        code: "002005002",
         html: '<div class="pull-left tableTools-container" style="padding-top: 10px;">' +
         '<p> <button class="btn btn-sm btn-info" onclick="toAdd();">新增</button> </p>' +
         '</div>'
@@ -77,35 +77,35 @@
 
                     getButtons([
                         {
-                            code: '002011003',
+                            code: '002005004',
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
-                                        "<a href='javascript:toEdit(" + oData.id + ")' class='blue'  title='修改'>" +
-                                        "<i class='ace-icon fa fa-pencil bigger-130'></i>" + "</a>" +
-                                        "</div> &nbsp; &nbsp;"
+                                "<a href='javascript:toEdit(" + oData.id + ")' class='blue'  title='修改'>" +
+                                "<i class='ace-icon fa fa-pencil bigger-130'></i>" + "</a>" +
+                                "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         },
                         {
-                            code: '002011005',
+                            code: '002005006',
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
-                                        "<a href='javascript:doDelete(" + oData.id + ")' class='red'  title='删除'>" +
-                                        "<i class='ace-icon fa fa-trash-o bigger-130'></i>" + "</a>" +
-                                        "</div> &nbsp; &nbsp;"
+                                "<a href='javascript:doDelete(" + oData.id + ")' class='red'  title='删除'>" +
+                                "<i class='ace-icon fa fa-trash-o bigger-130'></i>" + "</a>" +
+                                "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         },
                         {
-                            code: '002011006',
+                            code: '002005007',
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
-                                        "<a href='javascript:toReloadDB(" + oData.id + ")' class='green'  title='DBReload'>" +
-                                        "<i class='ace-icon fa fa-refresh bigger-130'></i>" + "</a>" +
-                                        "</div> &nbsp; &nbsp;"
+                                "<a href='javascript:toReloadDB(" + oData.id + ")' class='green'  title='DBReload'>" +
+                                "<i class='ace-icon fa fa-refresh bigger-130'></i>" + "</a>" +
+                                "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         }

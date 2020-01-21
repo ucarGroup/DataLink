@@ -25,10 +25,11 @@ import com.ucar.datalink.worker.api.task.TaskWriterContext;
 import com.ucar.datalink.worker.api.transform.Transformer;
 import com.ucar.datalink.worker.api.transform.TransformerFactory;
 import com.ucar.datalink.worker.api.util.copy.RecordCopier;
-import com.ucar.datalink.worker.api.util.priority.PriorityTask;
-import com.ucar.datalink.worker.api.util.priority.PriorityTaskExecutor;
 import com.ucar.datalink.worker.api.util.statistic.RecordGroupLoadStatistic;
 import com.ucar.datalink.worker.api.util.statistic.WriterStatistic;
+import com.ucar.datalink.worker.api.util.priority.PriorityTask;
+import com.ucar.datalink.worker.api.util.priority.PriorityTaskExecutor;
+import org.apache.commons.lang.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,9 +49,12 @@ import java.util.stream.Collectors;
 public abstract class AbstractHandler<T extends Record> implements Handler {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractHandler.class);
-    protected ExecutorService executorService;
+
     private LinkedList<Interceptor<T>> builtinInterceptors;
+
     private ExecutorService recordChunkExecutorService;
+
+    protected ExecutorService executorService;
 
     protected AbstractHandler() {
         this.builtinInterceptors = Lists.newLinkedList();
@@ -65,7 +69,10 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
         List<MediaMappingInfo> taskMappings = context.getService(MediaService.class)
                 .getMediaMappingsByTask(Long.valueOf(context.taskId()), false)
                 .stream()
-                .filter(i -> parameter.getSupportedSourceTypes().contains(i.getTargetMediaSource().getType()))
+                .filter(i -> (
+                        parameter.getSupportedSourceTypes().contains(i.getTargetMediaSource().getType()) ||
+                                parameter.getSupportedSourceTypes().contains(i.getTargetMediaSource().getSimulateMsType())
+                ))
                 .collect(Collectors.toList());
 
         int corePoolSize = 1;
@@ -190,9 +197,9 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
         }
 
 
-        if (sourceMediaTypeIsSDDL(transformedChunk)) {
+        if(sourceMediaTypeIsSDDL(transformedChunk)){
             //解决分库分表中的冗余表重复数据，避免写入端死锁或版本冲突
-            transformedChunk = merge(transformedChunk, context, true);
+           transformedChunk = merge(transformedChunk, context,true);
             if (!shouldContinue(transformedChunk)) {
                 return;
             }
@@ -203,8 +210,8 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
     }
 
 
-    private boolean sourceMediaTypeIsSDDL(RecordChunk<T> recordChunk) {
-        if (recordChunk == null || recordChunk.getRecords() == null || recordChunk.getRecords().size() == 0) {
+    private boolean sourceMediaTypeIsSDDL(RecordChunk<T> recordChunk){
+        if(recordChunk == null || recordChunk.getRecords() == null || recordChunk.getRecords().size() == 0){
             return false;
         }
         return MediaSourceType.SDDL.equals(RecordMeta.mediaMapping(recordChunk.getRecords().get(0)).getSourceMedia().getMediaSource().getType());
@@ -252,7 +259,7 @@ public abstract class AbstractHandler<T extends Record> implements Handler {
     }
 
 
-    protected void checkFutures(List<Future> results, String errrorMsg) {
+    protected void checkFutures(List<Future> results,String errrorMsg){
         Throwable ex = null;
         for (int i = 0; i < results.size(); i++) {
             Future result = results.get(i);

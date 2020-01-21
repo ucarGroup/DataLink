@@ -10,7 +10,7 @@ import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
-import com.ucar.datalink.domain.media.parameter.hdfs.HDFSMediaSrcParameter;
+import com.ucar.datalink.domain.media.parameter.fq.FqMediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.zk.ZkMediaSrcParameter;
 import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
@@ -164,17 +164,20 @@ public class ZkMediaSourceController {
             return "fail";
         }
         Set<MediaSourceType> setMediaSource = new HashSet<MediaSourceType>();
+        setMediaSource.add(MediaSourceType.FLEXIBLEQ);
         setMediaSource.add(MediaSourceType.HDFS);
-        List<MediaSourceInfo> hdfsMediaSourceList = mediaSourceService.getListByType(setMediaSource);
-        for (MediaSourceInfo mediaSourceInfo : hdfsMediaSourceList) {
-            Long zkId = ((HDFSMediaSrcParameter) mediaSourceInfo.getParameterObj()).getZkMediaSourceId();
-            if (Long.valueOf(id).equals(zkId)) {
-                return "请先删除该Zk集群下的HDFS节点";
+        setMediaSource.add(MediaSourceType.DOVE);
+        List<MediaSourceInfo> fqMediaSourceList = mediaSourceService.getListByType(setMediaSource);
+        Long idLong = Long.valueOf(id);
+        for (MediaSourceInfo mediaSourceInfo : fqMediaSourceList) {
+            Long zkId = ((FqMediaSrcParameter) mediaSourceInfo.getParameterObj()).getZkMediaSourceId();
+            if (idLong.equals(zkId)) {
+                return "请先删除该Zk集群下的Fq节点、HDFS节点和DOVE节点";
             }
         }
         try {
-            MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(Long.valueOf(id));
-            Boolean isSuccess = mediaSourceService.delete(Long.valueOf(id));
+            MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(idLong);
+            Boolean isSuccess = mediaSourceService.delete(idLong);
             if (isSuccess) {
                 AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
                         , "002004006", AuditLogOperType.delete.getValue()));
@@ -266,7 +269,7 @@ public class ZkMediaSourceController {
                 } catch (IOException e) {
                     throw new IOException("Zk服务器验证失败.", e);
                 }
-            } else {
+            }else {
                 throw new ValidationException("ip地址格式不正确.");
             }
         }

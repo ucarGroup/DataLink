@@ -1,8 +1,12 @@
 package com.ucar.datalink.manager.core.server;
 
+import com.ucar.datalink.biz.datasource.DataSourceHolder;
+import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.common.zookeeper.ZkConfig;
 import com.ucar.datalink.common.zookeeper.DLinkZkUtils;
+import com.ucar.datalink.extend.service.UPushService;
 import com.ucar.datalink.manager.core.coordinator.GroupCoordinator;
+import com.ucar.datalink.manager.core.doublecenter.DoubleCenterServer;
 import com.ucar.datalink.manager.core.monitor.MonitorManager;
 import com.ucar.datalink.manager.core.schedule.ScheduleServer;
 import org.slf4j.Logger;
@@ -26,6 +30,8 @@ public class ServerContainer {
     private ServerStatusMonitor serverStatusMonitor;
     private MonitorManager monitorManager;
     private ScheduleServer scheduleServer;
+    private DoubleCenterServer doubleCenterServer;
+    private DataSourceHolder dataSourceHolder;
 
     //单例
     private static ServerContainer container = new ServerContainer();
@@ -55,17 +61,37 @@ public class ServerContainer {
         this.monitorManager = new MonitorManager();
         this.scheduleServer = new ScheduleServer(serverStatusMonitor);
 
+        //初始化默认机房、默认数据源
+        dataSourceHolder = new DataSourceHolder(zkUtils,props.getProperty("doubleCenter.whoIsCentral.url"));
+
+        //初始化双中心server
+        doubleCenterServer = new DoubleCenterServer(zkUtils,props.getProperty("doubleCenter.labSwitch.isThrowBinLogError"),props.getProperty("doubleCenter.labSwitchKey"));
+
         logger.info("ServerContainer is initialized.");
     }
 
     public void startup() throws Exception {
+
         this.serverStatusMonitor.startup();
         this.groupCoordinator.startup();
         this.nettyServer.startup();
         this.jettyServer.startup();
-        this.monitorManager.startup();
-        this.scheduleServer.startup();
 
+        //初始化动态数据源，放在web容器启动之后，操作数据库之前
+        dataSourceHolder.init();
+
+
+        if (ManagerConfig.current().getMonitorManager()) {
+            this.monitorManager.startup();
+        }
+        if (ManagerConfig.current().getScheduleServer()) {
+            this.scheduleServer.startup();
+        }
+
+        doubleCenterServer.startup();
+
+        //短信服务启动
+        /*DataLinkFactory.getObject(UPushService.class).startup();*/
         logger.info("ServerContainer is started.");
     }
 
@@ -77,6 +103,8 @@ public class ServerContainer {
         this.nettyServer.shutdown();
         this.scheduleServer.shutdown();
 
+        //短信服务销毁
+        /*DataLinkFactory.getObject(UPushService.class).shutdown();*/
         logger.info("ServerContainer is shutdown.");
     }
 

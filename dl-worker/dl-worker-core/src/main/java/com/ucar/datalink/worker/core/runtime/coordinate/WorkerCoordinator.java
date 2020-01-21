@@ -1,8 +1,23 @@
 package com.ucar.datalink.worker.core.runtime.coordinate;
 
+import com.alibaba.fastjson.JSON;
+import com.ucar.datalink.biz.service.DoubleCenterService;
+import com.ucar.datalink.biz.service.LabService;
+import com.ucar.datalink.biz.service.MediaSourceService;
+import com.ucar.datalink.biz.service.WorkerService;
+import com.ucar.datalink.biz.utils.DataLinkFactory;
+import com.ucar.datalink.common.Constants;
 import com.ucar.datalink.common.DatalinkProtocol;
 import com.ucar.datalink.domain.ClusterConfigState;
+import com.ucar.datalink.domain.lab.LabInfo;
+import com.ucar.datalink.domain.media.MediaSourceInfo;
+import com.ucar.datalink.domain.media.MediaSourceType;
+import com.ucar.datalink.domain.task.TaskInfo;
+import com.ucar.datalink.domain.task.TaskSyncModeEnum;
+import com.ucar.datalink.domain.worker.WorkerInfo;
 import com.ucar.datalink.worker.core.runtime.TaskConfigManager;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.kafka.clients.consumer.internals.AbstractCoordinator;
 import org.apache.kafka.clients.consumer.internals.ConsumerNetworkClient;
 import org.apache.kafka.common.metrics.Measurable;
@@ -91,11 +106,13 @@ public final class WorkerCoordinator extends AbstractCoordinator implements Clos
 
         do {
             if (coordinatorUnknown()) {
+                //发送METADATA、GROUP_COORDINATOR消息
                 ensureCoordinatorReady();
                 now = time.milliseconds();
             }
 
             if (needRejoin()) {
+                //发送JOIN_GROUP、SYNC_GROUP消息
                 ensureActiveGroup();
                 now = time.milliseconds();
             }
@@ -134,6 +151,14 @@ public final class WorkerCoordinator extends AbstractCoordinator implements Clos
         listener.onAssigned(assignmentSnapshot, generation);
     }
 
+    /**
+     * 执行分配
+     *
+     * @param leaderId
+     * @param protocol
+     * @param allMemberMetadata
+     * @return
+     */
     @Override
     protected Map<String, ByteBuffer> performAssignment(String leaderId, String protocol, Map<String, ByteBuffer> allMemberMetadata) {
         log.debug("Performing task assignment");
@@ -191,27 +216,149 @@ public final class WorkerCoordinator extends AbstractCoordinator implements Clos
         return maxVersion;
     }
 
+    /**
+     * 分配任务
+     *
+     * @param leaderId
+     * @param maxVersion
+     * @param allConfigs 的key是虚拟机的worker id
+     * @return
+     */
     private Map<String, ByteBuffer> performTaskAssignment(String leaderId, long maxVersion, Map<String, DatalinkProtocol.WorkerState> allConfigs) {
+
         Map<String, List<String>> taskAssignments = new HashMap<>();
 
-        // Perform round-robin task assignment
+        //对worker分机房
+        Map<Long, List<String>> labMap = new HashMap<Long, List<String>>();
+        Iterator<Map.Entry<String,DatalinkProtocol.WorkerState>> iterator = allConfigs.entrySet().iterator();
+        while (iterator.hasNext()){
+            Map.Entry<String,DatalinkProtocol.WorkerState> entry = iterator.next();
+            //获取真实worker id
+            String virtualWorkerId = entry.getKey();
+            String realWorkerId = virtualWorkerId.substring(0,virtualWorkerId.indexOf("-"));
+            WorkerService service = DataLinkFactory.getObject(WorkerService.class);
+            WorkerInfo workerInfo = service.getById(Long.valueOf(realWorkerId));
+            List<String> workers = labMap.get(workerInfo.getLabId());
+            if(workers == null){
+                workers = new ArrayList<String>();
+                labMap.put(workerInfo.getLabId(),workers);
+            }
+            workers.add(entry.getKey());
+        }
+
+        //对机房下的worker排序
+        Iterator<Map.Entry<Long,List<String>>> iteratorLab = labMap.entrySet().iterator();
+        Map<Long, CircularIterator<String>> labWorkerMap = new HashMap<Long, CircularIterator<String>>();
+        while (iteratorLab.hasNext()){
+            Map.Entry<Long,List<String>> entry = iteratorLab.next();
+            labWorkerMap.put(entry.getKey(),new CircularIterator<>(sorted(entry.getValue())));
+        }
+
+        //中心机房
+        String labName = DataLinkFactory.getObject(DoubleCenterService.class).getCenterLab(Constants.WHOLE_SYSTEM);
+        LabService labService = DataLinkFactory.getObject(LabService.class);
+        LabInfo labInfo = labService.getLabByName(labName);
+        Long centerLabId = labInfo.getId();
+
+        //跨机房的任务，所有的worker都要参与分配（专门为跨机房分配使用）
         CircularIterator<String> memberIt = new CircularIterator<>(sorted(allConfigs.keySet()));
 
-        for (String taskId : shuffle(configSnapshot.tasks())) {
-            String taskAssignedTo = memberIt.next();
-            log.trace("Assigning task {} to {}", taskId, taskAssignedTo);
-            List<String> memberTasks = taskAssignments.get(taskAssignedTo);
-            if (memberTasks == null) {
-                memberTasks = new ArrayList<>();
-                taskAssignments.put(taskAssignedTo, memberTasks);
-            }
-            memberTasks.add(taskId);
+        //跨机房同步和单机房同步不会属于同一个组
+        String taskSyncMode = TaskSyncModeEnum.singleLabSync.getCode();
+        if(CollectionUtils.isNotEmpty(configSnapshot.allTaskConfigs())){
+            TaskInfo taskInfo = configSnapshot.allTaskConfigs().get(0);
+            taskSyncMode = taskInfo.getTaskSyncMode();
         }
+
+        //单机房分配
+        if(StringUtils.equals(taskSyncMode,TaskSyncModeEnum.singleLabSync.getCode())){
+            // Perform round-robin task assignment
+            for (TaskInfo taskInfo : shuffle(configSnapshot.allTaskConfigs())) {
+
+                //reader关联的数据源
+                Long mediaSourceId = taskInfo.getTaskReaderParameterObj().getMediaSourceId();
+                MediaSourceService service = DataLinkFactory.getObject(MediaSourceService.class);
+                MediaSourceInfo mediaSourceInfo = service.getById(mediaSourceId);
+                Boolean isVirtual = false;
+                if(mediaSourceInfo.getType().equals(MediaSourceType.VIRTUAL)){
+                    isVirtual = true;
+                }
+
+                //获取虚拟数据源的当前中心机房
+                Long dbCenterLabId = -1L;
+                if(isVirtual){
+                    String dbLabName = DataLinkFactory.getObject(DoubleCenterService.class).getCenterLab(mediaSourceId);
+                    LabInfo dbLabInfo = labService.getLabByName(dbLabName);
+                    dbCenterLabId = dbLabInfo.getId();
+                }
+
+                //如果Task配置了所属机房，将Task分配给对应机房下面的Worker即可
+                if(taskInfo.getLabId() != null &&  CollectionUtils.isNotEmpty(labMap.get(taskInfo.getLabId()))){
+                    String taskAssignedTo = labWorkerMap.get(taskInfo.getLabId()).next();
+                    doPerform(String.valueOf(taskInfo.getId()),taskAssignedTo,taskAssignments);
+                }
+                //如果Task没有配置所有机房，但Reader数据源是【非虚拟介质】，将Task分配给Reader数据源所属的机房的worker
+                else if(taskInfo.getLabId() == null && (!isVirtual) && CollectionUtils.isNotEmpty(labMap.get(mediaSourceInfo.getLabId()))){
+                    String taskAssignedTo = labWorkerMap.get(mediaSourceInfo.getLabId()).next();
+                    doPerform(String.valueOf(taskInfo.getId()),taskAssignedTo,taskAssignments);
+                }
+                //如果Task没有配置所有机房，Reader数据源是【虚拟介质】，根据Reader数据源上的中心机房,将Task分配给该机房的worker即可
+                else if(taskInfo.getLabId() == null && isVirtual && CollectionUtils.isNotEmpty(labMap.get(dbCenterLabId))){
+                    String taskAssignedTo = labWorkerMap.get(dbCenterLabId).next();
+                    doPerform(String.valueOf(taskInfo.getId()),taskAssignedTo,taskAssignments);
+                }
+                //将Task分配给中心机房的worker
+                else if(CollectionUtils.isNotEmpty(labMap.get(centerLabId))){
+                    String taskAssignedTo = labWorkerMap.get(centerLabId).next();
+                    doPerform(String.valueOf(taskInfo.getId()),taskAssignedTo,taskAssignments);
+                }
+                //如果上面条件都不满足，分配给非中心机房
+                else{
+                    Iterator<Map.Entry<Long,CircularIterator<String>>> it = labWorkerMap.entrySet().iterator();
+                    while(it.hasNext()){
+                        Map.Entry<Long,CircularIterator<String>> entry = it.next();
+                        if(!entry.getKey().equals(centerLabId)){
+                            String taskAssignedTo = entry.getValue().next();
+                            doPerform(String.valueOf(taskInfo.getId()),taskAssignedTo,taskAssignments);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        //跨机房分配，组下的worker都参与分配
+        else{
+            for (TaskInfo taskInfo : shuffle(configSnapshot.allTaskConfigs())) {
+                String taskAssignedTo = memberIt.next();
+                doPerform(String.valueOf(taskInfo.getId()),taskAssignedTo,taskAssignments);
+            }
+        }
+
+
+        log.debug("-------------任务分配结果是：" + JSON.toJSONString(taskAssignments) + " -------------");
 
         this.leaderState = new LeaderState(allConfigs, taskAssignments);
 
         return fillAssignmentsAndSerialize(allConfigs.keySet(), DatalinkProtocol.Assignment.NO_ERROR,
                 leaderId, allConfigs.get(leaderId).url(), maxVersion, taskAssignments);
+
+    }
+
+    /**
+     * 分配
+     *
+     * @param taskId
+     * @param taskAssignedTo
+     * @param taskAssignments
+     */
+    private void doPerform(String taskId,String taskAssignedTo,Map<String, List<String>> taskAssignments){
+        log.trace("Assigning task {} to {}", taskId, taskAssignedTo);
+        List<String> memberTasks = taskAssignments.get(taskAssignedTo);
+        if (memberTasks == null) {
+            memberTasks = new ArrayList<>();
+            taskAssignments.put(taskAssignedTo, memberTasks);
+        }
+        memberTasks.add(taskId);
     }
 
     private Map<String, ByteBuffer> fillAssignmentsAndSerialize(Collection<String> members,

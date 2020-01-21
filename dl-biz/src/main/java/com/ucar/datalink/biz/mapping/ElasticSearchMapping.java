@@ -7,6 +7,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,26 +21,26 @@ public class ElasticSearchMapping extends AbstractMapping {
     /**
      * 将ES的一列转换成关系数据库中的列
      */
-    private static final Map<String, String> toRDBMS = new ConcurrentHashMap<>();
+    private static final Map<String,String> toRDBMS = new ConcurrentHashMap<>();
 
-    private static final Map<String, String> toHDFS = new ConcurrentHashMap<>();
+    private static final Map<String,String> toHDFS = new ConcurrentHashMap<>();
 
     static {
         /**
          * toRDBMS是一个映射关系，key是ElasticSearch中的列类型，value是关系型数据库中的列类型
          */
-        toRDBMS.put("long", "bigint");
-        toRDBMS.put("integer", "int");
-        toRDBMS.put("string", "varchar");
-        toRDBMS.put("double", "decimal");
-        toRDBMS.put("date", "timestamp");
+        toRDBMS.put("long","bigint");
+        toRDBMS.put("integer","int");
+        toRDBMS.put("string","varchar");
+        toRDBMS.put("double","decimal");
+        toRDBMS.put("date","timestamp");
 
         toHDFS.put("integer", "bigint");
         toHDFS.put("long", "bigint");
-        toHDFS.put("string", "string");
-        toHDFS.put("double", "double");
-        toHDFS.put("date", "date");
-        toHDFS.put("text", "string");
+        toHDFS.put("string","string");
+        toHDFS.put("double","double");
+        toHDFS.put("date","date");
+        toHDFS.put("text","string");
 
 
     }
@@ -47,13 +48,13 @@ public class ElasticSearchMapping extends AbstractMapping {
 
     @Override
     public void processMetaMapping(MetaMappingInfo info) {
-        if (MediaSourceType.MYSQL.name().toUpperCase().equals(info.getTargetMediaSourceType()) || MediaSourceType.SQLSERVER.name().toUpperCase().equals(info.getTargetMediaSourceType()) || MediaSourceType.POSTGRESQL.name().toUpperCase().equals(info.getTargetMediaSourceType())) {
+        if(MediaSourceType.MYSQL.name().toUpperCase().equals(info.getTargetMediaSourceType()) || MediaSourceType.SQLSERVER.name().toUpperCase().equals(info.getTargetMediaSourceType()) || MediaSourceType.POSTGRESQL.name().toUpperCase().equals(info.getTargetMediaSourceType()) ) {
             toRDBMS.put(info.getSrcMappingType(), info.getTargetMappingType());
         }
-        if ("RDBMS".equals(info.getTargetMediaSourceType())) {
+        if("RDBMS".equals(info.getTargetMediaSourceType())) {
             toRDBMS.put(info.getSrcMappingType(), info.getTargetMappingType());
         }
-        if (MediaSourceType.HDFS.name().toUpperCase().equals(info.getTargetMediaSourceType())) {
+        if(MediaSourceType.HDFS.name().toUpperCase().equals(info.getTargetMediaSourceType())) {
             toHDFS.put(info.getSrcMappingType(), info.getTargetMappingType());
         }
     }
@@ -64,8 +65,8 @@ public class ElasticSearchMapping extends AbstractMapping {
         meta.setName(filterName);
         String name = meta.getType().toLowerCase();
         String type = toRDBMS.get(name);
-        if (type == null) {
-            LOGGER.error("unsupport transform " + name);
+        if(type == null) {
+            LOGGER.error("unsupport transform "+name);
             return createEmtpyColumnMeta(meta.getName());
         }
         ColumnMeta target = new ColumnMeta();
@@ -99,8 +100,8 @@ public class ElasticSearchMapping extends AbstractMapping {
         meta.setName(filterName);
         String name = meta.getType().toLowerCase();
         String type = toHDFS.get(name);
-        if (type == null) {
-            LOGGER.error("unsupport transform " + name);
+        if(type == null) {
+            LOGGER.error("unsupport transform "+name);
             return createEmtpyColumnMeta(meta.getName());
         }
         ColumnMeta target = new ColumnMeta();
@@ -110,10 +111,10 @@ public class ElasticSearchMapping extends AbstractMapping {
     }
 
     private static String filterVerticalLine(String content) {
-        if (StringUtils.isBlank(content)) {
+        if(StringUtils.isBlank(content)) {
             return content;
         }
-        if (content.contains("|")) {
+        if(content.contains("|")) {
             String[] str = content.split("\\|");
             return str[1];
         }

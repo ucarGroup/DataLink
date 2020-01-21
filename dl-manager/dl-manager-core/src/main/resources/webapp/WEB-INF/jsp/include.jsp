@@ -88,7 +88,7 @@
                 authCode = authValue.split(",");
             }
         }
-
+        //超级管理员免校验
         if(authCode.indexOf(code)>=0 || authCode == "super") {
             return true;
         } else{

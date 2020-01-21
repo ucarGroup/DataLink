@@ -18,6 +18,8 @@ public class WorkerView {
     private Date modifyTime;
     private String workerState = "";
     private String startTime = "";
+    private Long labId;
+    private String labName;
 
     public String getWorkerState() {
         return workerState;
@@ -105,5 +107,21 @@ public class WorkerView {
 
     public void setStartTime(String startTime) {
         this.startTime = startTime;
+    }
+
+    public Long getLabId() {
+        return labId;
+    }
+
+    public void setLabId(Long labId) {
+        this.labId = labId;
+    }
+
+    public String getLabName() {
+        return labName;
+    }
+
+    public void setLabName(String labName) {
+        this.labName = labName;
     }
 }

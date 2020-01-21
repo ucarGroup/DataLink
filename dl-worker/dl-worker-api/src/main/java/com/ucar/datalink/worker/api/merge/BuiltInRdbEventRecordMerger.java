@@ -1,6 +1,7 @@
 package com.ucar.datalink.worker.api.merge;
 
 import com.ucar.datalink.common.errors.DatalinkException;
+import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.contract.log.rdbms.EventColumn;
 import com.ucar.datalink.contract.log.rdbms.EventColumnIndexComparable;
 import com.ucar.datalink.contract.log.rdbms.EventType;

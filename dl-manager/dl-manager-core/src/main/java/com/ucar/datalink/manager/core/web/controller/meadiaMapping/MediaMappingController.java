@@ -10,17 +10,18 @@ import com.ucar.datalink.biz.utils.AuditLogOperType;
 import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.interceptor.InterceptorInfo;
+import com.ucar.datalink.domain.lab.LabInfo;
 import com.ucar.datalink.domain.media.*;
 import com.ucar.datalink.domain.media.parameter.MediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
 import com.ucar.datalink.domain.plugin.PluginWriterParameter;
 import com.ucar.datalink.domain.task.TaskInfo;
+import com.ucar.datalink.domain.task.TaskSyncModeEnum;
+import com.ucar.datalink.manager.core.utils.TableModeUtil;
 import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;
 import com.ucar.datalink.manager.core.web.dto.mediaMapping.MediaMappingView;
 import com.ucar.datalink.manager.core.web.dto.mediaSource.MediaSourceView;
-import com.ucar.datalink.manager.core.web.util.MediaMappingConfigUtil;
-import com.ucar.datalink.manager.core.web.util.Page;
-import com.ucar.datalink.manager.core.web.util.UserUtil;
+import com.ucar.datalink.manager.core.web.util.*;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -59,7 +60,9 @@ public class MediaMappingController {
     private TaskConfigService taskConfigService;
 
     @Autowired
-    private SyncRelationService syncRelationService;
+    LabService labService;
+    @Autowired
+    DoubleCenterService doubleCenterService;
 
     @RequestMapping(value = "/mediaSourceList")
     public ModelAndView mediaSourceList() {
@@ -68,7 +71,29 @@ public class MediaMappingController {
         mav.addObject("taskList", CollectionUtils.isEmpty(taskList) ? taskList : taskList.stream().filter(t -> t.getLeaderTaskId() == null).collect(Collectors.toList()));
         mav.addObject("sourceMediaSourceList", mediaSourceService.getList());
         mav.addObject("targetMediaSourceList", mediaSourceService.getList());
+        mav.addObject("taskSyncModeList", TaskSyncModeEnum.toList());
         return mav;
+    }
+
+    @RequestMapping(value = "/findMediaSourcesBySyncMode")
+    @ResponseBody
+    public Map<String, Object> findMediaSourcesBySyncMode(String taskSyncMode){
+        Map<String, Object> map = new HashMap<>();
+        TaskSyncModeEnum syncModeEnum = TaskSyncModeEnum.getEnumByCode(taskSyncMode);
+        map.put("mediaSourceList",findMediaSourcesBySyncMode(syncModeEnum));
+        return map;
+    }
+
+    private List<MediaSourceInfo> findMediaSourcesBySyncMode(TaskSyncModeEnum syncModeEnum){
+        List<MediaSourceInfo> mediaSourceInfoList;
+        if(TaskSyncModeEnum.singleLabSync.equals(syncModeEnum)){
+            mediaSourceInfoList = mediaService.findMediaSourcesForSingleLab(null);
+        }else if(TaskSyncModeEnum.acrossLabSync.equals(syncModeEnum)){
+            mediaSourceInfoList = mediaService.findMediaSourcesForAcrossLab(null, null);
+        }else{
+            mediaSourceInfoList = mediaSourceService.getList();
+        }
+        return mediaSourceInfoList;
     }
 
     @RequestMapping(value = "/initMediaMapping")
@@ -144,41 +169,82 @@ public class MediaMappingController {
     @AuthIgnore
     public Map<String, Object> getTableNameAndTargetNamespace(Long taskId, Long targetMediaNamespaceId) {
         Map<String, Object> map = new HashMap<>();
-        TaskInfo taskInfo = taskConfigService.getTask(taskId);
-        //源端
-        MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(taskInfo.getTaskReaderParameterObj().getMediaSourceId());
-        if (mediaSourceInfo.getType() == MediaSourceType.SDDL) {
-            SddlMediaSrcParameter sddlParameter = mediaSourceInfo.getParameterObj();
-            mediaSourceInfo = mediaSourceService.getById(sddlParameter.getProxyDbId());
-        }
+        try {
+            TaskInfo taskInfo = taskConfigService.getTask(taskId);
+            //源端
+            MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(taskInfo.getTaskReaderParameterObj().getMediaSourceId());
 
-        List<String> tableNameList;
-        if (mediaSourceInfo.getType() == MediaSourceType.HBASE) {
-            tableNameList = mediaSourceService.getHbaseTableNames(mediaSourceInfo);
-        } else {
-            tableNameList = mediaSourceService.getRdbTableNames(mediaSourceInfo);
-        }
-
-        Set<String> set = Sets.newLinkedHashSet();
-        tableNameList.stream().forEach(t -> set.add(t));
-        tableNameList.stream().forEach(t -> {
-            //必须先判断monthly，再判断yearly
-            String result = ModeUtils.tryBuildMonthlyPattern(t);
-            if (ModeUtils.isMonthlyPattern(result)) {
-                set.add(result);
-            } else {
-                result = ModeUtils.tryBuildYearlyPattern(t);
-                if (ModeUtils.isYearlyPattern(result)) {
-                    set.add(result);
+            if (mediaSourceInfo.getType() == MediaSourceType.SDDL) {
+                SddlMediaSrcParameter sddlParameter = mediaSourceInfo.getParameterObj();
+                mediaSourceInfo = mediaSourceService.getById(sddlParameter.getProxyDbId());
+            }else if(mediaSourceInfo.getType() == MediaSourceType.VIRTUAL){
+                String labName = doubleCenterService.getCenterLab(mediaSourceInfo.getId());
+                LabInfo labInfo = labService.getLabByName(labName);
+                Long labId = labInfo.getId();
+                //取出真实数据源
+                List<MediaSourceInfo> list = mediaSourceService.findRealListByVirtualMsId(mediaSourceInfo.getId());
+                for(MediaSourceInfo info : list){
+                    if(info.getLabId().equals(labId)){
+                        mediaSourceInfo = info;
+                        break;
+                    }
+                }
+                //如果真实数据源是sddl
+                if (mediaSourceInfo.getType() == MediaSourceType.SDDL) {
+                    SddlMediaSrcParameter sddlParameter = mediaSourceInfo.getParameterObj();
+                    mediaSourceInfo = mediaSourceService.getById(sddlParameter.getProxyDbId());
                 }
             }
-        });
-        tableNameList = set.stream().map(i -> i).collect(Collectors.toList());
 
-        //目标端
-        MediaSourceInfo targetMediaSourceInfo = mediaSourceService.getById(targetMediaNamespaceId);
-        map.put("tableNameList", tableNameList);
-        map.put("targetNamespace", targetMediaSourceInfo.getParameterObj().getNamespace());
+            Map<String, Object> mapParam = new HashMap<>();
+            mapParam.put("taskId", taskId);
+            mapParam.put("targetMediaSourceId", targetMediaNamespaceId);
+           // List<String> tableList = mediaSourceService.getMappingTableNameByTaskIdAndTargetMediaSourceId(mapParam);
+            List<String> tableNameList = null;
+            if (mediaSourceInfo.getType() == MediaSourceType.HBASE) {
+                tableNameList = mediaSourceService.getHbaseTableName(mediaSourceInfo);
+            } else {
+                tableNameList = mediaSourceService.getRdbTableName(mediaSourceInfo);
+            }
+
+            Set<String> set = Sets.newLinkedHashSet();
+            tableNameList.stream().forEach(t -> set.add(t));
+            tableNameList.stream().forEach(t -> {
+                //必须先判断monthly，再判断yearly
+                String result = ModeUtils.tryBuildMonthlyPattern(t);
+                if (ModeUtils.isMonthlyPattern(result)) {
+                    set.add(result);
+                } else {
+                    result = ModeUtils.tryBuildYearlyPattern(t);
+                    if (ModeUtils.isYearlyPattern(result)) {
+                        set.add(result);
+                    }
+                }
+            });
+
+            tableNameList = set.stream().map(i -> i).collect(Collectors.toList());
+
+/*            for (String tableName : tableList) {
+                tableNameList.remove(tableName);
+            }*/
+
+            //处理分表
+            TableModeUtil.doTableModel(tableNameList);
+
+            //目标端
+            MediaSourceInfo targetMediaSourceInfo = mediaSourceService.getById(targetMediaNamespaceId);
+            String targetNamespace;
+            if(targetMediaSourceInfo.getType().equals(MediaSourceType.VIRTUAL)){
+                MediaSourceInfo realMediaSourceInfo = mediaService.getRealDataSource(targetMediaSourceInfo);
+                targetNamespace = realMediaSourceInfo.getParameterObj().getNamespace();
+            }else{
+                targetNamespace = targetMediaSourceInfo.getParameterObj().getNamespace();
+            }
+            map.put("tableNameList", tableNameList);
+            map.put("targetNamespace", targetNamespace);
+        } catch (Exception e) {
+            logger.error("get table name or targetNamespace failed.", e);
+        }
         return map;
     }
 
@@ -195,7 +261,15 @@ public class MediaMappingController {
                 setMediaSource.addAll(per.getSupportedSourceTypes());
             }
         }
-        List<MediaSourceInfo> mediaSourceList = mediaSourceService.getListByType(setMediaSource);
+        //查询数据源
+        List<MediaSourceType> types = new ArrayList<MediaSourceType>();
+        types.addAll(setMediaSource);
+        List<MediaSourceInfo> mediaSourceList;
+        if(TaskSyncModeEnum.getEnumByCode(taskInfo.getTaskSyncMode()).equals(TaskSyncModeEnum.singleLabSync)){
+            mediaSourceList = mediaService.findMediaSourcesForSingleLab(types);
+        }else{
+            mediaSourceList = mediaService.findMediaSourcesForAcrossLab(taskInfo.getTaskParameterObj().getTargetLabId(), types);
+        }
         List<MediaSourceView> targetList = new ArrayList<MediaSourceView>();
         Map<String, Object> map = new HashMap<String, Object>();
         MediaSourceView sourceMedia = new MediaSourceView();
@@ -203,7 +277,7 @@ public class MediaMappingController {
         sourceMedia.setName(mediaSourceInfo.getName());
         if (mediaSourceList != null && mediaSourceList.size() > 0) {
             for (MediaSourceInfo targetMedias : mediaSourceList) {
-                if (targetMedias.getId().equals(mediaSourceInfo.getId())) {
+                if (targetMedias.getId() == mediaSourceInfo.getId()) {
                     continue;
                 }
                 MediaSourceView targetMedia = new MediaSourceView();
@@ -221,16 +295,49 @@ public class MediaMappingController {
     @RequestMapping(value = "/getColumnName")
     @AuthIgnore
     public List<String> getColumnName(Long id, String tableName) {
-        MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(id);
+        List<String> rdbColumnName = new ArrayList<>();
+        try {
+            MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(id);
 
-        if (mediaSourceInfo.getType() == MediaSourceType.HBASE) {
-            return mediaSourceService.getHbaseColumnNames(mediaSourceInfo, tableName);
-        } else {
             if (mediaSourceInfo.getType() == MediaSourceType.SDDL) {
                 SddlMediaSrcParameter sddlParameter = mediaSourceInfo.getParameterObj();
                 mediaSourceInfo = mediaSourceService.getById(sddlParameter.getProxyDbId());
+            }else if(mediaSourceInfo.getType() == MediaSourceType.VIRTUAL){
+                String labName = doubleCenterService.getCenterLab(mediaSourceInfo.getId());
+                LabInfo labInfo = labService.getLabByName(labName);
+                Long labId = labInfo.getId();
+                List<MediaSourceInfo> list = mediaSourceService.findRealListByVirtualMsId(mediaSourceInfo.getId());
+                for(MediaSourceInfo info : list){
+                    if(info.getLabId() == labId){
+                        mediaSourceInfo = info;
+                        break;
+                    }
+                }
             }
-            return mediaSourceService.getRdbColumnNames(mediaSourceInfo, tableName);
+            rdbColumnName = mediaSourceService.getRdbColumnName(mediaSourceInfo, tableName);
+        } catch (Exception e) {
+            logger.error("get column name failed.", e);
+        }
+        return rdbColumnName;
+    }
+
+    /**
+     * 获取es routing信息
+     *
+     * @param json
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/getEsRoutingInfo")
+    public Object getEsRoutingInfo(@RequestBody String json) {
+        Map paramterMap = JSON.parseObject(json,Map.class);
+        Long mediaSourceId = Long.valueOf((String) paramterMap.get("mediaSourceId"));
+        String targetTableName = (String)paramterMap.get("targetTableName");
+        try {
+            return IncrementSyncUtil.getEsRoutingInfo(mediaSourceId,targetTableName);
+        } catch (Exception e) {
+            logger.error("获取routing信息失败，异常是：{}", e);
+            return e.getMessage();
         }
     }
 
@@ -257,7 +364,16 @@ public class MediaMappingController {
             return e.getMessage();
         }
     }
-
+    private static AuditLogInfo getAuditLogInfo(MediaMappingInfo mediaMappingInfo, String menuCode, String operType){
+        AuditLogInfo logInfo=new AuditLogInfo();
+        logInfo.setUserId(UserUtil.getUserIdFromRequest());
+        logInfo.setMenuCode(menuCode);
+        logInfo.setOperName("MediaMapping");
+        logInfo.setOperType(operType);
+        logInfo.setOperKey(mediaMappingInfo.getId());
+        logInfo.setOperRecord(mediaMappingInfo.toString2());
+        return logInfo;
+    }
     @RequestMapping(value = "/toEdit")
     public ModelAndView toEdit(HttpServletRequest request) {
         String id = request.getParameter("id");
@@ -309,10 +425,14 @@ public class MediaMappingController {
         mediaMappingView.setWritePriority(mediaMappingInfo.getWritePriority());
         mediaMappingView.setJoinColumn(mediaMappingInfo.getJoinColumn());
         mediaMappingView.setEsUsePrefix(mediaMappingInfo.isEsUsePrefix());
+
         mediaMappingView.setEsRouting(mediaMappingInfo.getEsRouting());
         mediaMappingView.setEsRoutingIgnore(mediaMappingInfo.getEsRoutingIgnore());
+
+        mediaMappingView.setPrefixName(mediaMappingInfo.getPrefixName());
         mediaMappingView.setGeoPositionConf(mediaMappingInfo.getGeoPositionConf());
         mediaMappingView.setSkipIds(mediaMappingInfo.getSkipIds());
+//        mediaMappingInfo.setParameter(mediaMappingInfo.getParameter());
         mediaMappingView.setTargetMediaSourceId(mediaMappingInfo.getTargetMediaSourceId());
         return mediaMappingView;
     }
@@ -420,7 +540,7 @@ public class MediaMappingController {
                 view.setTaskName(i.getTaskInfo().getTaskName());
                 return view;
             }).collect(Collectors.toList());
-            map.put("mediaMappingList", mediaMappingViews);
+            map.put("mediaMappingList",mediaMappingViews);
         } catch (Exception e) {
             logger.error("校验失败：", e);
         }
@@ -438,34 +558,55 @@ public class MediaMappingController {
         if (sourceTableName == null && sourceTableName.length == 0) {
             throw new RuntimeException("sourceTableName is empty");
         }
-        if (mediaSourceInfo.getId().longValue() == targetMediaSourceId) {
+        if(mediaSourceInfo.getId().longValue() == targetMediaSourceId) {
             throw new RuntimeException("源端和目标端不能是同一个库");
         }
 
         List<MediaInfo> tablelist = new ArrayList<MediaInfo>();
 
+        MediaSourceInfo realMediaSourceInfo;
+        if(mediaSourceInfo.getType().equals(MediaSourceType.VIRTUAL)){
+            realMediaSourceInfo = mediaService.getRealDataSource(mediaSourceInfo);
+        }else{
+            realMediaSourceInfo = mediaSourceInfo;
+        }
 
-        MediaSourceInfo targetMediaSourceInfo = mediaSourceService.getById(targetMediaSourceId);
-        MediaSrcParameter mediaSrcParameter = mediaSourceInfo.getParameterObj();
+        MediaSrcParameter mediaSrcParameter = realMediaSourceInfo.getParameterObj();
+
+        List<MediaSourceInfo> realMediaSourceInfoList = mediaService.listRealMediaSourceInfos(realMediaSourceInfo);
+
+        List<MediaSourceInfo> realTargetMediaSourceInfoList = null;
+        if(targetMediaSourceId != null){
+            realTargetMediaSourceInfoList = mediaService.listRealMediaSourceInfos(mediaSourceService.getById(targetMediaSourceId));
+        }
 
         Set<String> tableNameSet = new HashSet<>();
         //校验mysql数据库表是否有主键
-        MediaMappingConfigUtil.validateMysqlTablePk(mediaSourceInfo, sourceTableName, tableNameSet);
+        MediaMappingConfigUtil.validateMysqlTablePk(realMediaSourceInfoList,sourceTableName,tableNameSet);
+
         //校验目标数据源是否存在
-        MediaMappingConfigUtil.validateExistsTargetMedia(targetMediaSourceInfo, sourceTableName, tableNameSet, targetTableName);
+        MediaMappingConfigUtil.validateExistsTargetMedia(realTargetMediaSourceInfoList,sourceTableName,tableNameSet,targetTableName);
 
         //TODO,如果namespace为空，则设置为default，此处只是临时支持hbase，暂时这么用，
         //TODO 后续整个MediaMappingController都需要进行深度重构
         String namespace = StringUtils.isBlank(mediaSrcParameter.getNamespace()) ? "default" : mediaSrcParameter.getNamespace();
+
+        Long taskId = Long.valueOf(request.getParameter("taskId"));
+        TaskInfo taskInfo = taskConfigService.getTask(taskId);
+
         for (String tableName : sourceTableName) {
             MediaInfo mediaInfo = new MediaInfo();
             mediaInfo.setName(tableName);
             mediaInfo.setMediaSourceId(Long.valueOf(id));
             mediaInfo.setNamespace(namespace);
             tablelist.add(mediaInfo);
+
+            //hbase开启表复制
+            HbaseSyncUtil.openReplication(mediaSourceInfo,taskInfo,tableName);
         }
         return tablelist;
     }
+
 
     private List<MediaMappingInfo> buildMediaMappingInfo(HttpServletRequest request, String id) {
         String[] targetTableName = request.getParameterValues("targetTableName");
@@ -473,8 +614,7 @@ public class MediaMappingController {
         String[] writePriority = request.getParameterValues("writePriorityHidden");
         String[] joinColumn = request.getParameterValues("joinColumnHidden");
         String[] esUsePrefix = request.getParameterValues("esUsePrefixHidden");
-        String[] esRouting = request.getParameterValues("esRoutingHidden");
-        String[] esRoutingIgnore = request.getParameterValues("esRoutingIgnoreHidden");
+        String[] prefixName = request.getParameterValues("prefixNameHidden");
         String[] geoPositionConf = request.getParameterValues("geoPositionConfHidden");
         String[] skipIds = request.getParameterValues("skipIdsHidden");
         String[] parameter = request.getParameterValues("parameterHidden");
@@ -496,6 +636,7 @@ public class MediaMappingController {
 
             mediaMapping.setValid(Boolean.valueOf(valid[i]));
             mediaMapping.setEsUsePrefix(Boolean.valueOf(esUsePrefix[i]));
+            mediaMapping.setPrefixName(prefixName[i] != null ? prefixName[i].trim() : "");
             mediaMapping.setGeoPositionConf(geoPositionConf[i]);
             mediaMapping.setSkipIds(skipIds[i]);
             if (StringUtils.isBlank(parameter[i])) {
@@ -514,8 +655,11 @@ public class MediaMappingController {
             }
             mediaMapping.setTargetMediaNamespace(request.getParameter("targetMediaNamespace"));
             mediaMapping.setTargetMediaName(targetTableName[i]);
-            mediaMapping.setEsRouting(esRouting[i]);
-            mediaMapping.setEsRoutingIgnore(esRoutingIgnore[i]);
+
+            //设置es routing信息
+            Map<String,String> map = IncrementSyncUtil.getEsRoutingInfo(mediaMapping.getTargetMediaSourceId(),mediaMapping.getTargetMediaName());
+            mediaMapping.setEsRouting(StringUtils.isNotBlank(map.get("esRouting")) ? map.get("esRouting") : "");
+            mediaMapping.setEsRoutingIgnore(StringUtils.isNotBlank(map.get("esRoutingIgnore")) ? map.get("esRoutingIgnore") : "");
 
             mediaMappingList.add(mediaMapping);
         }
@@ -536,17 +680,6 @@ public class MediaMappingController {
             mappingList.add(mediaColumnMappingInfo);
         }
         return mappingList;
-    }
-
-    private AuditLogInfo getAuditLogInfo(MediaMappingInfo mediaMappingInfo, String menuCode, String operType) {
-        AuditLogInfo logInfo = new AuditLogInfo();
-        logInfo.setUserId(UserUtil.getUserIdFromRequest());
-        logInfo.setMenuCode(menuCode);
-        logInfo.setOperName("MediaMapping");
-        logInfo.setOperType(operType);
-        logInfo.setOperKey(mediaMappingInfo.getId());
-        logInfo.setOperRecord(mediaMappingInfo.toString());
-        return logInfo;
     }
 
 }

@@ -19,8 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -28,9 +27,10 @@ import java.util.stream.Collectors;
 public class RdbEventRecordHandler extends AbstractHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(RdbEventRecordHandler.class);
-    private static final String NOT_APPEND_PERFIX_LAG = "##";
+
     private RdbEventRecordTransformer transformer = new RdbEventRecordTransformer();
 
+    private static final String NOT_APPEND_PERFIX_LAG = "##";
     @Override
     protected void doWrite(List records, TaskWriterContext context) {
         if (records.size() > 0) {
@@ -104,7 +104,7 @@ public class RdbEventRecordHandler extends AbstractHandler {
                     }
                     kuduTableClient.getKuduSession().apply(upsert);
                     applyCount++;
-                    if (applyCount < halfBatchSize) {
+                    if(applyCount < halfBatchSize){
                         continue;
                     }
                     List<OperationResponse> responses = kuduTableClient.getKuduSession().flush();
@@ -115,7 +115,7 @@ public class RdbEventRecordHandler extends AbstractHandler {
             List<OperationResponse> responses = kuduTableClient.getKuduSession().flush();
             checkError(responses);
         } catch (Exception e) {
-            if (row != null) {
+            if(row != null){
                 logger.error("upsert data:" + row.toString());
             }
             logger.error("write to Kudu failed.", e);
@@ -123,11 +123,19 @@ public class RdbEventRecordHandler extends AbstractHandler {
         }
     }
 
-    private List<EventColumn> getKuduEventColumns(RdbEventRecord record) {
+    private List<EventColumn> getKuduEventColumns(RdbEventRecord record){
         ArrayList<EventColumn> resultEventColumns = new ArrayList<>();
         resultEventColumns.addAll(record.getKeys());
         resultEventColumns.addAll(record.getColumns());
         return resultEventColumns;
+    }
+
+
+    private String getKuduFiedldPrefix(String fieldNamePrefix){
+        if(fieldNamePrefix == null || "".equals(fieldNamePrefix.trim())){
+            return "";
+        }
+        return fieldNamePrefix;
     }
 
     private void checkError(List<OperationResponse> responses) {
@@ -138,6 +146,8 @@ public class RdbEventRecordHandler extends AbstractHandler {
             }
         }
     }
+
+
 
 
 }

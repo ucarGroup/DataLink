@@ -195,6 +195,355 @@
         </form>
     </div>
 </div>
+<div id="div-fq" class="col-sm-12 panel panel-info" style="display:none;">
+    <div class="panel-heading">
+        <h1 class="panel-title">fq Writer</h1>
+    </div>
+    <div class="panel-body">
+        <form id="form-fq" class="form-horizontal" role="form">
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="fq-poolSize">线程池Size</label>
+
+                    <div class="col-sm-7">
+                        <input type='text' id='fq-poolSize' name="poolSize"
+                               style="width:100%;"
+                               value="${taskModel.writerParameterMap['writer-fq'].poolSize}"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="fq-useBatch">是否批量写入</label>
+
+                    <div class="col-sm-7">
+                        <select id='fq-useBatch' name="useBatch" style="width:100%;">
+                            <c:if test="${taskModel.writerParameterMap['writer-fq'].useBatch==true}">
+                                <option selected="selected" value="true">是</option>
+                                <option value="false">否</option>
+                            </c:if>
+                            <c:if test="${taskModel.writerParameterMap['writer-fq'].useBatch==false}">
+                                <option value="true">是</option>
+                                <option selected="selected" value="false">否</option>
+                            </c:if>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="fq-serializeMode">Serialize Mode</label>
+
+                    <div class="col-sm-7">
+                        <select id='fq-serializeMode' name="serializeMode" style="width:100%;">
+                            <c:forEach items="${taskModel.serializeModeList}" var="bean">
+                                <c:if test="${bean==taskModel.writerParameterMap['writer-fq'].serializeMode}">
+                                    <option selected="selected" value="${bean}">${bean}</option>
+                                </c:if>
+                                <c:if test="${bean!=taskModel.writerParameterMap['writer-fq'].serializeMode}">
+                                    <option value="${bean}">${bean}</option>
+                                </c:if>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="fq-batchSize">Batch Size</label>
+
+                    <div class="col-sm-7">
+                        <input type='text' id='fq-batchSize' name="batchSize"
+                               style="width:100%;"
+                               value="${taskModel.writerParameterMap['writer-fq'].batchSize}"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="fq-retryMode">重试模式</label>
+
+                    <div class="col-sm-7">
+                        <select id='fq-retryMode' name="retryMode" style="width:100%;">
+                            <c:forEach items="${taskModel.retryModeList}" var="bean">
+                                <c:if test="${bean==taskModel.writerParameterMap['writer-fq'].retryMode}">
+                                    <option selected="selected" value="${bean}">${bean}</option>
+                                </c:if>
+                                <c:if test="${bean!=taskModel.writerParameterMap['writer-fq'].retryMode}">
+                                    <option value="${bean}">${bean}</option>
+                                </c:if>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="fq-serializeMode">Partition Mode</label>
+
+                    <div class="col-sm-7">
+                        <select id='fq-partitionMode' name="partitionMode" style="width:100%;">
+                            <c:forEach items="${taskModel.partitionModeList}" var="bean">
+                                <c:if test="${bean==taskModel.writerParameterMap['writer-fq'].partitionMode}">
+                                    <option selected="selected" value="${bean}">${bean}</option>
+                                </c:if>
+                                <c:if test="${bean!=taskModel.writerParameterMap['writer-fq'].partitionMode}">
+                                    <option value="${bean}">${bean}</option>
+                                </c:if>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="fq-maxRetryTimes">最大重试次数</label>
+
+                    <div class="col-sm-7">
+                        <input type='text' id='fq-maxRetryTimes' name="maxRetryTimes"
+                               style="width:100%;"
+                               value="${taskModel.writerParameterMap['writer-fq'].maxRetryTimes}"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="fq-merging">是否压缩合并</label>
+
+                    <div class="col-sm-7">
+                        <select id='fq-merging' name="merging" style="width:100%;">
+                            <c:if test="${taskModel.writerParameterMap['writer-fq'].merging==true}">
+                                <option value="false">否</option>
+                                <option selected="selected" value="true">是</option>
+                            </c:if>
+                            <c:if test="${taskModel.writerParameterMap['writer-fq'].merging==false}">
+                                <option selected="selected" value="false">否</option>
+                                <option value="true">是</option>
+                            </c:if>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="fq-dryRun">是否DryRun</label>
+
+                    <div class="col-sm-7">
+                        <select id='fq-dryRun' name="dryRun" style="width:100%;">
+                            <c:if test="${taskModel.writerParameterMap['writer-fq'].dryRun==true}">
+                                <option value="false">否</option>
+                                <option selected="selected" value="true">是</option>
+                            </c:if>
+                            <c:if test="${taskModel.writerParameterMap['writer-fq'].dryRun==false}">
+                                <option selected="selected" value="false">否</option>
+                                <option value="true">是</option>
+                            </c:if>
+
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="fq-perfStatistic">PerfStatistic</label>
+
+                    <div class="col-sm-7">
+                        <select id='fq-perfStatistic' name="perfStatistic" style="width:100%;">
+                            <c:if test="${taskModel.writerParameterMap['writer-fq'].perfStatistic==true}">
+                                <option value="false">否</option>
+                                <option selected="selected" value="true">是</option>
+                            </c:if>
+                            <c:if test="${taskModel.writerParameterMap['writer-fq'].perfStatistic==false}">
+                                <option selected="selected" value="false">否</option>
+                                <option value="true">是</option>
+                            </c:if>
+
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="div-dove" class="col-sm-12 panel panel-info" style="display:none;">
+    <div class="panel-heading">
+        <h1 class="panel-title">dove Writer</h1>
+    </div>
+    <div class="panel-body">
+        <form id="form-dove" class="form-horizontal" role="form">
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="dove-poolSize">线程池Size</label>
+
+                    <div class="col-sm-7">
+                        <input type='text' id='dove-poolSize' name="poolSize"
+                               style="width:100%;"
+                               value="${taskModel.writerParameterMap['writer-dove'].poolSize}"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="dove-useBatch">是否批量写入</label>
+
+                    <div class="col-sm-7">
+                        <select id='dove-useBatch' name="useBatch" style="width:100%;">
+                            <c:if test="${taskModel.writerParameterMap['writer-dove'].useBatch==true}">
+                                <option selected="selected" value="true">是</option>
+                                <option value="false">否</option>
+                            </c:if>
+                            <c:if test="${taskModel.writerParameterMap['writer-dove'].useBatch==false}">
+                                <option value="true">是</option>
+                                <option selected="selected" value="false">否</option>
+                            </c:if>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="dove-serializeMode">Serialize Mode</label>
+
+                    <div class="col-sm-7">
+                        <select id='dove-serializeMode' name="serializeMode" style="width:100%;">
+                            <c:forEach items="${taskModel.serializeModeList}" var="bean">
+                                <c:if test="${bean==taskModel.writerParameterMap['writer-dove'].serializeMode}">
+                                    <option selected="selected" value="${bean}">${bean}</option>
+                                </c:if>
+                                <c:if test="${bean!=taskModel.writerParameterMap['writer-dove'].serializeMode}">
+                                    <option value="${bean}">${bean}</option>
+                                </c:if>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="dove-batchSize">Batch Size</label>
+
+                    <div class="col-sm-7">
+                        <input type='text' id='dove-batchSize' name="batchSize"
+                               style="width:100%;"
+                               value="${taskModel.writerParameterMap['writer-dove'].batchSize}"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="dove-retryMode">重试模式</label>
+
+                    <div class="col-sm-7">
+                        <select id='dove-retryMode' name="retryMode" style="width:100%;">
+                            <c:forEach items="${taskModel.retryModeList}" var="bean">
+                                <c:if test="${bean==taskModel.writerParameterMap['writer-dove'].retryMode}">
+                                    <option selected="selected" value="${bean}">${bean}</option>
+                                </c:if>
+                                <c:if test="${bean!=taskModel.writerParameterMap['writer-dove'].retryMode}">
+                                    <option value="${bean}">${bean}</option>
+                                </c:if>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="dove-serializeMode">Partition Mode</label>
+
+                    <div class="col-sm-7">
+                        <select id='dove-partitionMode' name="partitionMode" style="width:100%;">
+                            <c:forEach items="${taskModel.partitionModeList}" var="bean">
+                                <c:if test="${bean==taskModel.writerParameterMap['writer-dove'].partitionMode}">
+                                    <option selected="selected" value="${bean}">${bean}</option>
+                                </c:if>
+                                <c:if test="${bean!=taskModel.writerParameterMap['writer-dove'].partitionMode}">
+                                    <option value="${bean}">${bean}</option>
+                                </c:if>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="dove-maxRetryTimes">最大重试次数</label>
+
+                    <div class="col-sm-7">
+                        <input type='text' id='dove-maxRetryTimes' name="maxRetryTimes"
+                               style="width:100%;"
+                               value="${taskModel.writerParameterMap['writer-dove'].maxRetryTimes}"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="dove-merging">是否压缩合并</label>
+
+                    <div class="col-sm-7">
+                        <select id='dove-merging' name="merging" style="width:100%;">
+                            <c:if test="${taskModel.writerParameterMap['writer-dove'].merging==true}">
+                                <option value="false">否</option>
+                                <option selected="selected" value="true">是</option>
+                            </c:if>
+                            <c:if test="${taskModel.writerParameterMap['writer-dove'].merging==false}">
+                                <option selected="selected" value="false">否</option>
+                                <option value="true">是</option>
+                            </c:if>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="dove-dryRun">是否DryRun</label>
+
+                    <div class="col-sm-7">
+                        <select id='dove-dryRun' name="dryRun" style="width:100%;">
+                            <c:if test="${taskModel.writerParameterMap['writer-dove'].dryRun==true}">
+                                <option value="false">否</option>
+                                <option selected="selected" value="true">是</option>
+                            </c:if>
+                            <c:if test="${taskModel.writerParameterMap['writer-dove'].dryRun==false}">
+                                <option selected="selected" value="false">否</option>
+                                <option value="true">是</option>
+                            </c:if>
+
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="dove-perfStatistic">PerfStatistic</label>
+
+                    <div class="col-sm-7">
+                        <select id='dove-perfStatistic' name="perfStatistic" style="width:100%;">
+                            <c:if test="${taskModel.writerParameterMap['writer-dove'].perfStatistic==true}">
+                                <option value="false">否</option>
+                                <option selected="selected" value="true">是</option>
+                            </c:if>
+                            <c:if test="${taskModel.writerParameterMap['writer-dove'].perfStatistic==false}">
+                                <option selected="selected" value="false">否</option>
+                                <option value="true">是</option>
+                            </c:if>
+
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div id="div-es" class="col-sm-12 panel panel-info" style="display:none;">
     <div class="panel-heading">
         <h1 class="panel-title">Es Writer</h1>
@@ -548,7 +897,92 @@
         </form>
     </div>
 </div>
+<div id="div-sddl" class="col-sm-12 panel panel-info" style="display:none;">
+    <div class="panel-heading">
+        <h1 class="panel-title">SDDL Writer</h1>
+    </div>
+    <div class="panel-body">
+        <form id="form-sddl" class="form-horizontal" role="form">
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="sddl-retryMode">重试模式</label>
 
+                    <div class="col-sm-7">
+                        <select id='sddl-retryMode' name="retryMode" style="width:100%;">
+                            <c:forEach items="${taskModel.retryModeList}" var="bean">
+                                <c:if test="${bean==taskModel.writerParameterMap['writer-sddl'].retryMode}">
+                                    <option selected="selected" value="${bean}">${bean}</option>
+                                </c:if>
+                                <c:if test="${bean!=taskModel.writerParameterMap['writer-sddl'].retryMode}">
+                                    <option value="${bean}">${bean}</option>
+                                </c:if>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="sddl-missMatchSkipTables">过滤表白名单(多项以#分隔)</label>
+
+                    <div class="col-sm-7">
+                        <textarea id="sddl-missMatchSkipTables" name="missMatchSkipTables"
+                                  style="margin: 0px; width: 354px; height: 91px;">${taskModel.writerParameterMap['writer-sddl'].missMatchSkipTables}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="sddl-perfStatistic">PerfStatistic</label>
+
+                    <div class="col-sm-7">
+                        <select id='sddl-perfStatistic' name="perfStatistic" style="width:100%;">
+                            <c:if test="${taskModel.writerParameterMap['writer-sddl'].perfStatistic==true}">
+                                <option value="false">否</option>
+                                <option selected="selected" value="true">是</option>
+                            </c:if>
+                            <c:if test="${taskModel.writerParameterMap['writer-sddl'].perfStatistic==false}">
+                                <option selected="selected" value="false">否</option>
+                                <option value="true">是</option>
+                            </c:if>
+
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="sddl-maxRetryTimes">最大重试次数</label>
+
+                    <div class="col-sm-7">
+                        <input type='text' id='sddl-maxRetryTimes' name="maxRetryTimes"
+                               style="width:100%;"
+                               value="${taskModel.writerParameterMap['writer-sddl'].maxRetryTimes}"/>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="col-sm-5 control-label no-padding-right"
+                           for="sddl-syncAutoAddColumn">自动加字段</label>
+
+                    <div class="col-sm-7">
+                        <select id='sddl-syncAutoAddColumn' name="syncAutoAddColumn" style="width:100%;">
+                                <option selected="selected" value="false">否</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
 <div id="div-hbase" class="col-sm-12 panel panel-info" style="display:none;">
     <div class="panel-heading">
         <h1 class="panel-title">HBase Writer</h1>

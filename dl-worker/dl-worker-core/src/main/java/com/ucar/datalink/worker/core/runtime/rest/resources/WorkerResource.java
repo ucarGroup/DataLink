@@ -5,7 +5,6 @@ import com.ucar.datalink.common.event.EventBusFactory;
 import com.ucar.datalink.common.jvm.JvmSnapshot;
 import com.ucar.datalink.common.jvm.JvmUtils;
 import com.ucar.datalink.common.utils.FutureCallback;
-import com.ucar.datalink.worker.api.util.Constants;
 import com.ucar.datalink.worker.core.util.JavaShellUtil;
 import com.ucar.datalink.worker.core.util.PropertiesUtil;
 import org.apache.commons.lang.StringUtils;
@@ -35,7 +34,7 @@ import java.util.concurrent.Executors;
 public class WorkerResource {
     private static final Logger logger = LoggerFactory.getLogger(WorkerResource.class);
 
-    private static final String EXECUTE_SHELL = "nohup sh %s/bin/restartup.sh  >>  %s/logs/restartup.log &";
+    private static final String executeShell = "nohup sh /usr/local/frame/dl-worker/bin/restartup.sh  >> /usr/local/frame/dl-worker/logs/restartup.log &";
 
     private static final String WORKER_EXTEND_CONF_DIR = System.getProperty("worker.extend.conf.dir");
 
@@ -100,6 +99,7 @@ public class WorkerResource {
             }
             CommonEvent event = new CommonEvent(new FutureCallback(), eventName, request);
             EventBusFactory.getEventBus().post(event);
+            //event.getCallback().get();不等待，直接返回
         } catch (Exception e) {
             logger.error("Failure for common event process.", e.getMessage());
         }
@@ -152,6 +152,7 @@ public class WorkerResource {
             logger.error("updateJavaOpts error:", e);
             throw e;
         }
+
     }
 
 
@@ -162,23 +163,22 @@ public class WorkerResource {
 
         Map<String, String> result = new HashMap<>();
         try {
-            String localTestSh = System.getProperty("java.opts.local.sh");
+            String optsSh = System.getProperty("java.opts.local.sh");
 
-            String shellCommand;
+            String shellCommand = executeShell;
             // 为了本地测试,添加特殊路径
-            if (StringUtils.isNotEmpty(localTestSh)) {
-                shellCommand = String.format(EXECUTE_SHELL, localTestSh, localTestSh);
-            } else {
-                String workerHome = System.getProperty(Constants.WORKER_HOME);
-                shellCommand = String.format(EXECUTE_SHELL, workerHome, workerHome);
+            if (StringUtils.isNotEmpty(optsSh)) {
+                shellCommand = "nohup sh " + optsSh + "bin/restartup.sh  >> " + optsSh + "logs/restartup.log &";
             }
 
             ExecutorService executorService = Executors.newSingleThreadExecutor();
+            String finalShellCommand = shellCommand;
             executorService.submit(() -> {
+
                 try {
-                    JavaShellUtil.executeShell(shellCommand);
+                    JavaShellUtil.executeShell(finalShellCommand);
                 } catch (Exception e) {
-                    logger.info("JavaShellUtil.executeShell is error, shellCommand:{}! error info:", shellCommand, e);
+                    logger.info("JavaShellUtil.executeShell is error, shellCommand:{}! error info:", finalShellCommand, e);
                 }
             });
 

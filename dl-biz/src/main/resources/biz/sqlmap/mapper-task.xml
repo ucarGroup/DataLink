@@ -20,16 +20,21 @@
         <result property="isLeaderTask" column="IS_LEADER_TASK"/>
         <result property="createTime" column="CREATE_TIME"/>
         <result property="modifyTime" column="MODIFY_TIME"/>
+        <result property="labId" column="lab_id"/>
+        <result property="labName" column="lab_name"/>
+        <result property="taskSyncMode" column="task_sync_mode"/>
+        <result property="alarmPriorityId" column="alarm_priority_id"/>
+        <result property="taskPriorityId" column="task_priority_id"/>
     </resultMap>
 
     <!-- all columns -->
-    <sql id="allTaskColumns">ID,TASK_NAME,TASK_DESC,TASK_TYPE,READER_MEDIA_SOURCE_ID,TASK_PARAMETER,TASK_READER_PARAMETER,TASK_WRITER_PARAMETER,TARGET_STATE,GROUP_ID,IS_DELETE,LEADER_TASK_ID,IS_LEADER_TASK,CREATE_TIME,MODIFY_TIME</sql>
+    <sql id="allTaskColumns">ID,TASK_NAME,TASK_DESC,TASK_TYPE,READER_MEDIA_SOURCE_ID,TASK_PARAMETER,TASK_READER_PARAMETER,TASK_WRITER_PARAMETER,TARGET_STATE,GROUP_ID,IS_DELETE,LEADER_TASK_ID,IS_LEADER_TASK,CREATE_TIME,MODIFY_TIME,lab_id,task_sync_mode,alarm_priority_id,task_priority_id</sql>
 
     <insert id="insert" parameterType="task" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO t_dl_task
-         (TASK_NAME,TASK_DESC,TASK_TYPE,READER_MEDIA_SOURCE_ID,TASK_PARAMETER,TASK_READER_PARAMETER,TASK_WRITER_PARAMETER,TARGET_STATE,GROUP_ID,LEADER_TASK_ID,IS_LEADER_TASK,CREATE_TIME,MODIFY_TIME)
+         (TASK_NAME,TASK_DESC,TASK_TYPE,READER_MEDIA_SOURCE_ID,TASK_PARAMETER,TASK_READER_PARAMETER,TASK_WRITER_PARAMETER,TARGET_STATE,GROUP_ID,LEADER_TASK_ID,IS_LEADER_TASK,CREATE_TIME,MODIFY_TIME,lab_id,task_sync_mode,alarm_priority_id,task_priority_id)
         VALUES
-         (#{taskName},#{taskDesc},#{taskType},#{readerMediaSourceId},#{taskParameter},#{taskReaderParameter},#{taskWriterParameter},#{targetState},#{groupId},#{leaderTaskId},#{isLeaderTask},now(),now())
+         (#{taskName},#{taskDesc},#{taskType},#{readerMediaSourceId},#{taskParameter},#{taskReaderParameter},#{taskWriterParameter},#{targetState},#{groupId},#{leaderTaskId},#{isLeaderTask},now(),now(),#{labId},#{taskSyncMode},#{alarmPriorityId},#{taskPriorityId})
     </insert>
 
     <update id="delete" parameterType="long">
@@ -74,6 +79,37 @@
             <if test="leaderTaskId!=null">
                 LEADER_TASK_ID=#{leaderTaskId},
             </if>
+            <if test="taskSyncMode!=null">
+                task_sync_mode=#{taskSyncMode},
+            </if>
+            <if test="labId!=null">
+                lab_id=#{labId},
+            </if>
+            <if test="alarmPriorityId!=null">
+                alarm_priority_id=#{alarmPriorityId},
+            </if>
+            <if test="taskPriorityId!=null">
+                task_priority_id=#{taskPriorityId},
+            </if>
+            MODIFY_TIME=now(),
+        </set>
+        where id = #{id}
+    </update>
+
+
+    <update id="updateTask" parameterType="task">
+        UPDATE t_dl_task
+        <set>
+            <if test="taskName!=null and taskName!=''">
+                TASK_NAME=#{taskName},
+            </if>
+            <if test="isLeaderTask!=null">
+                IS_LEADER_TASK=#{isLeaderTask},
+            </if>
+            <if test="labId!=null">
+                lab_id=#{labId},
+            </if>
+
             MODIFY_TIME=now(),
         </set>
         where id = #{id}
@@ -119,11 +155,31 @@
         select max(MODIFY_TIME) from T_DL_TASK
     </select>
 
-    <select id="listByCondition" resultMap="taskResult">
+    <select id="listByCondition" resultMap="taskResult" parameterType="task">
         SELECT
-        <include refid="allTaskColumns"/>
-        from t_dl_task t
-        where t.is_delete='false'
+        t.ID,
+        t.TASK_NAME,
+        t.TASK_DESC,
+        t.TASK_TYPE,
+        t.READER_MEDIA_SOURCE_ID,
+        t.TASK_PARAMETER,
+        t.TASK_READER_PARAMETER,
+        t.TASK_WRITER_PARAMETER,
+        t.TARGET_STATE,
+        t.GROUP_ID,
+        t.IS_DELETE,
+        t.LEADER_TASK_ID,
+        t.IS_LEADER_TASK,
+        t.CREATE_TIME,
+        t.MODIFY_TIME,
+        t.lab_id,
+        t.task_sync_mode,
+        l.lab_name,
+        task_priority_id
+        from T_DL_TASK t
+        left join t_dl_lab l on t.lab_id = l.id
+        LEFT JOIN t_dl_media_source m ON t.READER_MEDIA_SOURCE_ID = m.id
+        where is_delete='false'
         <if test="groupId != null">
             and t.GROUP_ID = #{groupId}
         </if>
@@ -135,6 +191,9 @@
         </if>
         <if test="readerMediaSourceId!=null">
             and t.READER_MEDIA_SOURCE_ID=#{readerMediaSourceId}
+        </if>
+        <if test="srcType!=null">
+            and m.ms_type=#{srcType}
         </if>
     </select>
 
@@ -160,6 +219,12 @@
         from T_DL_TASK where is_delete='false' and task_type = #{taskType}
     </select>
 
+    <select id="findMysqlAndHBaseTasks" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        from T_DL_TASK where is_delete='false' and (task_type = 'MYSQL' OR task_type = 'HBASE') and task_sync_mode = 'SingleLab'
+    </select>
+
     <select id="getTaskMonitorInfoList" resultType="com.ucar.datalink.domain.monitor.TaskMonitorInfo">
         SELECT
         t.id taskId,
@@ -170,11 +235,8 @@
         ex.exception_detail exception,
         ex.id exceptionId
         FROM t_dl_task t
-        LEFT JOIN (SELECT * FROM t_dl_task_delaytime d INNER JOIN (SELECT max(id) AS maxid FROM t_dl_task_delaytime
-        GROUP BY task_id) m ON d.id= m.maxid) dt ON dt.task_id=t.id
-        LEFT JOIN (SELECT * FROM t_dl_task_exception e INNER JOIN (SELECT max(id) AS maxid FROM t_dl_task_exception
-        GROUP BY task_id) m ON e.id = m.maxid WHERE e.create_time BETWEEN #{startTime} AND #{endTime}) ex ON ex.task_id
-        = t.id
+        LEFT JOIN (SELECT * FROM t_dl_task_delaytime d INNER JOIN (SELECT max(id) AS maxid FROM t_dl_task_delaytime GROUP BY task_id) m ON d.id= m.maxid) dt ON dt.task_id=t.id
+        LEFT JOIN (SELECT * FROM t_dl_task_exception e INNER JOIN (SELECT max(id) AS maxid FROM t_dl_task_exception GROUP BY task_id) m ON e.id = m.maxid WHERE e.create_time BETWEEN #{startTime} AND #{endTime}) ex ON ex.task_id = t.id
         WHERE t.is_delete='false'
         <if test="taskId != null">
             AND t.id = #{taskId}
@@ -190,16 +252,43 @@
         <include refid="allTaskColumns"/>
         FROM t_dl_task where is_delete='false' AND group_id = #{groupId}
     </select>
+
+    <select id="findAcrossLabList" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        FROM t_dl_task where is_delete='false' AND task_sync_mode='AcrossLab'
+    </select>
+
+    <select id="findListBySyncMode" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        FROM t_dl_task where is_delete='false' AND task_sync_mode=#{taskSyncMode} limit #{start},#{pageSize}
+    </select>
+
+    <select id="countTasksBySyncMode" resultType="Long">
+        SELECT
+        COUNT(1)
+        FROM t_dl_task
+        where is_delete='false' and task_sync_mode=#{taskSyncMode}
+    </select>
+
+    <select id="batchUpdateTaskStatus" resultType="Long">
+        update t_dl_task set target_state = #{targetState} where id in
+        <foreach collection="taskIdList" item="type" index="index" open="(" close=")" separator=",">
+            #{type}
+        </foreach>
+    </select>
+
     <update id="batchUpdateTaskInfo">
         UPDATE T_DL_TASK
         <trim prefix="set" suffixOverrides=",">
             MODIFY_TIME=now(),
             <trim prefix="task_name=case" suffix="end,">
-                <foreach collection="taskInfoList" item="item">
-                    <if test="item.taskName!=null">
-                        when id=#{item.id} then #{item.taskName}
-                    </if>
-                </foreach>
+                 <foreach collection="taskInfoList" item="item">
+                     <if test="item.taskName!=null">
+                         when id=#{item.id} then #{item.taskName}
+                     </if>
+                 </foreach>
             </trim>
             <trim prefix="TASK_READER_PARAMETER=case" suffix="end,">
                 <foreach collection="taskInfoList" item="item">
@@ -224,7 +313,31 @@
         </where>
     </update>
 
-    <insert id="batchInsertTask" parameterType="List">
+    <select id="findAcrossLabTaskListByMsList" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        FROM t_dl_task
+        where
+        reader_media_source_id in
+        <foreach collection="mediaSourceIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and is_delete = 'false'
+        and task_sync_mode='AcrossLab'
+    </select>
+
+    <select id="findTaskInfoByBatchId" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        FROM t_dl_task
+        where
+        id in
+        <foreach collection="taskIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <insert id="batchInsertTask" parameterType="List" >
         <foreach collection="taskInfoList" index="index" item="taskInfo" open="(" separator="," close=")">
             INSERT INTO t_dl_task
             (TASK_NAME,TASK_DESC,TASK_TYPE,READER_MEDIA_SOURCE_ID,TASK_PARAMETER,TASK_READER_PARAMETER,TASK_WRITER_PARAMETER,TARGET_STATE,GROUP_ID,LEADER_TASK_ID,IS_LEADER_TASK,CREATE_TIME,MODIFY_TIME,lab_id,task_sync_mode)
@@ -232,4 +345,21 @@
             (#{taskInfo.taskName},#{taskInfo.taskDesc},#{taskInfo.taskType},#{taskInfo.readerMediaSourceId},#{taskInfo.taskParameter},#{taskInfo.taskReaderParameter},#{taskInfo.taskWriterParameter},#{taskInfo.targetState},#{taskInfo.groupId},#{taskInfo.leaderTaskId},#{taskInfo.isLeaderTask},now(),now(),#{taskInfo.labId},#{taskInfo.taskSyncMode})
         </foreach>
     </insert>
+
+    <select id="findTaskListNoPage" resultMap="taskResult">
+        SELECT
+        <include refid="allTaskColumns"/>
+        from T_DL_TASK where is_delete='false'
+        <if test="taskType != null">
+            AND task_type = #{taskType}
+        </if>
+        <if test="targetState != null">
+            AND target_state = #{targetState}
+        </if>
+        <if test="groupId != null">
+            AND group_id = #{groupId}
+        </if>
+    </select>
+
+
 </mapper>

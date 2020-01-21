@@ -7,5 +7,7 @@ import com.ucar.datalink.domain.user.UserInfo;
  */
 public interface LoginService {
 
-    boolean checkPassWord(UserInfo userInfo, String password);
+    boolean checkUcarPassWord(UserInfo userInfo, String password);
+
+    boolean checkLuckyPassWord(UserInfo userInfo, String password);
 }

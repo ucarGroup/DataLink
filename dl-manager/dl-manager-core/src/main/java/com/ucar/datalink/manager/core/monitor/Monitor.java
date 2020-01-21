@@ -1,6 +1,9 @@
 package com.ucar.datalink.manager.core.monitor;
 
+import com.ucar.datalink.common.utils.DateUtil;
 import com.ucar.datalink.domain.monitor.MonitorInfo;
+import com.ucar.datalink.manager.core.server.ManagerConfig;
+import com.ucar.datalink.util.Env;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +30,9 @@ public abstract class Monitor {
             if (monitorInfo != null
                     && isValidTime(monitorInfo.getMonitorRange())
                     && isArriveInterval(monitorInfo)
-                    && threshold >= monitorInfo.getThreshold()
+                    && threshold >= monitorInfo.getThreshold() //延时阈值时间
                     && monitorInfo.getIsEffective() == 1) {
+
                 return true;
             }
             return false;
@@ -38,7 +42,8 @@ public abstract class Monitor {
         }
     }
 
-    public Boolean isArriveInterval(MonitorInfo monitorInfo) {
+
+    public Boolean isArriveInterval(MonitorInfo monitorInfo) {//报警频率
         Long time = intervalTimeMap.get(monitorInfo.getId());
         if (time == null) {
             intervalTimeMap.put(monitorInfo.getId(), System.currentTimeMillis());
@@ -62,6 +67,11 @@ public abstract class Monitor {
         //rangeTime : 00:00-02:30
         String[] range = rangeTime.split("-");
         try {
+            //测试和预生产环境周末不发邮件报警
+            if (!ManagerConfig.current().getCurrentEnv().equalsIgnoreCase(Env.PROD.getName())
+                    && DateUtil.isWeekend()) {
+                return false;
+            }
             Date start = sdf.parse(year + "-" + month + "-" + day + " " + range[0] + ":00");
             Date end = sdf.parse(year + "-" + month + "-" + day + " " + range[1] + ":00");
             return date.after(start) && date.before(end);

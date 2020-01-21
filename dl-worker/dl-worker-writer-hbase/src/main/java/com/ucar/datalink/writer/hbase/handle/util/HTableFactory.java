@@ -1,13 +1,19 @@
 package com.ucar.datalink.writer.hbase.handle.util;
 
 import com.google.common.cache.*;
+import com.ucar.datalink.biz.service.DoubleCenterService;
+import com.ucar.datalink.biz.service.LabService;
+import com.ucar.datalink.biz.service.MediaSourceService;
+import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
+import com.ucar.datalink.domain.media.MediaSourceType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.HTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -43,7 +49,22 @@ public class HTableFactory {
     }
 
     public static HTable getHTable(String tableName, MediaSourceInfo mediaSourceInfo) {
-        return hTable.getUnchecked(new LoadingKey(tableName, mediaSourceInfo));
+        if (mediaSourceInfo.getType().equals(MediaSourceType.VIRTUAL)) {
+            DoubleCenterService doubleCenterService = DataLinkFactory.getObject(DoubleCenterService.class);
+            String labName = doubleCenterService.getCenterLab(mediaSourceInfo.getId());
+            //取中心机房对应的数据源
+            Long labId = DataLinkFactory.getObject(LabService.class).getLabByName(labName).getId();
+            List<MediaSourceInfo> list = DataLinkFactory.getObject(MediaSourceService.class).findRealListByVirtualMsId(mediaSourceInfo.getId());
+            for (MediaSourceInfo info : list) {
+                if (info.getLabId().longValue() == labId.longValue()) {
+                    mediaSourceInfo = info;
+                    break;
+                }
+            }
+            return hTable.getUnchecked(new LoadingKey(tableName, mediaSourceInfo));
+        } else {
+            return hTable.getUnchecked(new LoadingKey(tableName, mediaSourceInfo));
+        }
     }
 
     public static void invalidate() {
@@ -76,6 +97,6 @@ public class HTableFactory {
             result = 31 * result + mediaSourceInfo.hashCode();
             return result;
         }
-
     }
+
 }

@@ -62,7 +62,7 @@
                                             <div class="form-group">
                                                 <div class="col-sm-10">
                                                     <label class="col-sm-4 control-label no-padding-right"
-                                                           for="ucarEmail">邮箱前缀</label>
+                                                           for="ucarEmail">ucarinc邮箱前缀</label>
 
                                                     <div class="col-sm-8">
                                                         <input type="text" id="ucarEmail" name="ucarEmail"
@@ -123,7 +123,7 @@
             }
             var ucarEmail = $("#ucarEmail").val();
             if (ucarEmail == '') {
-                alert("邮箱不能为空");
+                alert("ucarinc邮箱不能为空");
                 return false;
             }
             var phone = $("#phone").val();
@@ -149,6 +149,10 @@
                 dataType: 'json',
                 success: function (data) {
                     if (data == "success") {
+                        alert("注册成功！请使用邮箱前缀登陆");
+                        window.location.href = CAR_PATH + "/userReq/login";
+                    } else if (data == "registered") {
+                        alert("该邮箱已经注册！请使用邮箱前缀登陆");
                         window.location.href = CAR_PATH + "/userReq/login";
                     } else {
                         alert(data);

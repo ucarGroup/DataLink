@@ -85,4 +85,13 @@
         <filter-name>encodingFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
+    <!-- 对请求过滤 -->
+    <filter>
+        <filter-name>servletContextFilter</filter-name>
+        <filter-class>com.ucar.datalink.manager.core.web.filter.ServletContextFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>servletContextFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 </web-app>

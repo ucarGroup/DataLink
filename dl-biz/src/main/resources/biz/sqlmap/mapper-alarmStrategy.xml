@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.AlarmStrategyDAO">
+
+    <resultMap id="alarmStrategyResult" type="alarmStrategy">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="priorityId" column="priority_id"/>
+        <result property="monitorType" column="monitor_type"/>
+        <result property="config" column="config"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+
+    <sql id="allColumns">id,`name`,priority_id,monitor_type,config,create_time,modify_time</sql>
+
+    <insert id="insert" parameterType="alarmStrategy" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_dl_alarm_strategy
+        ( priority_id, monitor_type,config, create_time, modify_time,name)
+        VALUES
+        (#{priorityId}, #{monitorType},#{config},  now(), now(),#{name})
+    </insert>
+
+    <select id="getById" parameterType="long" resultMap="alarmStrategyResult">
+        SELECT
+        <include refid="allColumns"/>
+        from t_dl_alarm_strategy WHERE id = #{id}
+    </select>
+
+    <select id="getAlarmStrategyList" parameterType="long" resultMap="alarmStrategyResult">
+        select <include refid="allColumns"/>
+        from t_dl_alarm_strategy where 1=1
+        <if test="priorityId != null">
+            and priority_id = #{priorityId}
+        </if>
+        <if test="name != null and name !=''">
+            and name like concat('%',#{name},'%')
+        </if>
+    </select>
+    <update id="update" parameterType="alarmStrategy" >
+        update t_dl_alarm_strategy set
+        monitor_type = #{monitorType},
+        priority_id = #{priorityId},
+        config = #{config},
+        modify_time = now(),
+        name = #{name}
+        where id = #{id}
+    </update>
+
+    <delete id="delete" parameterType="Long">
+        delete from t_dl_alarm_strategy
+        where id = #{id}
+    </delete>
+
+    <select id="getByTaskIdAndType" resultMap="alarmStrategyResult">
+       select s.* from t_dl_alarm_strategy s
+       left join t_dl_alarm_priority p on s.priority_id=p.id
+       left join t_dl_task t on t.alarm_priority_id = p.id
+       where t.id = ${taskId} and s.monitor_type=${monitorType}
+    </select>
+
+</mapper>

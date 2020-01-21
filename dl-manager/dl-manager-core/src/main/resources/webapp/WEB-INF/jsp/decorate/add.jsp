@@ -13,16 +13,15 @@
                     <div id="basicId" class="tab-pane in active">
 
                         <div class="col-sm-12">
-                            <div class="col-sm-4 form-group">
-                                <label class="col-sm-4 control-label no-padding-right">任务类型</label>
-
-                                <div class="col-sm-8">
-                                    <select style="width:100%;">
-                                        <option value="MYSQL" selected>MYSQL</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
+                                                        <div class="col-sm-4 form-group">
+                                                            <label class="col-sm-4 control-label no-padding-right" >任务类型</label>
+                                                            <div class="col-sm-8">
+                                                                <select  style="width:100%;">
+                                                                        <option value="MYSQL" selected>MYSQL</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                         </div>
 
                         <div class="col-sm-12">
                             <div class="col-sm-4 form-group">
@@ -40,46 +39,61 @@
                                 </div>
                             </div>
 
-                            <div class="col-sm-4 form-group">
-                                <label class="col-sm-4 control-label no-padding-right" for="form-add-sourceTableName">源表名称</label>
+                            <!--
+                             <div class="col-sm-4 form-group">
+                                   <label class="col-sm-4 control-label no-padding-right"
+                                    for="form-add-srcMediaSourceId">源库名称</label>
 
-                                <div class="col-sm-8">
-                                    <select multiple="" name="tableName" class="sourceTableName tag-input-style"
-                                            data-placeholder="Click to Choose..." id="form-add-sourceTableName"
-                                            style="width:100%;">
-                                    </select>
-                                </div>
-                            </div>
+                                      <div class="col-sm-8">
+                                                                <select multiple="" name="srcMediaSourceId"
+                                                                        class="srcMediaSourceId tag-input-style"
+                                                                        data-placeholder="Click to Choose..." id="form-add-srcMediaSourceId"
+                                                                        style="width:100%;">
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                               -->
+
+                                <div class="col-sm-4 form-group">
+                                                               <label class="col-sm-4 control-label no-padding-right" for="form-add-sourceTableName">源表名称</label>
+
+                                                               <div class="col-sm-8">
+                                                                   <select multiple="" name="tableName" class="sourceTableName tag-input-style"
+                                                                           data-placeholder="Click to Choose..." id="form-add-sourceTableName"
+                                                                           style="width:100%;">
+                                                                   </select>
+                                                               </div>
+                                                           </div>
 
                         </div>
                         <div class="col-sm-12">
 
-                            <div class="col-sm-4 form-group">
-                                <label class="col-sm-4 control-label no-padding-right" for="statement">表达式</label>
+                                                         <div class="col-sm-4 form-group">
+                               									<label class="col-sm-4 control-label no-padding-right" for="statement">表达式</label>
+                               								   <div class="col-sm-8">
+                               									  <textarea name="statement" id="statement" class="col-xs-12" rows="5"/>
+                               								   </div>
+                               								</div>
 
-                                <div class="col-sm-8">
-                                    <textarea name="statement" id="statement" class="col-xs-12" rows="5"/>
-                                </div>
+                            <div class="col-sm-4 form-group">
+                                   <label class="col-sm-4 control-label no-padding-right" for="remark">备注</label>
+                                   <div class="col-sm-8">
+                                        <textarea name="remark" id="remark" class="col-xs-12" rows="5"/>
+                                    </div>
+                               </div>
+                         </div>
+
+                            <div class="col-sm-12">
+                                    <p>源表名称不存在原因  1.任务名称没有对应的映射  2.存在映射但状态为无效</p>
                             </div>
 
-                            <div class="col-sm-4 form-group">
-                                <label class="col-sm-4 control-label no-padding-right" for="remark">备注</label>
-
-                                <div class="col-sm-8">
-                                    <textarea name="remark" id="remark" class="col-xs-12" rows="5"/>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-sm-12">
-                            <p>源表名称不存在原因 1.任务名称没有对应的映射 2.存在映射但状态为无效</p>
-                        </div>
-
-                    </div>
+                       </div>
                 </div>
             </div>
         </form>
     </div>
+
+
 
 
     <div class="clearfix form-actions">
@@ -154,27 +168,30 @@
                         for (var i = 0; i < result.target.length; i++) {
                             $("#form-add-targetMediaNamespaceId").append("<option value=" + "'" + result.target[i].id + "'" + ">" + result.target[i].name + "</option>");
                         }
+                        /*for(var i=0; i<result.tableName.length; i++) {
+                         $("#form-add-sourceTableName").append("<option value="+"'"+result.tableName[i]+"'"+">"+result.tableName[i]+"</option>");
+                         }*/
                     }
                 }
             }
         });
 
         $.ajax({
-            type: "post",
-            url: "${basePath}/decorate/findTables",
-            async: true,
-            dataType: "json",
-            data: "&taskId=" + taskId,
-            success: function (result) {
-                if (result != null && result != '') {
-                    $('#form-add-sourceTableName').html('');
+                    type: "post",
+                    url: "${basePath}/decorate/findTables",
+                    async: true,
+                    dataType: "json",
+                    data: "&taskId=" + taskId,
+                    success: function (result) {
+                        if (result != null && result != '') {
+                            $('#form-add-sourceTableName').html('');
 
-                    for (var i = 0; i < result.length; i++) {
-                        $("#form-add-sourceTableName").append("<option value=" + "'" + result[i] + "'" + ">" + result[i] + "</option>");
+                              for (var i = 0; i < result.length; i++) {
+                                      $("#form-add-sourceTableName").append("<option value=" + "'" + result[i] + "'" + ">" + result[i] + "</option>");
+                              }
+                        }
                     }
-                }
-            }
-        });
+                });
     });
 
 
@@ -195,13 +212,14 @@
             success: function (data) {
                 if (data == "success") {
                     alert("添加成功！");
-                    back2Main();
+                     back2Main();
                 } else {
                     alert(data);
                 }
             }
         });
     }
+
 
 
     function back2Main() {
@@ -222,9 +240,9 @@
         }
 
         if ($.trim($('#remark').val()) == '') {
-            alert('备注不可为空');
-            return false;
-        }
+             alert('备注不可为空');
+             return false;
+         }
 
         var statement = $.trim($('#statement').val());
         if (statement != null && statement != '' && !isSkipIds(statement)) {
@@ -236,19 +254,20 @@
     }
 
     function checkForSave() {
-        var skipIds = $.trim($("#skipIdsHidden").val());
-        if (skipIds != null && skipIds != '' && !isSkipIds(skipIds)) {
-            alert("请输入正确的要跳过的主键ID格式，例如：1,3,5 或者 [1-5],[10-20]");
-            return false;
+            var skipIds = $.trim($("#skipIdsHidden").val());
+            if (skipIds != null && skipIds != '' && !isSkipIds(skipIds)) {
+                alert("请输入正确的要跳过的主键ID格式，例如：1,3,5 或者 [1-5],[10-20]");
+                return false;
+            }
+            return true;
         }
-        return true;
-    }
 
     function isSkipIds(val) {
-        var skipIdsReg1 = /^([0-9]+,)*[0-9]+$/;
-        var skipIdsReg2 = /^(\[[0-9]+\-[0-9]+],)*(\[[0-9]+\-[0-9]+])$/;
-        return (skipIdsReg1.test(val) || skipIdsReg2.test(val));
-    }
+            var skipIdsReg1 = /^([0-9]+,)*[0-9]+$/;
+            var skipIdsReg2 = /^(\[[0-9]+\-[0-9]+],)*(\[[0-9]+\-[0-9]+])$/;
+            return (skipIdsReg1.test(val) || skipIdsReg2.test(val));
+     }
+
 
 
 </script>

@@ -41,6 +41,9 @@
                                     <option value="4">worker运行状态</option>
                                     <option value="5">workerJVM状态</option>
                                 </c:if>
+                                <c:if test="${monitorInfo.monitorCat == '3'}">
+                                    <option value="7">全量异常</option>
+                                </c:if>
                             </select>
                         </div>
                     </div>
@@ -61,6 +64,13 @@
                                     <c:forEach items="${workerList}" var="bean">
                                         <option value="${bean.id}" <c:if
                                                 test="${bean.id == monitorInfo.resourceId}"> selected="selected"</c:if>>${bean.workerName} </option>
+                                    </c:forEach>
+                                </c:if>
+
+                                <c:if test="${monitorInfo.monitorCat == '3'}">
+                                    <c:forEach items="${jobList}" var="bean">
+                                        <option value="${bean.id}" <c:if
+                                                test="${bean.id == monitorInfo.resourceId}"> selected="selected"</c:if>>${bean.job_name} </option>
                                     </c:forEach>
                                 </c:if>
                             </select>

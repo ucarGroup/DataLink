@@ -22,6 +22,7 @@
                         <tr>
                             <td>ID</td>
                             <td>数据源名称</td>
+                            <td>所属机房</td>
                             <td>创建时间</td>
                             <td>操作</td>
                         </tr>
@@ -56,6 +57,7 @@
 
             {"data": "id"},
             {"data": "sddlName"},
+            {"data": "labName"},
             {
                 "data": "createTime",
                 "bSortable": false,

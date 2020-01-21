@@ -1,0 +1,18 @@
+<!--
+	此配置文件会跟随代码打包，不要轻易修改配置，除非是生产打包需要
+	开发、测试时需要修改日志输出的话，请修改test包下的配置文件
+-->
+<configuration scan="true" scanPeriod=" 5 seconds">
+	<jmxConfigurator />
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{56} - %msg%n
+			</pattern>
+			<charset>UTF-8</charset>
+		</encoder>
+	</appender>
+
+	<root level="ERROR">
+		<appender-ref ref="STDOUT"/>
+	</root>
+</configuration>

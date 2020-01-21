@@ -8,8 +8,11 @@ import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.parameter.kafka.KafkaMediaSrcParameter;
 import com.ucar.datalink.domain.plugin.PluginWriterParameter;
 import com.ucar.datalink.domain.plugin.writer.kafka.KafkaWriterParameter;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -56,13 +59,13 @@ public class KafkaFactory {
                 conf.putAll(mapparamters);
                 KafkaProducer producer = new KafkaProducer<>(conf);
                 AdminClient client = AdminClient.create(conf);
-                return new KafkaFactory.KafkaClientModel(producer, client);
+                return new KafkaFactory.KafkaClientModel(producer,client);
             }
         });
     }
 
-    public static KafkaFactory.KafkaClientModel getKafkaProducer(MediaSourceInfo mediaSourceInfo, KafkaWriterParameter kafkaWriterParameter) throws ExecutionException {
-        return kuduTableClient.get(new LoadingKey(mediaSourceInfo, kafkaWriterParameter));
+    public static  KafkaFactory.KafkaClientModel getKafkaProducer(MediaSourceInfo mediaSourceInfo, KafkaWriterParameter kafkaWriterParameter) throws ExecutionException {
+        return kuduTableClient.get(new LoadingKey(mediaSourceInfo,kafkaWriterParameter));
     }
 
 
@@ -71,11 +74,10 @@ public class KafkaFactory {
         private MediaSourceInfo mediaSourceInfo;
         private PluginWriterParameter pluginWriterParameter;
 
-        public LoadingKey(MediaSourceInfo mediaSourceInfo, PluginWriterParameter pluginWriterParameter) {
+        public LoadingKey(MediaSourceInfo mediaSourceInfo,PluginWriterParameter pluginWriterParameter) {
             this.mediaSourceInfo = mediaSourceInfo;
             this.pluginWriterParameter = pluginWriterParameter;
         }
-
         public MediaSourceInfo getMediaSourceInfo() {
             return mediaSourceInfo;
         }
@@ -103,7 +105,7 @@ public class KafkaFactory {
         }
     }
 
-    public static class KafkaClientModel implements Closeable {
+ public static class KafkaClientModel implements Closeable {
         private KafkaProducer kafkaProducer;
         private AdminClient adminClient;
 
@@ -131,13 +133,13 @@ public class KafkaFactory {
 
         @Override
         public void close() throws IOException {
-            if (kafkaProducer != null) {
+            if(kafkaProducer != null){
                 try {
                     kafkaProducer.close();
                 } catch (Exception e) {
                 }
             }
-            if (adminClient != null) {
+            if(adminClient != null){
                 try {
                     adminClient.close();
                 } catch (Exception e) {

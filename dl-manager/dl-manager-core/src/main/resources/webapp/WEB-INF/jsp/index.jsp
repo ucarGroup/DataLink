@@ -10,6 +10,17 @@
 <body class="no-skin">
 <%@ include file="/WEB-INF/jsp/header.jsp" %>
 
+
+<style>
+
+    .changeHeight {
+        display:block;
+        list-style-type:none;
+        margin:15px;
+    }
+
+</style>
+
 <div class="main-container ace-save-state" id="main-container">
     <script type="text/javascript">
         try {
@@ -37,6 +48,56 @@
         </div>
     </div>
 
+    <div id="contactUsPage" class="modal">
+
+        <div class="modal-dialog">
+            <div class="modal-content" style="width:800px;height:400px">
+                <div id="modal-wizard-container2">
+                    <div class="modal-header" style="width:800px;height:70px">
+
+                        <div class="modal-header no-padding">
+                            <div class="table-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                    <span class="white">&times;</span>
+                                </button>
+                                联系我们
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-body" style="width:800px;height:300px">
+
+                        <div id="contact" class="page-body">
+                            <h5>
+                                <ul>
+                                    <li class="changeHeight">
+                                        李晓阳 : 13911972711  <a href="mailto:xiaoyang.li01@ucarinc.com">xiaoyang.li01@ucarinc.com</a>
+                                    </li>
+                                    <li class="changeHeight">
+                                        宋文彬 : 13241643559  <a href="mailto:wenbin.song@ucarinc.com">wenbin.song@ucarinc.com</a>
+                                    </li>
+                                    <li class="changeHeight">
+                                        王阳 : 15010085750  <a href="mailto:yang.wang09@ucarinc.com">yang.wang09@ucarinc.com</a>
+                                    </li>
+                                    <li class="changeHeight">
+                                        代俊建 : 13717663266  <a href="mailto:junjian.dai@ucarinc.com">junjian.dai@ucarinc.com</a>
+                                    </li>
+                                    <li class="changeHeight">
+                                        刘译繁 : 17611498126  <a href="mailto:yifan.liu02@ucarinc.com">yifan.liu02@ucarinc.com</a>
+                                    </li>
+                                    <li class="changeHeight">
+                                        组邮箱 : <a href="mailto:tech_plat_data@ucarinc.com">tech_plat_data@ucarinc.com</a>
+                                    </li>
+                                </ul>
+                            </h5>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="instruction-wizard" class="modal">
 
         <div class="modal-dialog">
@@ -56,17 +117,16 @@
 
                     <div class="modal-body" style="width:800px;height:300px">
                         <div id="document" class="page-body">
-                            <li>使用说明</li>
+                            <h5>
+                                <li class="changeHeight"><a href="http://wiki.10101111.com/pages/viewpage.action?pageId=107840774" target="_blank">使用说明
+                                </a></li>
+                                <li class="changeHeight"><a href="http://wiki.10101111.com/pages/viewpage.action?pageId=113410822" target="_blank">常见问题
+                                </a></li>
+                                <li class="changeHeight"><a href="http://wiki.10101111.com/pages/viewpage.action?pageId=107840764" target="_blank">架构介绍
+                                </a></li>
+                            </h5>
                         </div>
 
-                        <div style="margin-top: 30px">
-                            <h4>联系我们：</h4>
-                        </div>
-                        <div id="contact" class="page-body">
-                            <li>
-                                xxx (分机:xxx, TEL:xxx, Email:xxx)
-                            </li>
-                        </div>
 
                     </div>
                 </div>
@@ -185,7 +245,10 @@
                     if (data == "success") {
                         alert("logout成功");
                         window.location.href = "${basePath}/userReq/login";
-                    } else {
+                    }else if (data == "admin_success") {
+                        alert("logout成功");
+                         window.location.href = "${basePath}/admin";
+                     } else {
                         alert(data);
                     }
                 }
@@ -194,6 +257,11 @@
         $("#instruction").click(function () {
             $('#instruction-wizard').modal('show');
         });
+
+        $("#contactUs").click(function () {
+            $('#contactUsPage').modal('show');
+        });
+
     });
 
 </script>

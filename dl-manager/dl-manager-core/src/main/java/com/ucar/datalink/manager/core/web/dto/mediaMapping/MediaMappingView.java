@@ -31,8 +31,11 @@ public class MediaMappingView {
     private Long interceptorId;
     private String joinColumn;
     private boolean esUsePrefix;
+
     private String esRouting;
     private String esRoutingIgnore;
+
+    private String prefixName;
     private String geoPositionConf;
     private String skipIds;
     private Date createTime;
@@ -84,6 +87,13 @@ public class MediaMappingView {
 
     public void setTargetMediaSourceName(String targetMediaSourceName) {
         this.targetMediaSourceName = targetMediaSourceName;
+    }
+    public String getPrefixName() {
+        return prefixName;
+    }
+
+    public void setPrefixName(String prefixName) {
+        this.prefixName = prefixName;
     }
 
     public Long getId() {

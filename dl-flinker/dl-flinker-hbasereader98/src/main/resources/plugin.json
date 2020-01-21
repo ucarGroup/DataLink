@@ -1,0 +1,7 @@
+{
+    "name": "hbasereader98",
+    "class": "com.ucar.datalink.flinker.plugin.reader.hbasereader98.HbaseReader",
+    "description": "useScene: prod. mechanism: Scan to read data.",
+    "developer": "ucar"
+}
+

@@ -17,13 +17,17 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-ucarEmail">集团邮箱前缀</label>
+                    <label class="col-sm-3 control-label no-padding-right" for="form-update-ucarEmail">邮箱前缀</label>
 
                     <div class="col-sm-9">
                         <input type="text" value="${userInfo.ucarEmail}" style="width:350px;height:35px"
                                id="form-update-ucarEmail" name="ucarEmail" class="col-xs-10 col-sm-5"/>
                     </div>
                 </div>
+
+
+
+
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" for="form-update-phone">手机号</label>
 
@@ -45,6 +49,20 @@
                         </select>
                     </div>
                 </div>
+
+            <div class="form-group">
+                    <label class="col-sm-3 control-label no-padding-right" for="form-update-userType">用户类型</label>
+                    <div class="col-sm-6">
+                        <select name="userType" id="form-update-userType" class="chosen-select col-sm-5">
+                            <option value="0">神州优车</option>
+                            <option value="1">咖啡</option>
+                        </select>
+                    </div>
+                </div>
+
+
+
+
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" for="form-update-isAlarm">是否接收报警</label>
 
@@ -56,7 +74,15 @@
                     </div>
                 </div>
 
-
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label no-padding-right" for="form-update-isReceiveDataxMail">是否接收邮件</label>
+                        <div class="col-sm-6">
+                            <select name="isReceiveDataxMail" id="form-update-isReceiveDataxMail" class="chosen-select col-sm-5">
+                                <option value="false">否</option>
+                                <option value="true">是</option>
+                            </select>
+                        </div>
+                </div>
             </form>
         </div>
         <div class="clearfix form-actions">
@@ -77,7 +103,9 @@
 </div>
 
 <script type="text/javascript">
+    $("#form-update-userType").val('${userInfo.userType}');
     $("#form-update-isAlarm").val('${userInfo.isAlarm}');
+    $("#form-update-isReceiveDataxMail").val('${userInfo.isReceiveDataxMail}');
     $('.roleId').css('min-width', '50%').select2({allowClear: false, maximumSelectionLength: 1, width: '45%'});
 
     var pe = '${userInfo.roleIdStr}'.split(",");

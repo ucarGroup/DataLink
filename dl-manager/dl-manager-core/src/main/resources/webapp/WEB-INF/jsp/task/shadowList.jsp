@@ -18,7 +18,6 @@
 
                             <div class="form-group col-xs-3">
                                 <label class="col-sm-4 control-label">状态</label>
-
                                 <div class="col-sm-8">
                                     <select class="width-100 chosen-select" id="state"
                                             style="width:100%">
@@ -37,8 +36,7 @@
                                         <input id="taskId" type="hidden" name="taskId" value="${taskId}">
                                     </div>
                                     <div class="col-xs-2">
-                                        <button type="button" id="refresh_shadow" class="btn btn-sm btn-purple">刷新
-                                        </button>
+                                        <button type="button" id="refresh_shadow" class="btn btn-sm btn-purple">刷新</button>
                                     </div>
                                 </div>
                             </div>
@@ -47,7 +45,7 @@
                 </div>
             </div>
 
-            <div class="col-xs-12" id="OperPanel">
+            <div class="col-xs-12"  id="OperPanel">
 
             </div>
 
@@ -86,19 +84,19 @@
     var taskShadowListTable;
     $(".chosen-select").chosen();
     getButtons([{
-        code: "004010114",
-        html: '<div class="pull-left tableTools-container" style="padding-top: 10px;">' +
-        '<p> <button class="btn btn-sm btn-info" onclick="toAdd();">新增</button> </p>' +
-        '</div>'
-    }], $("#OperPanel"));
+        code:"009010101",
+        html:'<div class="pull-left tableTools-container" style="padding-top: 10px;">'+
+            '<p> <button class="btn btn-sm btn-info" onclick="toAdd();">新增</button> </p>'+
+            '</div>'
+    }],$("#OperPanel"));
 
     taskShadowListTable = $('#taskShadowListTable').DataTable({
         "bAutoWidth": true,
-        "serverSide": true,//开启服务器模式:启用服务器分页
-        "paging": true,//是否分页
-        "pagingType": "full_numbers",//除首页、上一页、下一页、末页四个按钮还有页数按钮
-        "bScrollInfinite": "true",
-        "sScrollX": "100%",
+        "serverSide" : true,//开启服务器模式:启用服务器分页
+        "paging" : true,//是否分页
+        "pagingType" : "full_numbers",//除首页、上一页、下一页、末页四个按钮还有页数按钮
+        "bScrollInfinite":"true",
+        "sScrollX":"100%",
         "ajax": {
             "url": "${basePath}/shadow/doShadowList",
             "data": function (d) {
@@ -141,8 +139,8 @@
 
     function toAdd() {
         reset();//每次必须先reset，把已开界面资源清理掉
-        var taskId = $("#taskId").val();
-        $("#taskShadowAdd").load("${basePath}/shadow/toAddShadow?taskId=" + taskId);
+        var taskId =  $("#taskId").val();
+        $("#taskShadowAdd").load("${basePath}/shadow/toAddShadow?taskId="+taskId);
         $("#taskShadowAdd").show();
         $("#taskShadowMainContent").hide();
     }

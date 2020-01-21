@@ -25,4 +25,15 @@ public class RdbEventRecordTransformer extends BuiltInRdbEventRecordTransformer 
         }
         return result;
     }
+
+    /**
+     * 根据mapping配置情况获取前缀信息
+     */
+    private static String getKuduPrefix(RdbEventRecord record, MediaMappingInfo mappingInfo) {
+        if (mappingInfo.isEsUsePrefix()) {
+            String prefixName = mappingInfo.getPrefixName();
+            return prefixName + Constants.SEPARATOR;
+        }
+        return "";
+    }
 }

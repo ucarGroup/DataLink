@@ -7,7 +7,8 @@
 </div>
 <div id="edit" class="main-container">
 </div>
-
+<div id="addQuick" class="main-container">
+</div>
 <div id="tableStructure" class="main-container">
 </div>
 <div class="main-container" id="mainContentInner">
@@ -67,6 +68,7 @@
                             <td>写库用户名</td>
                             <td>读库地址</td>
                             <td>读库用户名</td>
+                            <td>所属机房</td>
                             <td>创建时间</td>
                             <td>操作</td>
                         </tr>
@@ -89,9 +91,13 @@
         html: '<div class="pull-left tableTools-container" style="padding-top: 10px;">' +
         '<p> <button class="btn btn-sm btn-info" onclick="toAdd();">新增</button> </p>' +
         '</div>'
-    }
-    ,{
-            code: "002001009",
+    },{
+              code: "002001009",
+              html: '<div class="pull-left tableTools-container" style="padding-top: 10px;padding-left: 10px;">' +
+              '<p> <button class="btn btn-sm btn-info" onclick="toAddQuick();">自动新增</button> </p>' +
+              '</div>'
+    },{
+              code: "002001010",
               html: '<div class="pull-left tableTools-container" style="padding-top: 10px;padding-left: 10px;">' +
                     '<p> <button class="btn btn-sm btn-info" onclick="toGetTableStructure();">查询表结构</button> </p>' +
                     '</div>'
@@ -123,6 +129,7 @@
             {"data": "rdbMediaSrcParameter.writeConfig.username"},
             {"data": "rdbMediaSrcParameter.readConfig.hosts"},
             {"data": "rdbMediaSrcParameter.readConfig.username"},
+            {"data": "labName"},
             {
                 "data": "createTime",
                 "bSortable": false,
@@ -206,6 +213,12 @@
 
     }
 
+    function toAddQuick() {
+        reset();//每次必须先reset，把已开界面资源清理掉
+        $("#addQuick").load("${basePath}/mediaSource/toAddQuick?random=" + Math.random());
+        $("#addQuick").show();
+        $("#mainContentInner").hide();
+    }
 
     function toGetTableStructure() {
         reset();//每次必须先reset，把已开界面资源清理掉
@@ -225,6 +238,7 @@
     function reset() {
         $("#add").empty();
         $("#edit").empty();
+        $("#addQuick").empty();
     }
 
     function doDelete(id) {

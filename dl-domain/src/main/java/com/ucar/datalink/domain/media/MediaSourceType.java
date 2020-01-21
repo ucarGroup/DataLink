@@ -10,7 +10,8 @@ import java.util.List;
  * Created by lubiao on 2017/2/28.
  */
 public enum MediaSourceType {
-    MYSQL, SQLSERVER, ORACLE, HDFS, HBASE, ELASTICSEARCH, SDDL, ZOOKEEPER, POSTGRESQL,KUDU, HANA, KAFKA;
+    MYSQL, SQLSERVER, ORACLE, HDFS, FLEXIBLEQ, HBASE, ELASTICSEARCH, SDDL, ZOOKEEPER, POSTGRESQL,
+    VIRTUAL, KUDU, HANA, KAFKA, DOVE;
 
     public boolean isRdbms() {
         if (MYSQL.equals(this) || SQLSERVER.equals(this) || ORACLE.equals(this) || POSTGRESQL.equals(this) || HANA.equals(this)) {
@@ -20,12 +21,17 @@ public enum MediaSourceType {
     }
 
     public static List<MediaSourceType> getAllSrcMediaSourceTypes() {
-        return Lists.newArrayList(MYSQL, SQLSERVER, HDFS, HBASE, ELASTICSEARCH, POSTGRESQL);
+        return Lists.newArrayList(MYSQL, SQLSERVER, HBASE, ORACLE, HANA);
     }
 
-	public static List<MediaSourceType> getAllSrcTypesForIncrement() {
+    public static List<MediaSourceType> getMediaSourceTypesForVirtual() {
+        return Lists.newArrayList(MYSQL,SQLSERVER, HBASE, ELASTICSEARCH);
+    }
+
+    public static List<MediaSourceType> getAllSrcTypesForIncrement() {
         return Lists.newArrayList(MYSQL, HBASE, SDDL);
     }
+
     public static List<MediaSourceType> getTargetTypesForRDBMS() {
         return Lists.newArrayList(MYSQL, SQLSERVER, HBASE, ELASTICSEARCH);
     }
@@ -45,11 +51,12 @@ public enum MediaSourceType {
     public static List<MediaSourceType> getAllMediaSourceTypesForBidData() {
         return  Lists.newArrayList(MYSQL, SQLSERVER, HDFS, HBASE, ORACLE, HANA,ELASTICSEARCH, KUDU,POSTGRESQL,KAFKA);
     }
-	public static List<MediaSourceType> getMysqlTaskSrcTypes() {
-        return Lists.newArrayList(MYSQL, SDDL);
+
+    public static List<MediaSourceType> getMysqlTaskSrcTypes() {
+        return Lists.newArrayList(MYSQL, SDDL, VIRTUAL);
     }
 
     public static List<MediaSourceType> getHBaseTaskSrcTypes() {
-        return Lists.newArrayList(HBASE);
+        return Lists.newArrayList(HBASE, VIRTUAL);
     }
 }

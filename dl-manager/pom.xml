@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>com.ucar.datalink</groupId>
 		<artifactId>datalink</artifactId>
-		<version>1.0.0-beta</version>
+		<version>0.0.1</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -13,5 +13,6 @@
 
 	<modules>
 		<module>dl-manager-core</module>
+		<module>dl-manager-ext</module>
 	</modules>
 </project>

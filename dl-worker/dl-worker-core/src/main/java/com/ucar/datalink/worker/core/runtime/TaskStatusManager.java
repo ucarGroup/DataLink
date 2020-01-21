@@ -45,7 +45,7 @@ public class TaskStatusManager {
 
             @Override
             public void handleSessionEstablishmentError(Throwable error) throws Exception {
-                logger.error("handleSessionEstablishmentError is : " + error);
+                logger.info("handleSessionEstablishmentError is : " + error);
             }
         };
     }

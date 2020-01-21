@@ -11,6 +11,8 @@ import java.util.Properties;
  */
 public class ManagerConfig extends AbstractConfig {
     private static final ConfigDef configDef;
+    private static ManagerConfig instance;
+
     //---------host config------------
     private static final String HostNameProp = "host.name";
     private static final String PortProp = "port";
@@ -25,15 +27,33 @@ public class ManagerConfig extends AbstractConfig {
     private static final String GroupMaxSessionTimeoutMsProp = "group.max.session.timeout.ms";
     //---------other configs-------------
     private static final String CurrentEnv = "currentEnv";
+
+    private static final String MonitorManager = "monitorManager";
+    private static final String ScheduleServer = "scheduleServer";
     /**
      * 检测频率
      */
     private static final String monitorCheckIntervalTime = "monitor.check.intervalTime";
     /**
+     * 是否复用task
+     */
+    private static final String isReuseTask = "isReuseTask";
+
+    /**
+     * 单库切换通知dbms接口地址
+     */
+    private static final String notifyDbmsDbSwitchResultUrl = "doubleCenter.dbSwitchLab.notifyDbmsUrl";
+    /**
+     * 单库切换通知dbms，双方约定的秘钥
+     */
+    private static final String notifyDbmsDbSwitchSecurekey = "doubleCenter.dbSwitchLab.securekey";
+
+    /**
      * 是否开启读端数据多路复用
      */
     private static final String multiplexingRead = "multiplexingRead";
-    private static ManagerConfig instance;
+
+    private static final String passwordAesKey = "passwordAesKey";
 
     static {
         configDef = new ConfigDef()
@@ -47,7 +67,13 @@ public class ManagerConfig extends AbstractConfig {
                 .define(GroupMinSessionTimeoutMsProp, ConfigDef.Type.INT, Defaults.GroupMinSessionTimeoutMs, ConfigDef.Importance.MEDIUM, "")
                 .define(GroupMaxSessionTimeoutMsProp, ConfigDef.Type.INT, Defaults.GroupMaxSessionTimeoutMs, ConfigDef.Importance.MEDIUM, "")
                 .define(CurrentEnv, ConfigDef.Type.STRING, null, ConfigDef.Importance.HIGH, "")
-                .define(monitorCheckIntervalTime, ConfigDef.Type.INT, Defaults.monitorCheckIntervalTime, ConfigDef.Importance.HIGH, "")
+                .define(MonitorManager, ConfigDef.Type.BOOLEAN, Defaults.MonitorManager, ConfigDef.Importance.HIGH, "")
+                .define(ScheduleServer, ConfigDef.Type.BOOLEAN, Defaults.ScheduleServer, ConfigDef.Importance.HIGH, "")
+                .define(monitorCheckIntervalTime,ConfigDef.Type.INT,Defaults.monitorCheckIntervalTime,ConfigDef.Importance.HIGH,"")
+                .define(notifyDbmsDbSwitchResultUrl,ConfigDef.Type.STRING,Defaults.notifyDbmsDbSwitchResultUrl,ConfigDef.Importance.HIGH,"")
+                .define(notifyDbmsDbSwitchSecurekey,ConfigDef.Type.STRING,Defaults.notifyDbmsDbSwitchSecurekey,ConfigDef.Importance.HIGH,"")
+                .define(isReuseTask, ConfigDef.Type.BOOLEAN, Defaults.isReuseTask, ConfigDef.Importance.HIGH, "")
+                .define(passwordAesKey,ConfigDef.Type.STRING,Defaults.passwordAesKey,ConfigDef.Importance.HIGH,"")
                 .define(multiplexingRead, ConfigDef.Type.BOOLEAN, Defaults.multiplexingRead, ConfigDef.Importance.HIGH, "");
     }
 
@@ -109,25 +135,56 @@ public class ManagerConfig extends AbstractConfig {
         return getString(CurrentEnv);
     }
 
+    public boolean getMonitorManager() {
+        return getBoolean(MonitorManager);
+    }
+
+    public boolean getScheduleServer() {
+        return getBoolean(ScheduleServer);
+    }
+
     public int getMonitorCheckIntervalTime() {
         return getInt(monitorCheckIntervalTime);
     }
+
+    public String getNotifyDbmsDbSwitchResultUrl() {
+        return getString(notifyDbmsDbSwitchResultUrl);
+    }
+
+    public String getNotifyDbmsDbSwitchSecurekey() {
+        return getString(notifyDbmsDbSwitchSecurekey);
+    }
+
+    public boolean getIsReuseTask() {
+        return getBoolean(isReuseTask);
+    }
+
 
     public boolean getMultiplexingRead() {
         return getBoolean(multiplexingRead);
     }
 
+    public  String getPasswordAesKey() {
+        return getString(passwordAesKey);
+    }
+
     static class Defaults {
         public static final String HostName = "";
         public static final int Port = 8899;
-        public static final int HttpPort = 8080;
+        public static final int HttpPort = 80;
         public static final String ZkRoot = "/datalink";
         public static final String ZkServer = "localhost:2181";
         public static final int ZkSessionTimeoutMs = 10000;
         public static final int ZkConnectionTimeout = 10000;
         public static final int GroupMinSessionTimeoutMs = 6000;
         public static final int GroupMaxSessionTimeoutMs = 300000;
+        public static final boolean MonitorManager = false;
+        public static final boolean ScheduleServer = false;
         public static final int monitorCheckIntervalTime = 30;
+        public static final String notifyDbmsDbSwitchResultUrl = "";
+        public static final String notifyDbmsDbSwitchSecurekey = "";
+        public static final boolean isReuseTask = false;
         public static final boolean multiplexingRead = false;
+        public static final String passwordAesKey = "datalink_123456a";
     }
 }

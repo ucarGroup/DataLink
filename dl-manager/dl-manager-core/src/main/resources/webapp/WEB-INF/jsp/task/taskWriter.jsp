@@ -35,6 +35,22 @@
                 <span class="lbl">Dummy</span>
             </label>
             <label class="middle col-sm-2">
+                <input class="ace" type="checkbox" id="flexibleQ-checkbox"
+                        <c:if test="${taskModel.currentWriters['writer-fq']==1}">
+                            checked
+                        </c:if>
+                       onchange="fqClicked();"/>
+                <span class="lbl">FlexibleQ</span>
+            </label>
+            <label class="middle col-sm-2">
+                <input class="ace" type="checkbox" id="dove-checkbox"
+                        <c:if test="${taskModel.currentWriters['writer-dove']==1}">
+                            checked
+                        </c:if>
+                       onchange="doveClicked();"/>
+                <span class="lbl">Dove</span>
+            </label>
+            <label class="middle col-sm-2">
                 <input class="ace" type="checkbox" id="hbase-checkbox"
                         <c:if test="${taskModel.currentWriters['writer-hbase']==1}">
                             checked
@@ -42,25 +58,32 @@
                        onchange="hbaseClicked();"/>
                 <span class="lbl">HBase</span>
             </label>
-            
+            <label class="middle col-sm-2">
+                <input class="ace" type="checkbox" id="sddl-checkbox"
+                        <c:if test="${taskModel.currentWriters['writer-sddl']==1}">
+                            checked
+                        </c:if>
+                       onchange="sddlClicked();"/>
+                <span class="lbl">SDDL</span>
+            </label>
 
              <label class="middle col-sm-2">
-                 <input class="ace" type="checkbox" id="kudu-checkbox"
-                         <c:if test="${taskModel.currentWriters['writer-kudu']==1}">
-                             checked
-                         </c:if>
-                        onchange="kuduClicked();" disabled/>
-                 <span class="lbl">Kudu</span>
-             </label>
+                <input class="ace" type="checkbox" id="kudu-checkbox"
+                        <c:if test="${taskModel.currentWriters['writer-kudu']==1}">
+                            checked
+                        </c:if>
+                       onchange="kuduClicked();" disabled/>
+                <span class="lbl">Kudu</span>
+            </label>
 
               <label class="middle col-sm-2">
-                  <input class="ace" type="checkbox" id="kafka-checkbox"
-                          <c:if test="${taskModel.currentWriters['writer-kafka']==1}">
-                              checked
-                          </c:if>
-                         onchange="kafkaClicked();"/>
-                  <span class="lbl">Kafka</span>
-              </label>
+                            <input class="ace" type="checkbox" id="kafka-checkbox"
+                                    <c:if test="${taskModel.currentWriters['writer-kafka']==1}">
+                                        checked
+                                    </c:if>
+                                   onchange="kafkaClicked();" />
+                            <span class="lbl">Kafka</span>
+                        </label>
 
 
         </span>
@@ -70,10 +93,13 @@
 
 </div>
 <script type="text/javascript">
+
+
+
     $(document).ready(function () {
         rdbmsSyncModeChange();
 
-        if (currentPageName == "mysql") {
+        if(currentPageName == "mysql"){
             $('#kudu-checkbox').attr("disabled", false);
         }
 
@@ -81,8 +107,11 @@
 
     $("#taskWriter").ready(function () {
         rdbmsClicked();
+        fqClicked();
+        doveClicked();
         esClicked();
         hdfsClicked();
+        sddlClicked();
         hbaseClicked();
         kuduClicked();
         kafkaClicked();
@@ -102,7 +131,7 @@
 
     function rdbmsMergingChange() {
         var merging = $('#rdbms-merging').val();
-        if (merging == 'true') {
+        if (merging=='true') {
             $('#rdbms-useBatch').attr("disabled", false);
         } else {
             $('#rdbms-useBatch').attr("disabled", true);
@@ -115,6 +144,21 @@
             $('#div-rdbms').show();
         } else {
             $('#div-rdbms').hide();
+        }
+    }
+
+    function fqClicked() {
+        if ($('#flexibleQ-checkbox').prop("checked") == true) {
+            $('#div-fq').show();
+        } else {
+            $('#div-fq').hide();
+        }
+    }
+    function doveClicked() {
+        if ($('#dove-checkbox').prop("checked") == true) {
+            $('#div-dove').show();
+        } else {
+            $('#div-dove').hide();
         }
     }
 
@@ -142,6 +186,13 @@
         }
     }
 
+    function sddlClicked() {
+        if ($('#sddl-checkbox').prop("checked") == true) {
+            $('#div-sddl').show();
+        } else {
+            $('#div-sddl').hide();
+        }
+    }
 
     function kuduClicked() {
         if ($('#kudu-checkbox').prop("checked") == true) {
@@ -151,13 +202,15 @@
         }
     }
 
-    function kafkaClicked() {
-        if ($('#kafka-checkbox').prop("checked") == true) {
-            $('#div-kafka').show();
-        } else {
-            $('#div-kafka').hide();
+    	 function kafkaClicked() {
+            if ($('#kafka-checkbox').prop("checked") == true) {
+                $('#div-kafka').show();
+            } else {
+                $('#div-kafka').hide();
+            }
         }
-    }
+
+
 
 
     function getWritersObj() {
@@ -175,6 +228,36 @@
                 perfStatistic: $("#rdbms-perfStatistic").val(),
                 syncMode: $("#rdbms-syncMode").val(),
                 useUpsert: $("#rdbms-useUpsert").val()
+            };
+        }
+        if ($('#flexibleQ-checkbox').prop("checked") == true) {
+            obj['writer-fq'] = {
+                "@type": "com.ucar.datalink.domain.plugin.writer.fq.FqWriterParameter",
+                poolSize: $("#fq-poolSize").val(),
+                dryRun: $("#fq-dryRun").val(),
+                useBatch: $("#fq-useBatch").val(),
+                batchSize: $("#fq-batchSize").val(),
+                merging: $("#fq-merging").val(),
+                maxRetryTimes: $("#fq-maxRetryTimes").val(),
+                retryMode: $("#fq-retryMode").val(),
+                perfStatistic: $("#fq-perfStatistic").val(),
+                serializeMode: $("#fq-serializeMode").val(),
+                partitionMode: $("#fq-partitionMode").val()
+            };
+        }
+        if ($('#dove-checkbox').prop("checked") == true) {
+            obj['writer-dove'] = {
+                "@type": "com.ucar.datalink.domain.plugin.writer.dove.DoveWriterParameter",
+                poolSize: $("#dove-poolSize").val(),
+                dryRun: $("#dove-dryRun").val(),
+                useBatch: $("#dove-useBatch").val(),
+                batchSize: $("#dove-batchSize").val(),
+                merging: $("#dove-merging").val(),
+                maxRetryTimes: $("#dove-maxRetryTimes").val(),
+                retryMode: $("#dove-retryMode").val(),
+                perfStatistic: $("#dove-perfStatistic").val(),
+                serializeMode: $("#dove-serializeMode").val(),
+                partitionMode: $("#dove-partitionMode").val()
             };
         }
         if ($('#es-checkbox').prop("checked") == true) {
@@ -224,7 +307,15 @@
                 perfStatistic: $("#hbase-perfStatistic").val()
             };
         }
-
+        if ($('#sddl-checkbox').prop("checked") == true) {
+            obj['writer-sddl'] = {
+                "@type": "com.ucar.datalink.domain.plugin.writer.sddl.SddlWriterParameter",
+                maxRetryTimes: $("#sddl-maxRetryTimes").val(),
+                retryMode: $("#sddl-retryMode").val(),
+                perfStatistic: $("#sddl-perfStatistic").val(),
+                missMatchSkipTables: $("#sddl-missMatchSkipTables").val()
+            };
+        }
         if ($('#kudu-checkbox').prop("checked") == true) {
             obj['writer-kudu'] = {
                 "@type": "com.ucar.datalink.domain.plugin.writer.kudu.KuduWriterParameter",
@@ -233,21 +324,20 @@
             };
         }
         if ($('#kafka-checkbox').prop("checked") == true) {
-            obj['writer-kafka'] = {
-                "@type": "com.ucar.datalink.domain.plugin.writer.kafka.KafkaWriterParameter",
-                poolSize: $("#kafka-poolSize").val(),
-                dryRun: $("#kafka-dryRun").val(),
-                useBatch: $("#kafka-useBatch").val(),
-                batchSize: $("#kafka-batchSize").val(),
-                merging: $("#kafka-merging").val(),
-                maxRetryTimes: $("#kafka-maxRetryTimes").val(),
-                retryMode: $("#kafka-retryMode").val(),
-                perfStatistic: $("#kafka-perfStatistic").val(),
-                serializeMode: $("#kafka-serializeMode").val(),
-                partitionMode: $("#kafka-partitionMode").val()
-            };
-        }
-        ;
+                    obj['writer-kafka'] = {
+                        "@type": "com.ucar.datalink.domain.plugin.writer.kafka.KafkaWriterParameter",
+                        poolSize: $("#kafka-poolSize").val(),
+                        dryRun: $("#kafka-dryRun").val(),
+                        useBatch: $("#kafka-useBatch").val(),
+                        batchSize: $("#kafka-batchSize").val(),
+                        merging: $("#kafka-merging").val(),
+                        maxRetryTimes: $("#kafka-maxRetryTimes").val(),
+                        retryMode: $("#kafka-retryMode").val(),
+                        perfStatistic: $("#kafka-perfStatistic").val(),
+                        serializeMode: $("#kafka-serializeMode").val(),
+                        partitionMode: $("#kafka-partitionMode").val()
+                    };
+                    };
 
 
         return obj;

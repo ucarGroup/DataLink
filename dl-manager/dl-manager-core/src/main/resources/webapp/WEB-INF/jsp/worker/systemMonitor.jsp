@@ -355,6 +355,7 @@
             }
     );
 
+    //    debugger;
     function doSearchSystemMonitor() {
         var start = $("#startTime2").val();
         var end = $("#endTime2").val();

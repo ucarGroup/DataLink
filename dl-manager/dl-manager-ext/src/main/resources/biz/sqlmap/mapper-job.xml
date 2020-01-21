@@ -1,0 +1,635 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.JobDAO">
+
+    <resultMap id="jobConfig" type="jobconfig">
+        <result property="id" column="id"/>
+        <result property="apply_id" column="apply_id"/>
+        <result property="job_name" column="job_name"/>
+        <result property="job_desc" column="job_desc"/>
+        <result property="job_content" column="job_content"/>
+        <result property="job_media_name" column="job_media_name"/>
+        <result property="job_media_target_name" column="job_media_target_name"/>
+        <result property="job_src_media_source_id" column="job_src_media_source_id"/>
+        <result property="job_target_media_source_id" column="job_target_media_source_id"/>
+        <result property="timing_transfer_type" column="timing_transfer_type" javaType="string" jdbcType="VARCHAR"/>
+        <result property="timing_expression" column="timing_expression"/>
+        <result property="timing_yn" column="timing_yn"/>
+        <result property="timing_on_yn" column="timing_on_yn"/>
+        <result property="timing_parameter" column="timing_parameter"/>
+        <result property="timing_target_worker" column="timing_target_worker"/>
+        <result property="create_time" column="create_time"/>
+        <result property="modify_time" column="modify_time"/>
+        <result property="is_delete" column="is_delete"/>
+    </resultMap>
+
+    <resultMap id="jobExecution" type="jobexecution">
+        <result property="id" column="id"/>
+        <result property="job_id" column="job_id"/>
+        <result property="worker_address" column="worker_address"/>
+        <result property="pid" column="pid"/>
+        <result property="start_time" column="start_time"/>
+        <result property="end_time" column="end_time"/>
+        <result property="state" column="state"/>
+        <result property="byte_speed_per_second" column="byte_speed_per_second"/>
+        <result property="record_speed_per_second" column="record_speed_per_second"/>
+        <result property="total_error_records" column="total_error_records"/>
+        <result property="total_record" column="total_record"/>
+        <result property="wait_reader_time" column="wait_reader_time"/>
+        <result property="wait_writer_time" column="wait_writer_time"/>
+        <result property="percentage" column="percentage"/>
+        <result property="exception" column="exception"/>
+        <result property="job_queue_execution_id" column="job_queue_execution_id"/>
+        <result property="task_communication_info" column="task_communication_info"/>
+        <result property="original_configuration" column="original_configuration"/>
+    </resultMap>
+
+    <resultMap id="jobexecutionMonitor" type="jobexecutionMonitor">
+        <result property="executeId" column="execute_id" />
+        <result property="jobconfigId" column="jobconfig_id" />
+        <result property="resourceId" column="resource_id" />
+        <result property="jobName" column="job_name" />
+        <result property="workerAddress" column="worker_address" />
+        <result property="startTime" column="start_time" />
+        <result property="endTime" column="end_time" />
+        <result property="exception" column="exception" />
+    </resultMap>
+
+    <!-- job config -->
+    <sql id="allJobConfigColumns">id,apply_id,job_name,job_desc,job_content,job_media_name,job_media_target_name,job_src_media_source_id,job_target_media_source_id,timing_transfer_type,timing_expression,timing_yn,timing_on_yn,timing_parameter,timing_target_worker,create_time,modify_time,is_delete</sql>
+
+    <select id="getJobConfigById" resultMap="jobConfig" parameterType="long">
+        SELECT
+        <include refid="allJobConfigColumns"/>
+        FROM t_datax_job_config
+        WHERE id=#{id} AND is_delete=false
+    </select>
+
+
+    <select id="getJobConfigNameById" resultType="String" parameterType="long">
+        SELECT
+        job_name
+        FROM t_datax_job_config
+        WHERE id=#{id} AND is_delete=false
+    </select>
+
+    <select id="getJobConfigIDByName" resultType="java.lang.Long" parameterType="String">
+        SELECT
+        id
+        FROM t_datax_job_config
+        WHERE job_name=#{job_name} AND is_delete=false
+    </select>
+
+    <select id="getJobConfigByMediaSourceID" resultMap="jobConfig" parameterType="long">
+        SELECT
+        <include refid="allJobConfigColumns"/>
+        FROM t_datax_job_config
+        WHERE (job_src_media_source_id=#{mid} OR job_target_media_source_id=#{mid}) AND is_delete=false
+    </select>
+
+
+    <insert id="addJobConfig" parameterType="jobConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_datax_job_config
+        (job_name,
+        apply_id,
+        job_desc,
+        job_content,
+        job_media_name,
+        job_media_target_name,
+        job_src_media_source_id,
+        job_target_media_source_id,
+        timing_transfer_type,
+        timing_expression,
+        timing_yn,
+        timing_on_yn,
+        timing_parameter,
+        timing_target_worker,
+        is_delete,
+        create_time,
+        modify_time
+        )
+        VALUES
+        (#{job_name},
+        #{apply_id},
+        #{job_desc},
+        #{job_content},
+        #{job_media_name},
+        #{job_media_target_name},
+        #{job_src_media_source_id},
+        #{job_target_media_source_id},
+        #{timing_transfer_type},
+        #{timing_expression},
+        #{timing_yn},
+        #{timing_on_yn},
+        #{timing_parameter},
+        #{timing_target_worker},
+        #{is_delete},
+        now(),
+        now()
+        )
+        <selectKey resultType="long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+    </insert>
+
+
+    <update id="deleteJobConfigById" parameterType="long">
+        UPDATE t_datax_job_config
+        SET is_delete=TRUE
+        WHERE id=#{id}
+    </update>
+
+    <update id="updageJobConfig" parameterType="jobConfig">
+        UPDATE t_datax_job_config
+        SET
+        job_desc=#{job_desc},
+        timing_expression=#{timing_expression},
+        timing_yn=#{timing_yn},
+        timing_on_yn=#{timing_on_yn},
+        timing_parameter=#{timing_parameter},
+        timing_target_worker=#{timing_target_worker},
+        create_time=#{create_time},
+        modify_time=now()
+        WHERE id=#{id}
+    </update>
+
+    <update id="updateRelationMediaSource" parameterType="jobConfig">
+        UPDATE t_datax_job_config
+        SET
+        job_src_media_source_id=#{job_src_media_source_id},
+        job_target_media_source_id=#{job_target_media_source_id}
+        WHERE id=#{id}
+    </update>
+
+    <update id="updateJobConfigContent" parameterType="jobConfig">
+        UPDATE t_datax_job_config
+        SET
+        job_content=#{job_content},
+        modify_time=now(),
+        timing_yn=${timing_yn},
+        timing_transfer_type=#{timing_transfer_type},
+        timing_target_worker=#{timing_target_worker},
+        timing_parameter=#{timing_parameter},
+        <if test="job_media_name != null">
+            job_media_name=#{job_media_name},
+        </if>
+        <if test="job_media_target_name != null">
+            job_media_target_name=#{job_media_target_name},
+        </if>
+        create_time=#{create_time}
+        WHERE id=#{id}
+    </update>
+
+
+    <select id="getJobConfigCount" resultType="int">
+        SELECT count(1) FROM t_datax_job_config WHERE is_delete=false
+    </select>
+
+    <select id="selectBtachJobConfig" resultMap="jobConfig">
+        SELECT
+        <include refid="allJobConfigColumns"/>
+        FROM t_datax_job_config WHERE is_delete=false LIMIT #{0},#{1}
+    </select>
+
+    <select id="selectBatchJobConfigByDBType" resultMap="jobConfig">
+        SELECT
+        j.*
+        FROM t_datax_job_config j
+        LEFT JOIN t_data_sync_apply s ON j.apply_id = s.id
+        LEFT JOIN t_dl_user u ON s.apply_user_id = u.id
+        WHERE j.is_delete=0
+        <if test="isTiming == 0">
+            AND (j.timing_yn=0 OR j.timing_yn=1)
+        </if>
+        <if test="isTiming > 0">
+            AND j.timing_yn=1
+        </if>
+        <if test="0 > isTiming">
+            AND j.timing_yn=0
+        </if>
+
+        <if test="jobName != null">
+            AND j.job_name LIKE CONCAT('%',#{jobName},'%')
+        </if>
+        <if test="applyUserId > 0">
+            AND u.id=#{applyUserId}
+        </if>
+        <if test="jobName == null">
+            <if test="applyID > 0">
+                AND j.apply_id=#{applyID}
+            </if>
+            <!-- 复杂查询 -->
+            <if test="0 >= applyID">
+                <if test="srcName != null">
+                    AND j.job_src_media_source_id IN
+                    (SELECT m.id FROM t_dl_media_source m WHERE m.ms_name=#{srcName})
+                </if>
+                <if test="srcName == null">
+                    <if test="srcType != null">
+                        AND j.job_src_media_source_id IN
+                        ( SELECT m.id FROM t_dl_media_source m WHERE m.ms_type=#{srcType} )
+                    </if>
+                </if>
+
+                <if test="destName != null">
+                    AND j.job_target_media_source_id IN
+                    (SELECT m.id FROM t_dl_media_source m WHERE m.ms_name=#{destName})
+                </if>
+                <if test="destName == null">
+                    <if test="destType != null">
+                        AND j.job_target_media_source_id IN
+                        ( SELECT m.id FROM t_dl_media_source m WHERE m.ms_type=#{destType} )
+                    </if>
+                </if>
+                <if test="mediaName != null">
+                    AND j.job_media_name=#{mediaName}
+                </if>
+            </if>
+        </if>
+        <if test="configId > 0">
+            AND j.id=#{configId}
+        </if>
+        <if test="srcTableName != null">
+            AND j.job_media_name=#{srcTableName}
+        </if>
+        <if test="targetTableName != null">
+            AND j.job_media_target_name=#{targetTableName}
+        </if>
+        ORDER BY j.id DESC
+    </select>
+
+    <select id="timingDupCheck" resultType="int">
+      SELECT count(id)
+      FROM t_datax_job_config
+      WHERE job_src_media_source_id=#{0} AND job_target_media_source_id=#{1}
+      AND job_media_name=#{2} AND timing_yn=1 AND is_delete=0
+    </select>
+
+
+    <select id="latestJobConfigRecord" resultType="jobConfig">
+        SELECT
+        <include refid="allJobConfigColumns"/>
+        FROM `t_datax_job_config` ORDER BY id DESC LIMIT 1
+    </select>
+
+    <select id="lastJobConfigByName" resultMap="jobConfig" >
+        SELECT
+        <include refid="allJobConfigColumns"/>
+        FROM `t_datax_job_config`
+        WHERE job_name LIKE CONCAT('%',#{0},'%')
+        ORDER BY create_time DESC LIMIT 1
+    </select>
+
+
+    <select id="allTimingJob" resultMap="jobConfig">
+        SELECT
+        <include refid="allJobConfigColumns"/>
+        FROM `t_datax_job_config`
+        WHERE timing_yn=TRUE and is_delete=FALSE
+    </select>
+
+    <select id="allTinmingJobWithoutMonitor" resultMap="jobConfig">
+	SELECT
+      <include refid="allJobConfigColumns"/>
+	FROM t_datax_job_config WHERE id NOT IN
+	(
+		SELECT resource_id FROM t_dl_monitor WHERE monitor_cat=3
+	)   AND timing_yn=TRUE
+    </select>
+
+
+    <select id="allTinmingJobInMonitor" resultMap="jobConfig">
+        SELECT
+        <include refid="allJobConfigColumns"/>
+        FROM t_datax_job_config WHERE id IN
+        (
+        SELECT resource_id FROM t_dl_monitor WHERE monitor_cat=3
+        )   AND timing_yn=TRUE
+    </select>
+
+
+
+    <!-- job execution -->
+    <sql id="allJobExecutionColumns">id,job_id,worker_address,pid,start_time,end_time,state,byte_speed_per_second,record_speed_per_second,total_error_records,total_record,wait_reader_time,wait_writer_time,percentage,exception,job_queue_execution_id,task_communication_info,original_configuration</sql>
+
+    <select id="getJobExecutionById" resultMap="jobExecution" parameterType="long">
+        SELECT
+        <include refid="allJobExecutionColumns"/>
+        FROM t_datax_job_execution
+        WHERE id=#{id}
+    </select>
+
+    <insert id="addJobExecution" parameterType="jobExecution">
+        INSERT INTO t_datax_job_execution
+        (job_id,
+        worker_address,
+        pid,
+        start_time,
+        end_time,
+        state,
+        byte_speed_per_second,
+        record_speed_per_second,
+        total_error_records,
+        total_record,
+        wait_reader_time,
+        wait_writer_time,
+        percentage,
+        exception,
+        job_queue_execution_id,
+        task_communication_info,
+        original_configuration
+        )
+        VALUES
+        (#{job_id},
+        #{worker_address},
+        #{pid},
+        #{start_time},
+        #{end_time},
+        #{state},
+        #{byte_speed_per_second},
+        #{record_speed_per_second},
+        #{total_error_records},
+        #{total_record},
+        #{wait_reader_time},
+        #{wait_writer_time},
+        #{percentage},
+        #{exception},
+        #{job_queue_execution_id},
+        #{task_communication_info},
+        #{original_configuration}
+        )
+    </insert>
+
+    <update id="updateJobExecution" parameterType="jobExecution">
+        UPDATE t_datax_job_execution
+        SET
+        worker_address=#{worker_address},
+        pid=#{pid},
+        start_time=#{start_time},
+        end_time=#{end_time},
+        state=#{state},
+        byte_speed_per_second=#{byte_speed_per_second},
+        record_speed_per_second=#{record_speed_per_second},
+        total_error_records=#{total_error_records},
+        total_record=#{total_record},
+        wait_reader_time=#{wait_reader_time},
+        wait_writer_time=#{wait_writer_time},
+        percentage=#{percentage},
+        exception=#{exception},
+        job_queue_execution_id=#{job_queue_execution_id},
+        task_communication_info=#{task_communication_info},
+        original_configuration=#{original_configuration}
+        WHERE id=#{id}
+    </update>
+
+    <update id="updateJobExecutionState">
+        UPDATE t_datax_job_execution
+        SET state=#{0},exception=#{1}
+        WHERE id=#{2}
+    </update>
+
+    <update id="updateJobExecutionStateForRunningJob">
+        UPDATE t_datax_job_execution
+        SET state=#{0},exception=#{1}
+        WHERE id=#{2} AND state='RUNNING'
+    </update>
+
+
+
+    <select id="getJobExecutionCount" resultType="int">
+        SELECT count(1) FROM t_datax_job_execution
+    </select>
+
+    <select id="selectBtachJobExecutioin" resultMap="jobExecution">
+        SELECT
+        <include refid="allJobExecutionColumns"/>
+        FROM t_datax_job_execution LIMIT #{0},#{1}
+    </select>
+
+    <select id="selectBatchJobExecutionByStateType" resultMap="jobExecution">
+        SELECT
+        id,job_id,worker_address,start_time,end_time,state,byte_speed_per_second,
+        record_speed_per_second,total_error_records,total_record,wait_reader_time,
+        wait_writer_time, percentage,SUBSTR(exception,1,3)
+        FROM t_datax_job_execution WHERE 1=1
+        <if test="job_id > 0">
+            AND job_id = #{job_id}
+        </if>
+        <if test="stateType != null">
+            AND state=#{stateType}
+        </if>
+        <if test="mediaName != null">
+            AND job_id IN (
+            SELECT id FROM t_datax_job_config WHERE job_media_name=#{mediaName}
+            )
+        </if>
+        <if test="srcName != null">
+            AND job_id IN (
+            SELECT id FROM t_datax_job_config WHERE job_src_media_source_id IN
+            (SELECT id FROM t_dl_media_source WHERE ms_name=#{srcName})
+            )
+        </if>
+        <if test="srcName == null">
+            <if test="srcType != null">
+                AND job_id IN (
+                SELECT id FROM t_datax_job_config WHERE job_src_media_source_id IN
+                (SELECT id FROM t_dl_media_source WHERE ms_type=#{srcType})
+                )
+            </if>
+        </if>
+
+        <if test="destName != null">
+            AND job_id IN (
+            SELECT id FROM t_datax_job_config WHERE job_target_media_source_id IN
+            (SELECT id FROM t_dl_media_source WHERE ms_name=#{destName})
+            )
+        </if>
+        <if test="destName == null">
+            <if test="destType != null">
+                AND job_id IN (
+                SELECT id FROM t_datax_job_config WHERE job_target_media_source_id IN
+                (SELECT id FROM t_dl_media_source WHERE ms_type=#{destType})
+                )
+            </if>
+        </if>
+        <if test="startTime != null">
+            AND start_time>#{startTime}
+        </if>
+        <if test="endTime != null">
+            AND #{endTime}>end_time
+        </if>
+        ORDER BY id DESC
+    </select>
+
+
+
+
+    <select id="selectBatchJobExecutionByOptimized" resultMap="jobExecution">
+      SELECT j.id,j.job_id,j.worker_address,j.start_time,j.end_time,j.state,j.byte_speed_per_second,
+      j.record_speed_per_second,j.total_error_records,j.total_record,j.wait_reader_time,j.wait_writer_time,
+      j.percentage,SUBSTR(exception,1,3) AS exception
+      FROM t_datax_job_execution AS j
+
+        INNER JOIN
+        `t_datax_job_config` AS c
+        <if test="srcType!=null" >
+            INNER JOIN
+            t_dl_media_source AS src
+        </if>
+        <if test="destType!=null" >
+            INNER JOIN
+            t_dl_media_source AS dest
+        </if>
+
+        ON 1=1
+        AND j.job_id=c.id
+        <if test="srcType!=null">
+          AND c.job_src_media_source_id = src.id
+        </if>
+        <if test="destType!=null">
+          AND c.job_target_media_source_id = dest.id
+        </if>
+
+        WHERE 1=1
+        <if test="job_id>0">
+            AND job_id=${job_id}
+        </if>
+        <if test="stateType != null">
+            AND state=#{stateType}
+        </if>
+        <if test="srcType!=null" >
+            AND src.ms_type=#{srcType}
+            <if test="srcName != null">
+                AND src.ms_name=#{srcName}
+            </if>
+        </if>
+        <if test="destType!=null" >
+            AND dest.ms_type=#{destType}
+            <if test="destName != null">
+                AND dest.ms_name=#{destName}
+            </if>
+        </if>
+        <if test="mediaName != null">
+            AND c.job_media_name=#{mediaName}
+        </if>
+
+        <if test="startTime != null">
+            AND j.start_time>#{startTime}
+        </if>
+        <if test="endTime != null">
+            AND #{endTime}>j.end_time
+        </if>
+        ORDER BY j.id DESC
+    </select>
+
+
+
+
+
+
+    <select id="getJustCreatedJobExecution" resultType="jobExecution">
+        SELECT
+        <include refid="allJobExecutionColumns"/>
+        FROM t_datax_job_execution WHERE
+        job_id=#{0} AND start_time>#{1} ORDER BY start_time DESC LIMIT 1
+    </select>
+
+    <select id="lastExecuteJobExecutionInfo" resultType="jobExecution">
+        SELECT
+        <include refid="allJobExecutionColumns"/>
+        FROM `t_datax_job_execution` WHERE job_id=#{0} ORDER BY start_time DESC LIMIT 1
+    </select>
+
+    <select id="lastExecuteJobExecutionInfoByOptimized" resultType="jobExecution">
+        SELECT state FROM `t_datax_job_execution` WHERE id = (
+            SELECT MAX(id) FROM `t_datax_job_execution` WHERE job_id=#{0}
+        )
+    </select>
+
+
+
+    <select id="lastSuccessExecuteJobExecutionInfo" resultType="jobExecution">
+        SELECT
+        <include refid="allJobExecutionColumns"/>
+        FROM `t_datax_job_execution` WHERE job_id=#{0} AND state='SUCCEEDED' ORDER BY start_time DESC LIMIT 1
+    </select>
+
+
+    <select id="getJobExecutionByJobId" resultMap="jobExecution">
+        SELECT
+        <include refid="allJobExecutionColumns"/>
+        FROM `t_datax_job_execution` WHERE job_id=#{0}
+    </select>
+
+    <select id="getJobExecutionByJobIdForPaging" resultMap="jobExecution">
+        SELECT
+        <include refid="allJobExecutionColumns"/>
+        FROM `t_datax_job_execution` WHERE job_id=#{0} LIMIT #{1},{2}
+    </select>
+
+
+    <select id="getAllFailureJobByTimeFrame" resultMap="jobExecution">
+        SELECT
+        <include refid="allJobExecutionColumns"/>
+        FROM `t_datax_job_execution` WHERE 1=1
+        AND state='FAILED' AND end_time>#{0} AND #{1}>end_time
+    </select>
+
+    <select id="getJobConfigListByApplyId" parameterType="long" resultMap="jobConfig">
+        SELECT
+        <include refid="allJobConfigColumns"/>
+        FROM t_datax_job_config
+        WHERE apply_id = #{applyId}
+    </select>
+
+    <select id="getJustJobExecutionByConfigId" parameterType="long" resultMap="jobExecution">
+        SELECT
+        <include refid="allJobConfigColumns"/>
+        FROM t_datax_job_execution
+        WHERE job_id=#{0}
+        ORDER BY start_time DESC LIMIT 1
+    </select>
+
+    <!-- job execution monitor -->
+    <sql id="allJobExecutionMonitorColumn">id AS execute_id, jobconfig_id, resource_id, job_name, worker_address, start_time, end_time, exception</sql>
+
+    <select id="getAllFailureByMonitorCat" resultMap="jobexecutionMonitor">
+        SELECT
+        t.jobconfig_id, t.resource_id, t.job_name, t.worker_address, t.start_time, t.end_time, t.exception
+        FROM t_dl_monitor AS m INNER JOIN
+        (
+            SELECT
+             j.id AS jobconfig_id, j.id AS resource_id, j.job_name, e.worker_address, e.start_time, e.end_time, exception
+            FROM  t_datax_job_config AS j JOIN t_datax_job_execution AS e
+             ON e.job_id=j.id
+             WHERE  start_time>#{0}
+             AND now()>start_time
+            AND state= 'FAILED'
+        ) AS t
+        ON m.resource_id=t.jobconfig_id WHERE m.monitor_cat=3
+    </select>
+
+
+
+    <select id="allRunningJob" resultMap="jobExecution">
+        SELECT
+        <include refid="allJobExecutionColumns"/>
+        FROM t_datax_job_execution
+        WHERE state= 'RUNNING'
+    </select>
+
+    <select id="getJobsBySrcIdAndTargetIdAndTable" resultMap="jobConfig">
+        SELECT
+        <include refid="allJobConfigColumns"/>
+        FROM t_datax_job_config
+        where  job_target_media_source_id = #{targetId}
+        and job_media_name = #{targetTableName}
+        and  job_src_media_source_id in
+        <foreach collection="srcMediaSourceIdList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+</mapper>

@@ -1,5 +1,6 @@
 package com.ucar.datalink.writer.rdbms.intercept;
 
+import com.ucar.datalink.biz.service.MediaService;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.biz.utils.ddl.DdlSqlUtils;
@@ -46,6 +47,7 @@ public class DdlEventInterceptor implements Interceptor<RdbEventRecord> {
                 if (srcMedia.getMediaSource().getType() == MediaSourceType.MYSQL &&
                         !(
                                 mappingInfo.getTargetMediaSource().getType() == MediaSourceType.SDDL ||
+                                        mappingInfo.getTargetMediaSource().getSimulateMsType() == MediaSourceType.MYSQL ||
                                         mappingInfo.getTargetMediaSource().getType() == MediaSourceType.MYSQL
                         )) {
                     logger.info("ddl event is ignored,for the target media source type is not mysql or sddl, media-mapping-id is {}.", mappingInfo.getId());
@@ -71,14 +73,21 @@ public class DdlEventInterceptor implements Interceptor<RdbEventRecord> {
                     return null;
                 }
 
+                MediaSourceType mediaSourceType;
+                if(mappingInfo.getSourceMedia().getMediaSource().getType() == MediaSourceType.VIRTUAL){
+                    mediaSourceType = mappingInfo.getSourceMedia().getMediaSource().getSimulateMsType();
+                }else{
+                    mediaSourceType = mappingInfo.getSourceMedia().getMediaSource().getType();
+                }
                 //进行sql解析
-                List<SQLStatementHolder> holders = DdlSqlUtils.buildSQLStatement(mappingInfo.getSourceMedia().getMediaSource().getType(), record.getSql());
+                List<SQLStatementHolder> holders = DdlSqlUtils.buildSQLStatement(mediaSourceType, record.getSql());
                 if (holders.size() > 1) {
                     throw new ValidationException("The count of ddl slqs is more than one,please check,it may be a bug.");
                 }
                 SQLStatementHolder holder = holders.get(0);
                 holder.check();
 
+//            String sql = buildSql(record.getSql(), record, mappingInfo);
                 String sql = record.getSql();
                 if (SqlType.CreateTable.equals(holder.getSqlType()) && srcMedia.getNameMode().getMode().isWildCard()) {
                     execute(record, sql, mappingInfo, holder.getSqlType());
@@ -113,6 +122,15 @@ public class DdlEventInterceptor implements Interceptor<RdbEventRecord> {
                 executeForPrimaryDbs(record, sql, mappingInfo);
                 executeForSecondaryDbs(record, sql, mappingInfo);
             }
+        }
+        //虚拟数据源
+        else if(targetMediaSource.getType() == MediaSourceType.VIRTUAL){
+            //因有跨机房同步配置,只需要执行当前中心机房的数据源即可
+            MediaSourceInfo mediaSourceInfo = DataLinkFactory.getObject(MediaService.class).getRealDataSource(targetMediaSource);
+            sql = buildSql(record.getSql(), record, mappingInfo, mediaSourceInfo, false);
+            DbDialect dbDialect = DbDialectFactory.getDbDialect(mediaSourceInfo);
+            executeSql(mappingInfo, dbDialect, sql);
+
         } else {
             sql = buildSql(record.getSql(), record, mappingInfo, targetMediaSource, false);
             DbDialect dbDialect = DbDialectFactory.getDbDialect(targetMediaSource);

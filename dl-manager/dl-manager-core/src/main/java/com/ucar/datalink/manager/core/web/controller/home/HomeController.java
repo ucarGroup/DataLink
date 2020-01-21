@@ -2,8 +2,8 @@ package com.ucar.datalink.manager.core.web.controller.home;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.service.*;
-import com.ucar.datalink.domain.statis.HomeStatistic;
 import com.ucar.datalink.domain.statis.StatisDetail;
+import com.ucar.datalink.domain.statis.HomeStatistic;
 import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;
 import com.ucar.datalink.manager.core.web.util.Page;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,6 +74,36 @@ public class HomeController {
         statisAll.put("msCount", msCount);
         statisAll.put("taskCount", taskCount);
         statisAll.put("mappingCount", mappingCount);
+        /*List<StatisDetail> groupDetList = groupService.getCountByName();
+        List<StatisDetail> workerDetList = workerService.getCountByGroup();
+        List<StatisDetail> msDetList = mediaSourceService.getCountByType();
+        List<StatisDetail> taskDetList = taskConfigService.getCountByType();
+        List<StatisDetail> mappingDetList = mediaService.getCountByType();
+        StringBuilder groupDetailStr = new StringBuilder();
+        StringBuilder workerDetailStr = new StringBuilder();
+        StringBuilder msDetailStr = new StringBuilder();
+        StringBuilder taskDetailStr = new StringBuilder();
+        StringBuilder mappingDetailStr = new StringBuilder();
+        for (StatisDetail sd : groupDetList) {
+            groupDetailStr.append(sd.getType() + ":" + sd.getCountByType()).append("； ");
+        }
+        for (StatisDetail sd : workerDetList) {
+            workerDetailStr.append(sd.getType() + ":" + sd.getCountByType()).append("； ");
+        }
+        for (StatisDetail sd : msDetList) {
+            msDetailStr.append(sd.getType() + ":" + sd.getCountByType()).append("； ");
+        }
+        for (StatisDetail sd : taskDetList) {
+            taskDetailStr.append(sd.getType() + ":" + sd.getCountByType()).append("； ");
+        }
+        for (StatisDetail sd : mappingDetList) {
+            mappingDetailStr.append(sd.getType() + ":" + sd.getCountByType()).append("； ");
+        }
+        statisAll.put("groupDetail", groupDetailStr);
+        statisAll.put("workerDetail", workerDetailStr);
+        statisAll.put("msDetail", msDetailStr);
+        statisAll.put("taskDetail", taskDetailStr);
+        statisAll.put("mappingDetail", mappingDetailStr);*/
 
         groupId = groupId == -1L ? null : groupId;
         //设置统计时间为当前时间之前一小时

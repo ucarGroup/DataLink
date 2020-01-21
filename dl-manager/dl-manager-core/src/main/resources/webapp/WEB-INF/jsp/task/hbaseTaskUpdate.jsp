@@ -60,6 +60,9 @@
 </div>
 
 <script type="text/javascript">
+
+    $(".taskSyncMode").val('${taskModel.taskBasicInfo.taskSyncMode}').select2({allowClear: false, maximumSelectionLength: 1});
+
     function back2Main() {
         $("#hbaseTaskUpdate").empty();
         $("#main-container").show();
@@ -71,14 +74,17 @@
         obj.taskBasicInfo = getBasicObj();
         obj.hbaseReaderParameter = getHbaseReaderObj();
         obj.writerParameterMap = getWritersObj();
-        var sync = "0";
-        if ('${taskModel.isLeaderTask}' == "1" && confirm("是否需要同步修改follower task?")) {
+        var  sync = "0";
+        if('${taskModel.isLeaderTask}'=="1" && confirm("是否需要同步修改从task?")){
             sync = "1";
         }
-
+        if(obj.taskBasicInfo.alarmPriorityId == null || obj.taskBasicInfo.alarmPriorityId == '') {
+            alert("请选择报警方式!");
+            return ;
+        }
         $.ajax({
             type: "post",
-            url: "${basePath}/hbaseTask/doUpdateHbaseTask?sync=" + sync,
+            url: "${basePath}/hbaseTask/doUpdateHbaseTask?sync="+sync,
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             data: JSON.stringify(obj),

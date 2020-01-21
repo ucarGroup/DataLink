@@ -158,6 +158,7 @@
                                                     </div>
                                                 </div>
                                             </div>
+
                                             <div class="col-sm-12">
                                                 <div class="col-sm-6 form-group">
                                                     <label class="col-sm-4 control-label no-padding-right"
@@ -193,7 +194,7 @@
                                                     <div class="col-sm-8">
                                                         <input type="text" name="esRouting" id="form-add-esRouting"
                                                                value=""
-                                                               style="width:100%;" readonly="false">
+                                                               style="width:100%;" readonly="true">
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-6 form-group">
@@ -213,6 +214,21 @@
                                             </div>
 
                                         </div>
+
+                                        <div class="col-sm-12" id="form-add-prefixName-div" >
+                                            <div class="col-sm-6 form-group">
+                                                <label class="col-sm-4 control-label no-padding-right"
+                                                       for="form-add-prefixName">聚合表前缀(kudu)</label>
+
+                                                <div class="col-sm-8">
+                                                    <input type="text" name="prefixName" id="form-add-prefixName"
+                                                           style="width:100%;">
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+
                                         <div class="form-group" id="duallistbox_demo1" style="display: none;">
                                             <div class="col-sm-12">
                                                 <select multiple="multiple" size="10" name="duallistbox_demo1[]"
@@ -333,8 +349,7 @@
             <input type="hidden" name="writePriorityHidden" value="5">
             <input type="hidden" name="validHidden" value="true">
             <input type="hidden" name="esUsePrefixHidden" value="true">
-			<input type="hidden" name="esRoutingHidden">
-			<input type="hidden" name="esRoutingIgnoreHidden" value="true">
+            <input type="hidden" name="prefixNameHidden">
             <input type="hidden" name="geoPositionConfHidden">
             <input type="hidden" name="skipIdsHidden">
             <input type="hidden" name="parameterHidden">
@@ -499,6 +514,7 @@
                 }
             } else {
                 e.find('input[name=targetTableName]').val(value);
+                e.find('input[name=prefixNameHidden]').val(value);
             }
             $('#copyTableName').append(e);
         }
@@ -608,19 +624,12 @@
         } else {
             $('#form-add-esUsePrefix').val(true);
         }
-		
-		var esRouting = $(obj).parent().parent().find('input[name=esRoutingHidden]').val();
-        if (esRouting != null && esRouting != '') {
-            $('#form-add-esRouting').val(esRouting);
+
+        var prefixName = $(obj).parent().parent().find('input[name=prefixNameHidden]').val();
+        if (prefixName != null && prefixName != '') {
+            $('#form-add-prefixName').val(prefixName);
         } else {
-            $('#form-add-esRouting').val('');
-        }
-		
-		var esRoutingIgnore = $(obj).parent().parent().find('input[name=esRoutingIgnoreHidden]').val();
-        if (esRoutingIgnore != null && esRoutingIgnore != '') {
-            $('#form-add-esRoutingIgnore').val(esRoutingIgnore);
-        } else {
-            $('#form-add-esRoutingIgnore').val(true);
+            $('#form-add-prefixName').val('');
         }
 
         var geoPositionConf = $(obj).parent().parent().find('input[name=geoPositionConfHidden]').val();
@@ -645,8 +654,14 @@
         }
 
         getColumnInfo(this);
+
+        //获取es routing信息
+        getEsRoutingInfo(this);
+
         $('#myModal').modal('show');
     });
+
+
 
     function getColumnInfo(e) {
         var tableName = $(e).parent().parent().find('input[name=sourceTableName]').val();
@@ -686,6 +701,41 @@
         });
     }
 
+
+    function getEsRoutingInfo(e) {
+
+        var targetMediaSourceId = $("#form-add-targetMediaNamespaceId").val()[0];
+        var targetTableName = $(e).parent().parent().find('input[name=targetTableName]').val();
+        var obj = {
+            mediaSourceId: targetMediaSourceId,
+            targetTableName:targetTableName
+        };
+
+        debugger;
+        $.ajax({
+            type: "post",
+            url: "${basePath}/mediaMapping/getEsRoutingInfo",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify(obj),
+            async: false,
+            error: function (xhr, status, err) {
+                debugger;
+                alert(err);
+            },
+            success: function (data) {
+                if (data.success == "true") {
+                    $('#form-add-esRouting').val(data.esRouting);
+                    var value = data.esRoutingIgnore;
+                    $('#form-add-esRoutingIgnore').find("option[value="+value+"]").prop("selected",true);
+                }else{
+                    alert(data);
+                }
+            }
+        });
+
+    }
+
     $('#form-add-columnMappingMode').change(function () {
         var val = $("#form-add-columnMappingMode").val();
         if (val == 'INCLUDE' || val == 'EXCLUDE') {
@@ -715,12 +765,9 @@
 
         var esUsePrefix = $('#form-add-esUsePrefix').val();
         $(obj).parent().parent().find('input[name=esUsePrefixHidden]').val(esUsePrefix);
-		
-		var esRouting = $('#form-add-esRouting').val();
-        $(obj).parent().parent().find('input[name=esRoutingHidden]').val(esRouting);
-		
-		var esRoutingIgnore = $('#form-add-esRoutingIgnore').val();
-        $(obj).parent().parent().find('input[name=esRoutingIgnoreHidden]').val(esRoutingIgnore);
+
+        var prefixName = $('#form-add-prefixName').val();
+        $(obj).parent().parent().find('input[name=prefixNameHidden]').val(prefixName);
 
         var geoPositionConf = $('#form-add-geoPositionConf').val();
         $(obj).parent().parent().find('input[name=geoPositionConfHidden]').val(geoPositionConf);

@@ -2,6 +2,8 @@ package com.ucar.datalink.writer.es.intercept;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.mapping.RDBMSMapping;
+import com.ucar.datalink.biz.service.MediaService;
+import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.biz.utils.ddl.DdlSqlUtils;
 import com.ucar.datalink.biz.utils.ddl.SQLStatementHolder;
 import com.ucar.datalink.common.errors.ValidationException;
@@ -9,6 +11,7 @@ import com.ucar.datalink.contract.log.rdbms.RdbEventRecord;
 import com.ucar.datalink.domain.RecordMeta;
 import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
+import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.meta.ColumnMeta;
 import com.ucar.datalink.domain.relationship.SqlCheckColumnInfo;
 import com.ucar.datalink.domain.relationship.SqlCheckItem;
@@ -40,7 +43,14 @@ public class DdlEventInterceptor implements Interceptor<RdbEventRecord> {
 
             MediaMappingInfo mappingInfo = RecordMeta.mediaMapping(record);
 
-            List<SQLStatementHolder> holders = DdlSqlUtils.buildSQLStatement(mappingInfo.getSourceMedia().getMediaSource().getType(), record.getSql());
+            MediaSourceType mediaSourceType;
+            if(mappingInfo.getSourceMedia().getMediaSource().getType() == MediaSourceType.VIRTUAL){
+                mediaSourceType = mappingInfo.getSourceMedia().getMediaSource().getSimulateMsType();
+            }else{
+                mediaSourceType = mappingInfo.getSourceMedia().getMediaSource().getType();
+            }
+
+            List<SQLStatementHolder> holders = DdlSqlUtils.buildSQLStatement(mediaSourceType, record.getSql());
             if (holders.size() > 1) {
                 throw new ValidationException("The count of ddl slqs is more than one,please check,it may be a bug.");
             }
@@ -85,7 +95,8 @@ public class DdlEventInterceptor implements Interceptor<RdbEventRecord> {
                         vo.setIndex(array[0]);
                         vo.setType(array[1]);
                         MediaSourceInfo targetMediaSource = mappingInfo.getTargetMediaSource();
-                        ESConfigVo esConfigVo = EsConfigManager.getESConfig(targetMediaSource);
+
+                        ESConfigVo esConfigVo = EsConfigManager.getESConfig(targetMediaSource, mappingInfo.getTaskId());
                         String hosts = esConfigVo.getHosts();
                         String[] hostArr = hosts.split(",");
                         Integer port = esConfigVo.getHttp_port();

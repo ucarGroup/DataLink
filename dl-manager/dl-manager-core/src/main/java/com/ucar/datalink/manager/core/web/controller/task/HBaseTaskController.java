@@ -7,33 +7,36 @@ import com.ucar.datalink.biz.service.*;
 import com.ucar.datalink.biz.utils.AuditLogOperType;
 import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.common.errors.DatalinkException;
+import com.ucar.datalink.common.errors.ErrorException;
 import com.ucar.datalink.common.errors.ValidationException;
+import com.ucar.datalink.common.utils.CodeContext;
 import com.ucar.datalink.domain.Parameter;
+import com.ucar.datalink.domain.alarm.AlarmPriorityInfo;
+import com.ucar.datalink.domain.doublecenter.LabEnum;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.parameter.hbase.HBaseMediaSrcParameter;
-import com.ucar.datalink.domain.media.parameter.zk.ZkMediaSrcParameter;
 import com.ucar.datalink.domain.plugin.PluginWriterParameter;
 import com.ucar.datalink.domain.plugin.reader.hbase.HBaseReaderParameter;
+import com.ucar.datalink.domain.plugin.writer.dove.DoveWriterParameter;
 import com.ucar.datalink.domain.plugin.writer.es.EsWriterParameter;
+import com.ucar.datalink.domain.plugin.writer.fq.FqWriterParameter;
+import com.ucar.datalink.domain.plugin.writer.fq.PartitionMode;
+import com.ucar.datalink.domain.plugin.writer.fq.SerializeMode;
 import com.ucar.datalink.domain.plugin.writer.hbase.HBaseWriterParameter;
 import com.ucar.datalink.domain.plugin.writer.hdfs.CommitMode;
 import com.ucar.datalink.domain.plugin.writer.hdfs.HdfsWriterParameter;
-import com.ucar.datalink.domain.plugin.writer.kafka.PartitionMode;
-import com.ucar.datalink.domain.plugin.writer.kafka.SerializeMode;
+import com.ucar.datalink.domain.plugin.writer.kafka.KafkaWriterParameter;
 import com.ucar.datalink.domain.plugin.writer.rdbms.RdbmsWriterParameter;
-import com.ucar.datalink.domain.task.TargetState;
-import com.ucar.datalink.domain.task.TaskInfo;
-import com.ucar.datalink.domain.task.TaskStatus;
-import com.ucar.datalink.domain.task.TaskType;
+import com.ucar.datalink.domain.task.*;
 import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
 import com.ucar.datalink.manager.core.server.ManagerConfig;
 import com.ucar.datalink.manager.core.server.ServerContainer;
-import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;
 import com.ucar.datalink.manager.core.web.dto.task.HBaseTaskModel;
 import com.ucar.datalink.manager.core.web.dto.task.TaskModel;
 import com.ucar.datalink.manager.core.web.dto.task.TaskView;
+import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;
 import com.ucar.datalink.manager.core.web.util.AuditLogInfoUtil;
 import com.ucar.datalink.manager.core.web.util.Page;
 import org.apache.commons.collections.CollectionUtils;
@@ -76,11 +79,17 @@ public class HBaseTaskController extends BaseTaskController {
     @Autowired
     MediaSourceService mediaSourceService;
 
+    @Autowired
+    LabService labService;
+
+    @Autowired
+    private AlarmPriorityService alarmPriorityService;
+
     @RequestMapping(value = "/hbaseTaskList")
     public ModelAndView hbaseTaskList() {
         ModelAndView mav = new ModelAndView("task/hbaseTaskList");
         List<TaskInfo> taskList = taskService.getList();
-
+        mav.addObject("srcTypeList", MediaSourceType.getHBaseTaskSrcTypes());
         mav.addObject("taskList", CollectionUtils.isEmpty(taskList) ? taskList : taskList.stream().filter(t -> t.getTaskType() == TaskType.HBASE).collect(Collectors.toList()));
         mav.addObject("groupList", groupService.getAllGroups());
         mav.addObject("mediaSourceList", mediaService.getMediaSourcesByTypes(MediaSourceType.HBASE));
@@ -93,10 +102,12 @@ public class HBaseTaskController extends BaseTaskController {
         Page<TaskView> page = new Page<>(map);
         PageHelper.startPage(page.getPageNum(), page.getLength());
 
+        String srcType = map.get("srcType");
         Long readerMediaSourceId = Long.valueOf(map.get("readerMediaSourceId"));
         Long groupId = Long.valueOf(map.get("groupId"));
         Long id = Long.valueOf(map.get("id"));
         List<TaskInfo> taskInfos = taskService.listTasksForQueryPage(
+                srcType.equals("-1") ? null : MediaSourceType.valueOf(srcType),
                 readerMediaSourceId == -1L ? null : readerMediaSourceId,
                 groupId == -1L ? null : groupId,
                 id == -1L ? null : id,
@@ -108,6 +119,9 @@ public class HBaseTaskController extends BaseTaskController {
             view.setTaskDesc(i.getTaskDesc());
             view.setTargetState(i.getTargetState());
             view.setGroupId(i.getGroupId());
+            view.setLabName(StringUtils.isNotBlank(i.getLabName()) ? i.getLabName() : "");
+            view.setTaskSyncMode(TaskSyncModeEnum.getEnumByCode(i.getTaskSyncMode()).getName());
+            view.setTaskPriorityId(i.getTaskPriorityId()!=null?String.valueOf(i.getTaskPriorityId()):"-1");
             return view;
         }).collect(Collectors.toList());
 
@@ -130,10 +144,10 @@ public class HBaseTaskController extends BaseTaskController {
 
             //启动时间
             TaskStatus taskStatus = taskStatusService.getStatus(i.getId().toString());
-            if (taskStatus != null) {
+            if(taskStatus != null){
                 String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(taskStatus.getStartTime()));
                 i.setStartTime(time);
-            } else {
+            }else{
                 i.setStartTime("");
             }
 
@@ -150,22 +164,28 @@ public class HBaseTaskController extends BaseTaskController {
     @RequestMapping(value = "/toAddHbaseTask")
     public ModelAndView toAddHbaseTask() {
         ModelAndView mav = new ModelAndView("task/hbaseTaskAdd");
+        List<AlarmPriorityInfo> alarmPriorityInfoList = alarmPriorityService.getAll();
+        List<MediaSourceType> types = new ArrayList<>();
+        types.add(MediaSourceType.HBASE);
         HBaseTaskModel hbaseTaskModel = new HBaseTaskModel(
-                new TaskModel.TaskBasicInfo(null, null, null, null, null),
+                new TaskModel.TaskBasicInfo(null, null, null, null, null,null,null,null),
                 getWriterParameters(),
                 groupService.getAllGroups(),
                 TargetState.getAllStates(),
-                mediaService.getMediaSourcesByTypes(MediaSourceType.HBASE),
-                buildZkMediaSources(),
+                mediaService.findMediaSourcesForSingleLab(types),
+                mediaService.buildZkMediaSources(ManagerConfig.current().getZkServer()),
                 PluginWriterParameter.RetryMode.getAllModes(),
                 RdbmsWriterParameter.SyncMode.getAllModes(),
                 new HBaseReaderParameter(),
                 CommitMode.getAllCommitModes(),
                 SerializeMode.getAllSerializeModes(),
                 PartitionMode.getAllPartitionModes(),
+                labService.findLabList(),
+                TaskSyncModeEnum.toList(),
                 ""
         );
         mav.addObject("taskModel", hbaseTaskModel);
+        mav.addObject("alarmPriorityInfoList", alarmPriorityInfoList);
         return mav;
     }
 
@@ -176,9 +196,9 @@ public class HBaseTaskController extends BaseTaskController {
             checkRequired(hbaseTaskModel);
             checkZNode(hbaseTaskModel);
 
-            TaskInfo leaderTask = getLeaderTask(hbaseTaskModel);
-            if (leaderTask != null) {
-                checkWriter(leaderTask, hbaseTaskModel);
+            TaskInfo leaderTask = getLeaderTaskId(hbaseTaskModel);
+            if(leaderTask != null) {
+                checkWriter(leaderTask,hbaseTaskModel);
             }
 
             TaskInfo taskInfo = new TaskInfo();
@@ -186,6 +206,10 @@ public class HBaseTaskController extends BaseTaskController {
             taskInfo.setTaskName(hbaseTaskModel.getTaskBasicInfo().getTaskName());
             taskInfo.setTaskDesc(hbaseTaskModel.getTaskBasicInfo().getTaskDesc());
             taskInfo.setTargetState(hbaseTaskModel.getTaskBasicInfo().getTargetState());
+
+            taskInfo.setLabId(hbaseTaskModel.getTaskBasicInfo().getLabId());
+            taskInfo.setTaskSyncMode(hbaseTaskModel.getTaskBasicInfo().getTaskSyncMode());
+
             taskInfo.setReaderMediaSourceId(hbaseTaskModel.getHbaseReaderParameter().getMediaSourceId());
             taskInfo.setTaskType(TaskType.HBASE);
             taskInfo.setTaskReaderParameter(hbaseTaskModel.getHbaseReaderParameter().toJsonString());
@@ -196,10 +220,17 @@ public class HBaseTaskController extends BaseTaskController {
                                     .collect(Collectors.toList()))
             );
             taskInfo.setTaskParameter("{}");
-            taskInfo.setLeaderTaskId(leaderTask == null ? null : leaderTask.getId());
+            taskInfo.setLeaderTaskId(leaderTask==null?null:leaderTask.getId());
             taskInfo.setIsLeaderTask(isLeaderTask(hbaseTaskModel));
+
+            if(hbaseTaskModel.getTaskBasicInfo().getAlarmPriorityId()!=null) {
+                AlarmPriorityInfo alarmPriorityInfo = alarmPriorityService.getById(hbaseTaskModel.getTaskBasicInfo().getAlarmPriorityId());
+                taskInfo.setAlarmPriorityId(hbaseTaskModel.getTaskBasicInfo().getAlarmPriorityId());
+                taskInfo.setTaskPriorityId(alarmPriorityInfo.getPriority());
+            }
+
             taskService.addTask(taskInfo);
-            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo, "004010203", AuditLogOperType.insert.getValue()));
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo,"004010203", AuditLogOperType.insert.getValue()));
         } catch (Exception e) {
             logger.error("Add HbaseTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -207,50 +238,61 @@ public class HBaseTaskController extends BaseTaskController {
         return "success";
     }
 
+
     @RequestMapping(value = "/toUpdateHbaseTask")
     public ModelAndView toUpdateHbaseTask(Long id) {
         ModelAndView mav = new ModelAndView("task/hbaseTaskUpdate");
+        List<AlarmPriorityInfo> alarmPriorityInfoList = alarmPriorityService.getAll();
         TaskInfo taskInfo = taskService.getTask(id);
         Map<String, PluginWriterParameter> writerParameterMap = getWriterParameters();
         taskInfo.getTaskWriterParameterObjs().forEach(i -> writerParameterMap.put(i.getPluginName(), i));
+        List<MediaSourceType> types = new ArrayList<>();
+        types.add(MediaSourceType.HBASE);
         HBaseTaskModel hbaseTaskModel = new HBaseTaskModel(
                 new TaskModel.TaskBasicInfo(
                         id,
                         taskInfo.getTaskName(),
                         taskInfo.getTaskDesc(),
                         taskInfo.getTargetState(),
-                        taskInfo.getGroupId()
+                        taskInfo.getGroupId(),
+                        taskInfo.getLabId(),
+                        taskInfo.getTaskSyncMode(),
+                        taskInfo.getAlarmPriorityId()
                 ),
                 writerParameterMap,
                 groupService.getAllGroups(),
                 TargetState.getAllStates(),
-                mediaService.getMediaSourcesByTypes(MediaSourceType.HBASE),
-                buildZkMediaSources(),
+                mediaService.findMediaSourcesForSingleLab(types),
+                mediaService.buildZkMediaSources(ManagerConfig.current().getZkServer()),
                 PluginWriterParameter.RetryMode.getAllModes(),
                 RdbmsWriterParameter.SyncMode.getAllModes(),
                 (HBaseReaderParameter) taskInfo.getTaskReaderParameterObj(),
                 CommitMode.getAllCommitModes(),
                 SerializeMode.getAllSerializeModes(),
                 PartitionMode.getAllPartitionModes(),
-                taskInfo.isLeaderTask() ? "1" : "0"
+                labService.findLabList(),
+                TaskSyncModeEnum.toList(),
+                taskInfo.isLeaderTask()?"1":"0"
         );
         hbaseTaskModel.setCurrentWriters(taskInfo.getTaskWriterParameterObjs().stream().collect(Collectors.toMap(PluginWriterParameter::getPluginName, i -> "1")));
         mav.addObject("taskModel", hbaseTaskModel);
+        mav.addObject("alarmPriorityInfoList",alarmPriorityInfoList);
         return mav;
     }
 
     @RequestMapping(value = "/doUpdateHbaseTask")
     @ResponseBody
-    public synchronized String doUpdateHbaseTask(@RequestBody HBaseTaskModel hbaseTaskModel, String sync) {
+    public synchronized String doUpdateHbaseTask(@RequestBody HBaseTaskModel hbaseTaskModel,String sync) {
         try {
+
             checkRequired(hbaseTaskModel);
             checkZNode(hbaseTaskModel);
 
             TaskInfo taskInfo = taskService.getTask(hbaseTaskModel.getTaskBasicInfo().getId());
 
-            if (!taskInfo.isLeaderTask()) {
+            if(!taskInfo.isLeaderTask()) {
                 TaskInfo leaderTask = taskService.getTask(taskInfo.getLeaderTaskId());
-                checkWriter(leaderTask, hbaseTaskModel);
+                checkWriter(leaderTask,hbaseTaskModel);
             }
 
             taskInfo.setId(hbaseTaskModel.getTaskBasicInfo().getId());
@@ -258,6 +300,10 @@ public class HBaseTaskController extends BaseTaskController {
             taskInfo.setTaskName(hbaseTaskModel.getTaskBasicInfo().getTaskName());
             taskInfo.setTaskDesc(hbaseTaskModel.getTaskBasicInfo().getTaskDesc());
             taskInfo.setTargetState(hbaseTaskModel.getTaskBasicInfo().getTargetState());
+
+            taskInfo.setLabId(hbaseTaskModel.getTaskBasicInfo().getLabId());
+            taskInfo.setTaskSyncMode(hbaseTaskModel.getTaskBasicInfo().getTaskSyncMode());
+
             taskInfo.setReaderMediaSourceId(hbaseTaskModel.getHbaseReaderParameter().getMediaSourceId());
             taskInfo.setTaskReaderParameter(hbaseTaskModel.getHbaseReaderParameter().toJsonString());
             taskInfo.setTaskWriterParameter(Parameter.listToJsonString(
@@ -266,8 +312,16 @@ public class HBaseTaskController extends BaseTaskController {
                                     .map(i -> i.getValue())
                                     .collect(Collectors.toList()))
             );
-            taskService.updateTask(taskInfo, sync);
-            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo, "004010205", AuditLogOperType.update.getValue()));
+
+            if(hbaseTaskModel.getTaskBasicInfo().getAlarmPriorityId() != null){
+                AlarmPriorityInfo alarmPriorityInfo = alarmPriorityService.getById(hbaseTaskModel.getTaskBasicInfo().getAlarmPriorityId());
+                taskInfo.setAlarmPriorityId(hbaseTaskModel.getTaskBasicInfo().getAlarmPriorityId());
+                taskInfo.setTaskPriorityId(alarmPriorityInfo.getPriority());
+            }
+
+            taskService.updateTask(taskInfo,sync);
+
+            AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo,"004010205", AuditLogOperType.update.getValue()));
         } catch (Exception e) {
             logger.error("Update HbaseTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -283,7 +337,7 @@ public class HBaseTaskController extends BaseTaskController {
             TaskInfo taskInfo = taskService.getTask(id);
             taskService.deleteTask(id);
             AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo
-                    , "004010206", AuditLogOperType.delete.getValue()));
+                    ,"004010206", AuditLogOperType.delete.getValue()));
         } catch (Exception e) {
             logger.error("Delete HbaseTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -296,9 +350,15 @@ public class HBaseTaskController extends BaseTaskController {
     @AuthIgnore
     public Map<String, Object> getListenerGroup(Long mediaSourceId) {
         Map<String, Object> map = new HashMap<>();
+
         MediaSourceInfo hbaseMediaSource = mediaSourceService.getById(mediaSourceId);
+        if(hbaseMediaSource.getType() == MediaSourceType.VIRTUAL){
+            hbaseMediaSource = mediaSourceService.findRealSignleByMsIdAndLab(hbaseMediaSource.getId(), LabEnum.logicA.getCode());
+        }
+
         String znodeParent = ((HBaseMediaSrcParameter) hbaseMediaSource.getParameterObj()).getZnodeParent();
-        String group = "/hrdl_" + mediaSourceId + "_" + znodeParent.replace("/", "");
+        String group = "/hrdl_" + hbaseMediaSource.getId() + "_" + znodeParent.replace("/", "");
+
         map.put("replZnodeParent", group);
         return map;
     }
@@ -312,7 +372,7 @@ public class HBaseTaskController extends BaseTaskController {
 
             TaskInfo taskInfo = taskService.getTask(id);
             AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo
-                    , "004010207", AuditLogOperType.other.getValue()));
+                    ,"004010207", AuditLogOperType.other.getValue()));
         } catch (Exception e) {
             logger.error("Pause HbaseTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -329,7 +389,7 @@ public class HBaseTaskController extends BaseTaskController {
 
             TaskInfo taskInfo = taskService.getTask(id);
             AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo
-                    , "004010208", AuditLogOperType.other.getValue()));
+                    ,"004010208", AuditLogOperType.other.getValue()));
         } catch (Exception e) {
             logger.error("Pause HbaseTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -346,7 +406,7 @@ public class HBaseTaskController extends BaseTaskController {
 
             TaskInfo taskInfo = taskService.getTask(Long.valueOf(id));
             AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromTaskInfo(taskInfo
-                    , "004010209", AuditLogOperType.other.getValue()));
+                    ,"004010209", AuditLogOperType.other.getValue()));
         } catch (Exception e) {
             logger.error("Pause HbaseTask Failed.", e);
             return "操作失败:" + e.getMessage();
@@ -354,20 +414,33 @@ public class HBaseTaskController extends BaseTaskController {
         return "success";
     }
 
+/*    @RequestMapping(value = "/oneClickAddTask")
+    @ResponseBody
+    public String oneClickAddTask(HttpServletRequest request) {
+        try {
+            String taskId = request.getParameter("id");
+            if(StringUtils.isEmpty(taskId)) {
+                throw new ErrorException(CodeContext.TASKID_NOTNULL_ERROR_CODE);
+            }
+            TaskInfo taskInfo = taskService.getTask(Long.valueOf(taskId));
+            if(!taskInfo.isLeaderTask()) {
+                throw new ErrorException(CodeContext.MUSTBE_LEADERTASK_ERROR_CODE);
+            }
+            TaskInfo subTaskInfo = taskInfo.clone();
+
+        } catch (Exception e) {
+            logger.error("Pause HbaseTask Failed.", e);
+            return "操作失败:" + e.getMessage();
+        }
+        return "success";
+    }*/
+
     private Map<String, PluginWriterParameter> getWriterParameters() {
-        return Lists.newArrayList(new RdbmsWriterParameter(), new EsWriterParameter(), new HdfsWriterParameter(), new HBaseWriterParameter())
+        return Lists.newArrayList(new RdbmsWriterParameter(), new FqWriterParameter(), new DoveWriterParameter(), new EsWriterParameter(), new HdfsWriterParameter(), new HBaseWriterParameter(), new KafkaWriterParameter())
                 .stream()
                 .collect(Collectors.toMap(PluginWriterParameter::getPluginName, i -> i));
     }
 
-    private List<MediaSourceInfo> buildZkMediaSources() {
-        List<MediaSourceInfo> list = mediaService.getMediaSourcesByTypes(MediaSourceType.ZOOKEEPER);
-        return list == null ?
-                Lists.newArrayList() :
-                list.stream().
-                        filter(i -> ((ZkMediaSrcParameter) i.getParameterObj()).getServers().equals(ManagerConfig.current().getZkServer()))
-                        .collect(Collectors.toList());
-    }
 
     private boolean isLeaderTask(HBaseTaskModel taskModel) {
         List<TaskInfo> list = taskService.getTasksByReaderMediaSourceId(taskModel.getHbaseReaderParameter().getMediaSourceId());
@@ -383,7 +456,7 @@ public class HBaseTaskController extends BaseTaskController {
         return true;
     }
 
-    private TaskInfo getLeaderTask(HBaseTaskModel taskModel) {
+    private TaskInfo getLeaderTaskId(HBaseTaskModel taskModel) {
         List<TaskInfo> list = taskService.getTasksByReaderMediaSourceId(taskModel.getHbaseReaderParameter().getMediaSourceId());
         if (CollectionUtils.isNotEmpty(list)) {
             List<TaskInfo> tasksOfThisPeer = list.stream().filter(i -> {
@@ -412,6 +485,9 @@ public class HBaseTaskController extends BaseTaskController {
         }
         if (StringUtils.isBlank(taskModel.getTaskBasicInfo().getTaskDesc())) {
             throw new RuntimeException("Task描述为必输项");
+        }
+        if (StringUtils.isBlank(taskModel.getTaskBasicInfo().getTaskSyncMode())) {
+            throw new RuntimeException("机房同步模式为必输项");
         }
         if (taskModel.getWriterParameterMap() == null || taskModel.getWriterParameterMap().isEmpty()) {
             throw new RuntimeException("请至少选择一个Writer");
@@ -451,20 +527,20 @@ public class HBaseTaskController extends BaseTaskController {
     private void checkWriter(TaskInfo leaderTask, HBaseTaskModel hbaseTaskModel) {
         List<PluginWriterParameter> leaderWriterList = leaderTask.getTaskWriterParameterObjs();
         Map<String, PluginWriterParameter> writerParameterMap = hbaseTaskModel.getWriterParameterMap();
-        if (leaderWriterList.size() != writerParameterMap.size()) {
+        if(leaderWriterList.size() != writerParameterMap.size()) {
             throw new DatalinkException("follower task必须和leader task的writer保持一致!");
         }
-        for (Map.Entry<String, PluginWriterParameter> entry : writerParameterMap.entrySet()) {
+        for (Map.Entry<String,PluginWriterParameter> entry : writerParameterMap.entrySet()) {
             PluginWriterParameter pluginWriterParameter = entry.getValue();
             String pluginName = pluginWriterParameter.getPluginName();
             boolean flag = false;
             for (PluginWriterParameter leaderWriter : leaderWriterList) {
-                if (pluginName.equals(leaderWriter.getPluginName())) {
-                    flag = true;
-                    break;
-                }
+                 if(pluginName.equals(leaderWriter.getPluginName())) {
+                     flag = true;
+                     break;
+                 }
             }
-            if (!flag) {
+            if(!flag) {
                 throw new DatalinkException("follower task必须和leader task的writer保持一致!");
             }
         }

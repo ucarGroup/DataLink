@@ -5,6 +5,7 @@ import com.ucar.datalink.manager.core.server.ServerStatusMonitor;
 import com.ucar.datalink.manager.core.web.servlet.ManagerProxyServlet;
 
 import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Enumeration;
 
@@ -12,7 +13,7 @@ import java.util.Enumeration;
  * Created by lubiao on 2017/4/16.
  */
 public class ManagerActiveCheckFilter implements Filter {
- 
+
     private FilterConfig filterConfig;
     private ManagerProxyServlet proxyServlet;
 

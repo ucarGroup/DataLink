@@ -43,6 +43,19 @@
                             </div>
 
                             <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right" for="form-update-labId">所属机房</label>
+
+                                <div class="col-sm-9">
+                                    <select multiple="" id="form-update-labId" name="labId" class="labId col-xs-10 col-sm-5"
+                                            data-placeholder="Click to Choose..." style="width:350px;height:35px">
+                                        <c:forEach items="${labInfoList}" var="bean">
+                                            <option value="${bean.id}">${bean.labName} </option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
                                 <label class="col-sm-3 control-label no-padding-right" for="form-update-workerAddress">机器IP</label>
 
                                 <div class="col-sm-9">
@@ -119,13 +132,16 @@
     $("#javaoptsOld").val('${workerInfo.javaopts}');
     $("#javaoptsTest").val('${workerInfo.javaopts}');
 
-    $(".groupId").val('${workerInfo.groupId}').select2({allowClear: false});
+    $(".groupId").val('${workerInfo.groupId}').select2({allowClear: false, maximumSelectionLength: 1});
+    $(".labId").val('${workerInfo.labId}').select2({allowClear: false, maximumSelectionLength: 1});
+
     function doEdit() {
         var workerName = $.trim($("#form-update-workerName").val());
         var groupId = $.trim($("#form-update-groupId").val());
         var workerAddress = $.trim($("#form-update-workerAddress").val());
         var restPort = $.trim($("#form-update-restPort").val());
         var workerDesc = $.trim($("#form-update-workerDesc").val());
+        var labId = $.trim($("#form-update-labId").val());
 
         if (workerName == "") {
             alert("机器名称不能为空!");
@@ -133,6 +149,10 @@
         }
         if (groupId == "") {
             alert("分组名称不能为空!");
+            return false;
+        }
+        if (labId == "") {
+            alert("所属机房不能为空!");
             return false;
         }
         if (workerAddress == "") {

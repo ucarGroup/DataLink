@@ -125,7 +125,15 @@
             html: '<div class="pull-left tableTools-container" style="padding-top: 10px;padding-left: 10px;">' +
             '<p> <button class="btn btn-sm btn-info" onclick="doAllStop();">停止所有报警</button> </p>' +
             '</div>'
-        }], $("#OperPanel"));
+        },
+        {
+            code: "006001011",
+            html: '<div class="pull-left tableTools-container" style="padding-top: 10px;padding-left: 10px;">' +
+            '<p> <button class="btn btn-sm btn-info" onclick="createAllDataxMonitor();">创建所有的datax监控</button> </p>' +
+            '</div>'
+        }
+
+    ], $("#OperPanel"));
 
     msgAlarmListMyTable = $('#monitorTable').DataTable({
         "bAutoWidth": true,
@@ -166,6 +174,8 @@
                         $(nTd).html("workerJVM状态");
                     } else if (oData.monitorType == 6) {
                         $(nTd).html("任务状态冲突监控");
+                    } else if (oData.monitorType == 7) {
+                        $(nTd).html("全量任务异常监控");
                     } else if (oData.monitorType == 8) {
                         $(nTd).html("任务同步状态监控");
                     }
@@ -196,9 +206,9 @@
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
-                                        "<a href='javascript:toEdit(" + oData.id + ")' class='blue'  title='修改'>" +
-                                        "<i class='ace-icon fa fa-pencil bigger-130'></i>" + "</a>" +
-                                        "</div> &nbsp; &nbsp;"
+                                "<a href='javascript:toEdit(" + oData.id + ")' class='blue'  title='修改'>" +
+                                "<i class='ace-icon fa fa-pencil bigger-130'></i>" + "</a>" +
+                                "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         },
@@ -207,9 +217,9 @@
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
-                                        "<a href='javascript:doDelete(" + oData.id + ")' class='red'  title='删除'>" +
-                                        "<i class='ace-icon fa fa-trash-o bigger-130'></i>" + "</a>" +
-                                        "</div> &nbsp; &nbsp;"
+                                "<a href='javascript:doDelete(" + oData.id + ")' class='red'  title='删除'>" +
+                                "<i class='ace-icon fa fa-trash-o bigger-130'></i>" + "</a>" +
+                                "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         },
@@ -219,9 +229,9 @@
                                 var str;
                                 if (oData.isEffective == 1) {
                                     str = "<div class='radio'>" +
-                                            "<a href='javascript:doPause(" + oData.id + ")' class='red'  title='关闭'>" +
-                                            "<i class='ace-icon fa fa-pause bigger-130'></i>" + "</a>" +
-                                            "</div> &nbsp; &nbsp;"
+                                    "<a href='javascript:doPause(" + oData.id + ")' class='red'  title='关闭'>" +
+                                    "<i class='ace-icon fa fa-pause bigger-130'></i>" + "</a>" +
+                                    "</div> &nbsp; &nbsp;"
                                 }
                                 return str;
                             }
@@ -232,9 +242,9 @@
                                 var str;
                                 if (oData.isEffective == 2) {
                                     str = "<div class='radio'>" +
-                                            "<a href='javascript:doStart(" + oData.id + ")' class='red'  title='启动'>" +
-                                            "<i class='ace-icon fa fa-play bigger-130'></i>" + "</a>" +
-                                            "</div> &nbsp; &nbsp;"
+                                    "<a href='javascript:doStart(" + oData.id + ")' class='red'  title='启动'>" +
+                                    "<i class='ace-icon fa fa-play bigger-130'></i>" + "</a>" +
+                                    "</div> &nbsp; &nbsp;"
                                 }
                                 return str;
                             }
@@ -354,6 +364,28 @@
         }
     }
 
+    function createAllDataxMonitor() {
+         if (confirm("确定要创建所有datax任务监控？")) {
+            $.ajax({
+                type: "post",
+                url: "${basePath}/monitor/createAllDataxMonitor",
+                dataType: "json",
+                async: false,
+                error: function (xhr, status, err) {
+                    alert(err);
+                },
+                success: function (data) {
+                    if (data == "success") {
+                        msgAlarmListMyTable.ajax.reload();
+                        alert("创建成功！");
+                    } else {
+                        alert(data);
+                    }
+                }
+            });
+        }
+    }
+
 
     function doStart(id) {
         $.ajax({
@@ -401,7 +433,7 @@
 
         $.ajax({
             type: "post",
-            url: "${basePath}/monitor/getMonitorTypeListByCat?monitorCat=" + monitorCat,
+            url: "${basePath}/monitor/getMonitorType?monitorCat=" + monitorCat,
             async: true,
             dataType: "json",
             success: function (result) {

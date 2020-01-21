@@ -21,6 +21,7 @@ public class RdbMediaSrcParameter extends MediaSrcParameter {
     private WriteConfig writeConfig;
     private ReadConfig readConfig;
     private Object dataSourceConfig;
+    private Boolean isTIDB = false;
 
     public int getPort() {
         return port;
@@ -84,6 +85,14 @@ public class RdbMediaSrcParameter extends MediaSrcParameter {
 
     public void setDataSourceConfig(Object dataSourceConfig) {
         this.dataSourceConfig = dataSourceConfig;
+    }
+
+    public Boolean getIsTIDB() {
+        return isTIDB;
+    }
+
+    public void setIsTIDB(Boolean isTIDB) {
+        this.isTIDB = isTIDB;
     }
 
     public static class WriteConfig {
@@ -190,4 +199,5 @@ public class RdbMediaSrcParameter extends MediaSrcParameter {
             }
         }
     }
+
 }

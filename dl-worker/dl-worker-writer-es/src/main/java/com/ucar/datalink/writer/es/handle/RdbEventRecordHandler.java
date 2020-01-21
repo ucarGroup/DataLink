@@ -5,12 +5,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.ucar.datalink.biz.service.MediaService;
+import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.common.errors.DataLoadException;
 import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.contract.log.rdbms.RdbEventRecord;
 import com.ucar.datalink.domain.RecordMeta;
 import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
+import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.worker.api.handle.AbstractHandler;
 import com.ucar.datalink.worker.api.task.RecordChunk;
 import com.ucar.datalink.worker.api.task.TaskWriterContext;
@@ -27,9 +30,7 @@ import com.ucar.datalink.writer.es.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -43,12 +44,13 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RdbEventRecordHandler.class);
     private static final int MAX_TRIES = 3;
-    private Transformer<RdbEventRecord> transformer = new RdbEventRecordTransformer();
 
     public RdbEventRecordHandler() {
         super();
         this.addInterceptorBefore(new DdlEventInterceptor());
     }
+
+    private Transformer<RdbEventRecord> transformer = new RdbEventRecordTransformer();
 
     @Override
     protected void doWrite(List<RdbEventRecord> records, TaskWriterContext context) {
@@ -113,11 +115,11 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
         }
 
         // 批量提交到ES，并处理返回值
-        syncToElasticsearch(contents, targetMediaSource);
+        syncToElasticsearch(contents, targetMediaSource, mediaMappingInfo.getTaskId());
     }
 
 
-    private void syncToElasticsearch(List<BatchContentVo> contents, MediaSourceInfo targetMediaSource) {
+    private void syncToElasticsearch(List<BatchContentVo> contents, MediaSourceInfo targetMediaSource, Long taskId) {
 
         for (int i = 0; i < MAX_TRIES; i++) {
             if (contents.isEmpty()) {
@@ -126,7 +128,7 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
 
             try {
                 //准备数据
-                BatchDocVo route = new BatchDocVo(EsConfigManager.getESConfig(targetMediaSource).getClusterName());
+                BatchDocVo route = new BatchDocVo(EsConfigManager.getESConfig(targetMediaSource, taskId).getClusterName());
                 route.setBatchType("_bulk");
 
                 //发送数据

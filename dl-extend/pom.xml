@@ -6,7 +6,7 @@
     <parent>
         <artifactId>datalink</artifactId>
         <groupId>com.ucar.datalink</groupId>
-        <version>1.0.0-beta</version>
+        <version>0.0.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,13 +18,20 @@
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-biz</artifactId>
-            <version>1.0.0-beta</version>
+            <version>0.0.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.lucky.upush</groupId>
+            <artifactId>upush-sdk</artifactId>
+            <version>${upush-sdk.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
         <filters>
-            <filter>src/main/filters/release.properties</filter>
+            <filter>src/main/filters/${env}.properties</filter>
         </filters>
         <resources>
             <resource>

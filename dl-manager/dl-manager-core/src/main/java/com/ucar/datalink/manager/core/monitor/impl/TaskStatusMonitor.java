@@ -1,9 +1,8 @@
 package com.ucar.datalink.manager.core.monitor.impl;
 
-import com.ucar.datalink.biz.service.AlarmService;
-import com.ucar.datalink.biz.service.MonitorService;
-import com.ucar.datalink.biz.service.TaskConfigService;
-import com.ucar.datalink.biz.service.TaskStatusService;
+import com.ucar.datalink.biz.service.*;
+import com.ucar.datalink.domain.alarm.AlarmStrategyInfo;
+import com.ucar.datalink.domain.alarm.StrategyConfig;
 import com.ucar.datalink.domain.monitor.MonitorInfo;
 import com.ucar.datalink.domain.monitor.MonitorType;
 import com.ucar.datalink.domain.task.TargetState;
@@ -15,6 +14,7 @@ import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -45,6 +45,9 @@ public class TaskStatusMonitor extends Monitor {
 
     @Autowired
     AlarmService alarmService;
+
+    @Autowired
+    private AlarmStrategyService alarmStrategyService;
 
     @Override
     public void doMonitor() {
@@ -78,8 +81,13 @@ public class TaskStatusMonitor extends Monitor {
 
     private void alarmAndRestart(TaskInfo taskInfo, TargetState targetState, TaskStatus.State actualState) {
         MonitorInfo monitorInfo = monitorService.getByResourceAndType(taskInfo.getId(), MonitorType.TASK_STATUS_MONITOR);
-		if(monitorInfo == null) {
+        if(monitorInfo == null) {
             return;
+        }
+        AlarmStrategyInfo alarmStrategyInfo = alarmStrategyService.getByTaskIdAndType(monitorInfo.getResourceId(),monitorInfo.getMonitorType());
+        if(alarmStrategyInfo != null) {
+            StrategyConfig config = alarmStrategyService.getStrategyConfig(alarmStrategyInfo.getStrategys());
+            monitorService.copyStrategy(config,monitorInfo);
         }
         if (isAlarm(taskInfo.getId(), Long.MAX_VALUE, monitorInfo)) {
             //do alarm

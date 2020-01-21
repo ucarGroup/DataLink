@@ -21,10 +21,22 @@
                         <div class="row">
                             <form class="form-horizontal">
                                 <div class="form-group col-xs-3">
-                                    <label class="col-sm-4 control-label">源数据库</label>
+                                    <label class="col-sm-4 control-label">源库类型</label>
 
                                     <div class="col-sm-8">
-                                        <select class="width-20 chosen-select" id="readerMediaSourceId"
+                                        <select class="width-20 chosen-select" id="srcType" style="width:100%">
+                                            <option selected="selected" value="-1">全部</option>
+                                            <c:forEach items="${srcTypeList}" var="item">
+                                                <option value="${item}">${item}</option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group col-xs-3">
+                                    <label class="col-sm-4 control-label" for="readerMediaSourceId">源数据库</label>
+
+                                    <div class="col-sm-8">
+                                        <select class="readerMediaSourceId width-20 chosen-select" id="readerMediaSourceId"
                                                 style="width:100%">
                                             <option value="-1">全部</option>
                                             <c:forEach items="${mediaSourceList}" var="item">
@@ -81,7 +93,10 @@
                                     <th style="text-align:center;">实际状态</th>
                                     <th style="text-align:center;">所属分组</th>
                                     <th style="text-align:center;">所属机器</th>
+                                    <th style="text-align:center;">所属机房</th>
+                                    <th style="text-align:center;">机房同步模式</th>
                                     <th style="text-align:center;">最近启动时间</th>
+                                    <th style="text-align:center;">任务级别</th>
                                     <th style="text-align:center;width: 150px">操作</th>
                                 </tr>
                                 </thead>
@@ -117,6 +132,7 @@
             ajax: {
                 "url": "${basePath}/hbaseTask/initHbaseTaskList",
                 "data": function (d) {
+                    d.srcType = $("#srcType").val();
                     d.readerMediaSourceId = $("#readerMediaSourceId").val();
                     d.groupId = $("#groupId").val();
                     d.id = $("#id").val();
@@ -141,7 +157,35 @@
                     }
                 }
                 },
-                {"data": "startTime"}
+                {"data": "labName"},
+                {"data": "taskSyncMode"},
+                {"data": "startTime"},
+                {
+                    "data": "taskPriorityId",
+/*                    render: function (data, type, row) {
+                        if (data == 1) {
+                            return "一级";
+                        } else if (data == 2) {
+                            return "二级";
+                        } else if (data == 3) {
+                            return "三级";
+                        }
+                        return "无";
+                    },*/
+                    createdCell: function (nTd, sData, oData, iRow, iCol) {
+                        var taskPriorityId = oData.taskPriorityId;
+                        if (taskPriorityId == "1") {
+                            //设置满足条件行的背景颜色
+                            $(nTd).css("background", "#FF6A6A");
+                        } else if (taskPriorityId == "2") {
+                            //设置满足条件行的背景颜色
+                            $(nTd).css("background", "#FFB90F");
+                        } else if (taskPriorityId == "3") {
+                            //设置满足条件行的背景颜色
+                            $(nTd).css("background", "#32CD32");
+                        }
+                    }
+                }
             ],
             language: {
                 "sUrl": "${basePath}/assets/json/zh_CN.json",
@@ -169,7 +213,7 @@
                 });
             },
             columnDefs: [{
-                "aTargets": [7],
+                "aTargets": [10],
                 "mData": null,
                 "bSortable": false,
                 "bSearchable": false,
@@ -253,7 +297,36 @@
 
                 }
 
-            }]
+            }]/*,
+            "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                var elements = $(nRow).find("td");
+                //改行满足的条件
+                var taskPriorityId = aData.taskPriorityId;
+                if(taskPriorityId == "1"){
+                    $(elements).each(function (index,element) {
+                        if(index !=0 && index != elements.length-1) {
+                            //设置满足条件行的背景颜色
+                            $(element).css("background", "#FF6A6A");
+                        }
+                    });
+                    //设置满足条件行的字体颜色
+                    /!*$(nRow).css("color", "black");*!/
+                }else if(taskPriorityId == "2") {
+                    $(elements).each(function (index,element) {
+                        if(index !=0 && index != elements.length-1) {
+                            //设置满足条件行的背景颜色
+                            $(element).css("background", "#FFB90F");
+                        }
+                    });
+                }else if(taskPriorityId == "3") {
+                    $(elements).each(function (index,element) {
+                        if(index !=0 && index != elements.length-1) {
+                            //设置满足条件行的背景颜色
+                            $(element).css("background", "#32CD32");
+                        }
+                    });
+                }
+            }*/
         });
 
         $("#id").change(function () {
@@ -283,6 +356,35 @@
                             $("<option value='" + result.taskIds[i] + "' >" + result.taskNames[i] + "</option>").appendTo(".id");
                         }
                         $(".id").trigger("chosen:updated");
+                    }
+                    else {
+                        alert(result);
+                    }
+                }
+            });
+
+            oTable.ajax.reload();
+        });
+
+        $("#srcType").change(function () {
+            var srcType = $('#srcType').val();
+
+            $("#readerMediaSourceId").val(-1);
+
+            $.ajax({
+                type: "post",
+                url: "${basePath}/task/getSrcMediaSourceListByType?srcType=" + srcType,
+                async: true,
+                dataType: "json",
+                success: function (result) {
+                    if (result != null && result != '') {
+                        document.getElementById("readerMediaSourceId").innerHTML = "";
+
+                        $("<option value=\"-1\">全部</option>").appendTo(".readerMediaSourceId");
+                        for (i = 0; i < result.msIds.length; i++) {
+                            $("<option value='" + result.msIds[i] + "' >" + result.msNames[i] + "</option>").appendTo(".readerMediaSourceId");
+                        }
+                        $(".readerMediaSourceId").trigger("chosen:updated");
                     }
                     else {
                         alert(result);

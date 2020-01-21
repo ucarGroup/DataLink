@@ -62,16 +62,109 @@
 </div>
 
 <script type="text/javascript">
+
+    $(".taskSyncMode").val("SingleLab").select2({allowClear: false, maximumSelectionLength: 1});
+    $(".sourceLabId").select2({allowClear: false, maximumSelectionLength: 1});
+    $(".targetLabId").select2({allowClear: false, maximumSelectionLength: 1});
+    $("#sourceLabIdDiv").hide();
+    $("#targetLabIdDiv").hide();
+
     function back2Main() {
         $("#mysqlTaskAdd").empty();
         $("#main-container").show();
     }
 
+    $('#basic-taskSyncMode').change(function () {
+        debugger;
+        $("#mysqlReader-mediaSourceId").empty();
+        $("#mysqlReader-mediaSourceId").trigger("chosen:updated");
+
+        var taskSyncMode = $('#basic-taskSyncMode').val();
+        if (taskSyncMode == null) {
+            $("#sourceLabIdDiv").hide();
+            $("#targetLabIdDiv").hide();
+            return;
+        }
+
+        //如果选择的是夸机房
+        if(taskSyncMode == 'AcrossLab'){
+            $("#sourceLabIdDiv").show();
+            $("#targetLabIdDiv").show();
+        }else{
+            $("#sourceLabIdDiv").hide();
+            $("#targetLabIdDiv").hide();
+        }
+        findMediaSources();
+
+    });
+
+    $('#basic-sourceLabId').change(function () {
+
+        debugger;
+        $("#mysqlReader-mediaSourceId").empty();
+        $("#mysqlReader-mediaSourceId").trigger("chosen:updated");
+
+        var sourceLabId = $('#basic-sourceLabId').val();
+        if (sourceLabId == null) {
+            return;
+        }
+        findMediaSources();
+    });
+
+    function findMediaSources() {
+        var taskSyncModeArr = $('#basic-taskSyncMode').val();
+        var taskSyncMode;
+        if(taskSyncModeArr && taskSyncModeArr.length >= 1){
+            taskSyncMode = taskSyncModeArr[0];
+        }
+        var sourceLabIdArr = $('#basic-sourceLabId').val();
+        var sourceLabId;
+        if(sourceLabIdArr && sourceLabIdArr.length >= 1){
+            sourceLabId = sourceLabIdArr[0];
+        }
+        var data;
+        if(taskSyncModeArr == 'SingleLab' ){
+            data = "&taskSyncMode=" + taskSyncMode;
+        }else{
+            if(sourceLabId){
+                data = "&taskSyncMode=" + taskSyncMode + "&sourceLabId=" + sourceLabId;
+            }
+            else{
+                data = "&taskSyncMode=" + taskSyncMode + "&sourceLabId=" + 0;
+            }
+        }
+
+        $.ajax({
+            type: "post",
+            url: "${basePath}/mysqlTask/findMediaSourcesBySyncMode",
+            async: true,
+            dataType: "json",
+            data: data,
+            success: function (result) {
+                if (result != null && result != '') {
+                    if (result.mediaSourceList != null && result.mediaSourceList.length > 0) {
+                        for (var i = 0; i < result.mediaSourceList.length; i++) {
+                            $("#mysqlReader-mediaSourceId").append("<option value=" + "'" + result.mediaSourceList[i].id + "'" + ">" + result.mediaSourceList[i].name + "</option>");
+                        }
+                        $("#mysqlReader-mediaSourceId").trigger("chosen:updated");
+                    }
+                }
+            }
+        });
+    }
+
     function add() {
         var obj = {};
         obj.taskBasicInfo = getBasicObj();
+        obj.taskParameter = getTaskParameterObj();
         obj.mysqlReaderParameter = getMysqlReaderObj();
         obj.writerParameterMap = getWritersObj();
+        obj.isMultiCopy=$("#basic-isMultiCopy").val();
+
+        if(obj.taskBasicInfo.alarmPriorityId == null || obj.taskBasicInfo.alarmPriorityId == '') {
+            alert("请选择报警方式!");
+            return ;
+        }
 
         $.ajax({
             type: "post",

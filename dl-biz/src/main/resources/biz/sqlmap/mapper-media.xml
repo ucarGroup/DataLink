@@ -18,6 +18,7 @@
         <result property="interceptorId" column="interceptor_id"/>
         <result property="joinColumn" column="join_column"/>
         <result property="esUsePrefix" column="es_use_prefix"/>
+        <result property="prefixName" column="prefix_name"/>
         <result property="geoPositionConf" column="geo_position_conf"/>
         <result property="skipIds" column="skip_ids"/>
         <result property="createTime" column="create_time"/>
@@ -48,6 +49,8 @@
         <result property="parameter" column="ms_parameter"/>
         <result property="createTime" column="create_time"/>
         <result property="modifyTime" column="modify_time"/>
+        <result property="labId" column="lab_id"/>
+        <result property="simulateMsType" column="simulate_ms_type"/>
     </resultMap>
 
     <resultMap id="mediaColumnMappingMap" type="mediaColumnMapping">
@@ -85,6 +88,16 @@
         </selectKey>
     </insert>
 
+    <update id="updateMedia" parameterType="com.ucar.datalink.domain.media.MediaInfo">
+        UPDATE t_dl_media
+        <set>
+            <if test="mediaSourceId!=null">
+                media_source_id=#{mediaSourceId},
+            </if>
+            MODIFY_TIME=now(),
+        </set>
+        where id = #{id}
+    </update>
 
     <insert id="mediaMappingInsert" parameterType="com.ucar.datalink.domain.media.MediaMappingInfo">
         INSERT INTO t_dl_media_mapping
@@ -100,6 +113,7 @@
         interceptor_id,
         join_column,
         es_use_prefix,
+        prefix_name,
         geo_position_conf,
         skip_ids,
         create_time,
@@ -124,6 +138,7 @@
         </if>
         #{joinColumn},
         #{esUsePrefix},
+        #{prefixName},
         #{geoPositionConf},
         #{skipIds},
         now(),
@@ -223,6 +238,61 @@
         </foreach>
     </select>
 
+    <select id="findMediaSourcesForSingleLab" resultMap="mediaSourceMap">
+
+        SELECT
+          *
+        FROM
+          t_dl_media_source s
+        WHERE
+          (
+            s.ms_type = 'VIRTUAL'
+            <if test="types != null">
+                and s.simulate_ms_type in <foreach collection="types" item="type" index="index" open="(" close=")" separator=","> #{type} </foreach>
+            </if>
+          )
+        OR (
+            NOT EXISTS (
+              SELECT
+              r.id
+              FROM
+              t_dl_mediasource_relation r
+              WHERE
+              s.id = r.real_ms_id
+            )
+            <if test="types != null">
+                and s.ms_type in <foreach collection="types" item="type" index="index" open="(" close=")" separator=","> #{type} </foreach>
+            </if>
+        )
+    </select>
+
+    <select id="findMediaSourcesForAcrossLab" resultMap="mediaSourceMap">
+        select * from t_dl_media_source s
+        where
+        exists (select id from t_dl_mediasource_relation r where s.id = r.real_ms_id)
+        <if test="labId != null">
+            and lab_id = #{labId}
+        </if>
+        <if test="types != null">
+            and s.ms_type in
+            <foreach collection="types" item="type" index="index" open="(" close=")" separator=",">
+                #{type}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="findMediaSourcesForAllAcrossLab" resultMap="mediaSourceMap">
+        select * from t_dl_media_source s
+        where
+        exists (select id from t_dl_mediasource_relation r where s.id = r.real_ms_id)
+        <if test="types != null">
+            and s.ms_type in
+            <foreach collection="types" item="type" index="index" open="(" close=")" separator=",">
+                #{type}
+            </foreach>
+        </if>
+    </select>
+
     <select id="getAllMediaMappings" resultMap="mediaMappingMap">
         select * from t_dl_media_mapping
     </select>
@@ -243,8 +313,20 @@
             parameter=#{parameter},
             join_column=#{joinColumn},
             es_use_prefix=#{esUsePrefix},
+            prefix_name=#{prefixName},
             geo_position_conf=#{geoPositionConf},
             skip_ids=#{skipIds},
+            MODIFY_TIME=now(),
+        </set>
+        where id = #{id}
+    </update>
+
+    <update id="updateTargetMediaSource" parameterType="com.ucar.datalink.domain.media.MediaMappingInfo">
+        UPDATE t_dl_media_mapping
+        <set>
+            <if test="targetMediaSourceId!=null">
+                target_media_source_id=#{targetMediaSourceId},
+            </if>
             MODIFY_TIME=now(),
         </set>
         where id = #{id}
@@ -302,7 +384,7 @@
         INNER JOIN t_dl_media_source ms ON m.media_source_id=ms.id
         GROUP BY ms.ms_type
     </select>
-
+    
     <select id="findTaskIdsByMediaSourceId" parameterType="Long" resultType="Long">
         SELECT
         DISTINCT task_id
@@ -321,14 +403,14 @@
         FROM t_dl_media_mapping mapping
         LEFT JOIN t_dl_media media ON mapping.source_media_id = media.id
         WHERE
-        media.media_source_id in
-        <foreach collection="mediaSourceIdList" item="item" index="index" open="(" close=")" separator=",">
-            #{item}
-        </foreach>
-        OR mapping.target_media_source_id in
-        <foreach collection="mediaSourceIdList" item="item" index="index" open="(" close=")" separator=",">
-            #{item}
-        </foreach>
+            media.media_source_id in
+            <foreach collection="mediaSourceIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            OR mapping.target_media_source_id in
+            <foreach collection="mediaSourceIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
     </select>
     <select id="getMediaMappingOfSpecial" resultMap="mediaMappingMap">
 
@@ -342,6 +424,21 @@
         LIMIT 1
 
     </select>
+
+    <select id="getTaskMediaNamesByTaskId"  resultType="com.ucar.datalink.domain.vo.TaskMediaNameVo">
+        select distinct task_id as taskId,media_name as mediaName from t_dl_media_mapping mapping
+        left join t_dl_media media on mapping.source_media_id=media.id
+        where mapping.is_valid=1 and mapping.task_id in
+        <foreach collection="taskIdList" index="index" item="item" open="(" separator="," close=")" >
+            #{item}
+        </foreach>
+    </select>
+
+   <select id="findSourceTableInfoByMappingId" parameterType="Long" resultType="com.ucar.datalink.domain.vo.TaskMediaNameVo">
+       select task_id as taskId,media_name as mediaName from t_dl_media_mapping mapping
+       left join t_dl_media media on mapping.source_media_id=media.id
+       where mapping.id=#{mappingId}
+   </select>
 
     <select id="findMappingListByCondition" resultMap="mediaMappingMap"
             parameterType="com.ucar.datalink.domain.media.MediaMappingInfo">
@@ -372,7 +469,6 @@
         and mapping.target_media_name = #{targetTableName}
         and task.reader_media_source_id = #{srcMediaSourceId}
     </select>
-
     <select id="findMediaMappingByJoinIndex" resultMap="mediaMappingMap"
             parameterType="com.ucar.datalink.domain.media.MediaMappingInfo">
         SELECT *

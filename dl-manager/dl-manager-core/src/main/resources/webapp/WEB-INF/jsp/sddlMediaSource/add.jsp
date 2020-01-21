@@ -14,6 +14,9 @@
                     <li>
                         <a data-toggle="tab" href="#secondaryId">Secondary</a>
                     </li>
+                    <li>
+                        <a data-toggle="tab" href="#projectInfo">ProjectInfo</a>
+                    </li>
                 </ul>
                 <div class="tab-content" style="border: 0px">
                     <!--基础配置-->
@@ -63,6 +66,22 @@
                                   style="margin: 0px; width: 350px; height: 91px;"/>
                             </div>
                         </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label no-padding-right"
+                                   for="form-update-labId">所属机房</label>
+
+                            <div class="col-sm-7">
+                                <select multiple="" id="form-update-labId" name="labId"
+                                        class="labId col-xs-10 col-sm-12"
+                                        data-placeholder="Click to Choose..." style="width:350px;">
+                                    <c:forEach items="${labInfoList}" var="bean">
+                                        <option value="${bean.id}">${bean.labName} </option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                        </div>
+
                     </div>
                     <div id="secondaryId" class="tab-pane">
                         <div class="form-group">
@@ -77,6 +96,35 @@
                                         <option value="${bean.id}">${bean.name} </option>
                                     </c:forEach>
                                 </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="projectInfo" class="tab-pane">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label no-padding-right"
+                                   for="form-add-businessLine">BusinessLine</label>
+
+                            <div class="col-sm-9">
+                                <select multiple="" name="businessLine" class="businessLine tag-input-style"
+                                        data-placeholder="Click to Choose..." id="form-add-businessLine"
+                                        style="width:350px;">
+                                    <option value="UCAR">专车</option>
+                                    <option value="ZUCHE">租车</option>
+                                    <option value="FCAR">闪贷</option>
+                                    <option value="MMC">电商</option>
+                                    <option value="LUCKY">LUCKY</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label no-padding-right"
+                                   for="form-add-projectName">所属项目名称</label>
+
+                            <div class="col-sm-9">
+                                <input type="text" style="width:350px;height:35px" id="form-add-projectName"
+                                       name="projectName" class="col-xs-10 col-sm-5"/>
                             </div>
                         </div>
                     </div>
@@ -116,6 +164,13 @@
         maximumSelectionLength: 1,
         width: '45%'
     });
+    $('.businessLine').css('min-width', '100%').select2({
+        allowClear: false,
+        maximumSelectionLength: 1,
+        width: '45%'
+    });
+
+    $('.labId').select2({allowClear: false, maximumSelectionLength: 1});
 
     function doAdd() {
         var sddlName = $.trim($("#form-add-sddlName").val());
@@ -136,6 +191,14 @@
         }
         if (sddlDesc == "") {
             alert("描述不能为空!");
+            return false;
+        }
+        if ($.trim($("#form-add-businessLine").val()) == "") {
+            alert("产品线不能为空!");
+            return false;
+        }
+        if ($.trim($("#form-add-projectName").val()) == "") {
+            alert("所属项目名不能为空!");
             return false;
         }
 

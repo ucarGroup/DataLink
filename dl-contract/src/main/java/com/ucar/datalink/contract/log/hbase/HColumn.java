@@ -1,6 +1,7 @@
 package com.ucar.datalink.contract.log.hbase;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * Created by lubiao on 2017/11/15.

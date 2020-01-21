@@ -6,11 +6,14 @@ import com.alibaba.otter.canal.instance.manager.model.CanalParameter;
 import com.alibaba.otter.canal.protocol.position.EntryPosition;
 import com.google.common.collect.Lists;
 import com.ucar.datalink.biz.service.MediaService;
+import com.ucar.datalink.biz.service.TaskConfigService;
 import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.parameter.rdb.RdbMediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
+import com.ucar.datalink.domain.media.parameter.virtual.VirtualMediaSrcParameter;
 import com.ucar.datalink.domain.plugin.reader.mysql.MysqlReaderParameter;
+import com.ucar.datalink.domain.task.TaskInfo;
 import com.ucar.datalink.domain.task.TaskShadowInfo;
 import com.ucar.datalink.worker.api.task.TaskReaderContext;
 import org.apache.commons.lang.StringUtils;
@@ -148,6 +151,22 @@ public class CanalReaderConfigGenerator {
             canalParameter.setDbPassword(proxyParameter.getReadConfig().getDecryptPassword());
             canalParameter.setConnectionCharset(proxyParameter.getEncoding());
 //            canalParameter.setDefaultDatabaseName(proxyParameter.getNamespace());
+        }
+        //优先取Task所属机房对应的数据源，没有的话再取中心机房的数据源
+        else if (mediaSrc.getParameterObj() instanceof VirtualMediaSrcParameter) {
+
+            MediaSourceInfo mediaSourceInfo;
+            TaskInfo taskInfo = DataLinkFactory.getObject(TaskConfigService.class).getTask(Long.valueOf(context.taskId()));
+            //目前只有es
+            if (taskInfo.getLabId() != null) {
+                mediaSourceInfo = DataLinkFactory.getObject(MediaService.class).getRealDataSourceSpecial(Long.valueOf(context.taskId()), mediaSrc);
+            }
+            //非es
+            else {
+                mediaSourceInfo = DataLinkFactory.getObject(MediaService.class).getRealDataSource(mediaSrc);
+            }
+
+            packCanalParameter(destination, canalParameter, mediaSourceInfo, parameter, context);
         } else {
             throw new InvalidParameterException("Unknown MediaSource :" + mediaSrc.getParameterObj().getClass());
         }

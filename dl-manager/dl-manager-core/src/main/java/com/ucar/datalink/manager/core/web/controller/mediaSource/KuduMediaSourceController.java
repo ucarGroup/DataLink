@@ -1,8 +1,11 @@
 package com.ucar.datalink.manager.core.web.controller.mediaSource;
 
+import com.ucar.datalink.biz.service.LabService;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.biz.utils.AuditLogOperType;
 import com.ucar.datalink.biz.utils.AuditLogUtils;
+import com.ucar.datalink.common.errors.ValidationException;
+import com.ucar.datalink.domain.lab.LabInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.parameter.kudu.KuduMediaSrcParameter;
@@ -44,6 +47,8 @@ public class KuduMediaSourceController {
 
     @Autowired
     MediaSourceService mediaSourceService;
+    @Autowired
+    LabService labService;
 
     @RequestMapping(value = "/kuduList")
     public ModelAndView kuduList() {
@@ -63,7 +68,9 @@ public class KuduMediaSourceController {
             view.setName(i.getName());
             view.setDesc(i.getDesc());
             view.setCreateTime(i.getCreateTime());
+            view.setLabId(i.getLabId());
             view.setKuduMediaSrcParameter(i.getParameterObj());
+            view.setLabName(StringUtils.isNotBlank(i.getLabName()) ? i.getLabName() : "");
             return view;
         }).collect(Collectors.toList());
         return new Page<>(kuduView);
@@ -72,6 +79,8 @@ public class KuduMediaSourceController {
     @RequestMapping(value = "/toAdd")
     public ModelAndView toAdd() {
         ModelAndView mav = new ModelAndView("kuduMediaSource/add");
+        List<LabInfo> labInfoList = labService.findLabList();
+        mav.addObject("labInfoList", labInfoList);
         return mav;
     }
 
@@ -111,6 +120,10 @@ public class KuduMediaSourceController {
         view.setKuduMediaSrcParameter(mediaSourceInfo.getParameterObj());
 
         mav.addObject("kuduMediaSourceView", view);
+        List<LabInfo> labInfoList = labService.findLabList();
+        mav.addObject("labInfoList", labInfoList);
+
+        mav.addObject("labId", mediaSourceInfo.getLabId());
         return mav;
     }
 
@@ -158,7 +171,7 @@ public class KuduMediaSourceController {
                         , "002010006", AuditLogOperType.delete.getValue()));
                 return "success";
             }
-        } catch (Exception e) {
+        } catch (ValidationException e) {
             logger.error("Delete Kudu Media Source Error.", e);
             return e.getMessage();
         }
@@ -189,8 +202,11 @@ public class KuduMediaSourceController {
         kuduMediaSourceInfo.setType(MediaSourceType.KUDU);
         kuduMediaSourceView.getKuduMediaSrcParameter().setMediaSourceType(MediaSourceType.KUDU);
         kuduMediaSourceInfo.setParameter(kuduMediaSourceView.getKuduMediaSrcParameter().toJsonString());
+        kuduMediaSourceInfo.setLabId(kuduMediaSourceView.getLabId());
         return kuduMediaSourceInfo;
     }
+
+
 
     @ResponseBody
     @RequestMapping(value = "/toReloadDB")
@@ -223,6 +239,44 @@ public class KuduMediaSourceController {
             return e.getMessage();
         }
     }
+
+
+
+
+
+/*
+    @ResponseBody
+    @RequestMapping(value = "/toReloadDB")
+    public String toReloadDB(String mediaSourceId) {
+        try {
+            if (StringUtils.isBlank(mediaSourceId)) {
+                throw new RuntimeException("mediaSourceId is empty");
+            }
+            GroupMetadataManager groupMetadataManager = ServerContainer.getInstance().getGroupCoordinator().getGroupManager();
+            ClusterState clusterState = groupMetadataManager.getClusterState();
+            if (clusterState == null) {
+                return "success";
+            }
+            List<ClusterState.MemberData> memberDatas = clusterState.getAllMemberData();
+            if (memberDatas == null || memberDatas.size() == 0) {
+                return "success";
+            }
+            MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(Long.valueOf(mediaSourceId));
+            DataSourceFactory.invalidate(mediaSourceInfo, () -> null);
+            for (ClusterState.MemberData mem : memberDatas) {
+                String url = "http://" + mem.getWorkerState().url() + "/flush/reloadKudu/" + mediaSourceId;
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                HttpEntity request = new HttpEntity(null, headers);
+                new RestTemplate().postForObject(url, request, Map.class);
+            }
+            return "success";
+        } catch (Exception e) {
+            return e.getMessage();
+        }
+    }*/
+
+
 
     private void  checkKuduConfig(KuduMediaSrcParameter kuduMediaSrcParameter) {
         String database = kuduMediaSrcParameter.getDatabase();
@@ -259,4 +313,6 @@ public class KuduMediaSourceController {
             throw new RuntimeException("数据库不存在,请检查!");
         }
     }
+
+
 }

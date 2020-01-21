@@ -5,7 +5,7 @@
                 http://www.springframework.org/schema/beans/spring-beans-4.1.xsd">
 
     <import resource="classpath:biz/spring/datalink-biz.xml"/>
-
-
+    <import resource="classpath:ext/spring/manager-ext.xml"/>
+    <import resource="classpath:core-schedule.xml" />
 
 </beans>

@@ -23,7 +23,7 @@ import javax.ws.rs.core.MediaType;
 import java.util.List;
 
 /**
- * Created by lubiao on 2017/6/8.
+ * Created by sqq on 2017/6/8.
  */
 @Path("/flush")
 @Produces(MediaType.APPLICATION_JSON)
@@ -50,6 +50,8 @@ public class FlushResource {
                 MediaSourceInfo ms = DataLinkFactory.getObject(MediaSourceService.class).getById(secondaryDbId);
                 DataSourceFactory.invalidate(ms, () -> msPreCloseAction(ms));
             }
+        } else if (mediaSourceType == MediaSourceType.VIRTUAL && mediaSourceInfo.getSimulateMsType().isRdbms()) {
+            DataSourceFactory.invalidate(mediaSourceInfo, () -> msPreCloseAction(mediaSourceInfo));
         }
         //清空相关Task的mapping缓存
         clearTaskMediaMappingCache(Long.valueOf(mediaSourceId));
@@ -118,6 +120,22 @@ public class FlushResource {
     @Path("/reloadZK/{mediaSourceId}")
     public void reloadZK(@PathParam("mediaSourceId") String mediaSourceId) throws Throwable {
         logger.info("Receive a request for reload zk-media-source,with id " + mediaSourceId);
+        //清空相关Task的mapping缓存
+        clearTaskMediaMappingCache(Long.valueOf(mediaSourceId));
+    }
+
+    @POST
+    @Path("/reloadFQ/{mediaSourceId}")
+    public void reloadFQ(@PathParam("mediaSourceId") String mediaSourceId) throws Throwable {
+        logger.info("Receive a request for reload fq-media-source,with id " + mediaSourceId);
+        //清空相关Task的mapping缓存
+        clearTaskMediaMappingCache(Long.valueOf(mediaSourceId));
+    }
+
+    @POST
+    @Path("/reloadDove/{mediaSourceId}")
+    public void reloadDove(@PathParam("mediaSourceId") String mediaSourceId) throws Throwable {
+        logger.info("Receive a request for reload dove-media-source,with id " + mediaSourceId);
         //清空相关Task的mapping缓存
         clearTaskMediaMappingCache(Long.valueOf(mediaSourceId));
     }

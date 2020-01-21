@@ -3,10 +3,12 @@ package com.ucar.datalink.manager.core.web.controller.mediaSource;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.base.Splitter;
+import com.ucar.datalink.biz.service.LabService;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.biz.utils.AuditLogOperType;
 import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.common.errors.ValidationException;
+import com.ucar.datalink.domain.lab.LabInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.parameter.es.EsMediaSrcParameter;
@@ -58,6 +60,8 @@ public class EsMediaSourceController {
 
     @Autowired
     MediaSourceService mediaSourceService;
+    @Autowired
+    LabService labService;
 
     @RequestMapping(value = "/esList")
     public ModelAndView esList() {
@@ -81,10 +85,12 @@ public class EsMediaSourceController {
             view.setDesc(i.getDesc());
             view.setCreateTime(i.getCreateTime());
             view.setEsMediaSrcParameter(i.getParameterObj());
+            view.setLabId(i.getLabId());
+            view.setLabName(StringUtils.isNotBlank(i.getLabName()) ? i.getLabName() : "");
             return view;
         }).collect(Collectors.toList());
 
-        PageInfo<MediaSourceInfo> pageInfo = new PageInfo<>(esMediaSourceList);
+        PageInfo<MediaSourceInfo> pageInfo = new PageInfo<MediaSourceInfo>(esMediaSourceList);
         page.setDraw(page.getDraw());
         page.setAaData(esView);
         page.setRecordsTotal((int) pageInfo.getTotal());
@@ -95,6 +101,8 @@ public class EsMediaSourceController {
     @RequestMapping(value = "/toAdd")
     public ModelAndView toAdd() {
         ModelAndView mav = new ModelAndView("esMediaSource/add");
+        List<LabInfo> labInfoList = labService.findLabList();
+        mav.addObject("labInfoList", labInfoList);
         return mav;
     }
 
@@ -132,6 +140,10 @@ public class EsMediaSourceController {
         view.setCreateTime(mediaSourceInfo.getCreateTime());
         view.setEsMediaSrcParameter(mediaSourceInfo.getParameterObj());
         mav.addObject("esMediaSourceView", view);
+
+        List<LabInfo> labInfoList = labService.findLabList();
+        mav.addObject("labInfoList", labInfoList);
+        mav.addObject("labId", mediaSourceInfo.getLabId());
         return mav;
     }
 
@@ -232,6 +244,7 @@ public class EsMediaSourceController {
         esMediaSourceInfo.setType(MediaSourceType.ELASTICSEARCH);
         esMediaSourceView.getEsMediaSrcParameter().setMediaSourceType(MediaSourceType.ELASTICSEARCH);
         esMediaSourceInfo.setParameter(esMediaSourceView.getEsMediaSrcParameter().toJsonString());
+        esMediaSourceInfo.setLabId(esMediaSourceView.getLabId());
         return esMediaSourceInfo;
     }
 

@@ -82,7 +82,7 @@
             resetPosition: $("#form-restart-resetPosition").val(),
             newTimeStamps: Date.parse(new Date($("#form-restart-newTimeStamps").val()))
         };
-
+        debugger;
         $.ajax({
             type: "post",
             url: "${basePath}/mysqlTask/doRestartMysqlTask",

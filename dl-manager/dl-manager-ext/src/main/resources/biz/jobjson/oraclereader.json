@@ -1,0 +1,61 @@
+{
+  "entry": {
+    "jvm": "-Xms1G -Xmx1G",
+    "environment": {
+
+    }
+  },
+  "core": {
+    "transport": {
+      "channel": {
+        "class": "com.alibaba.datax.core.transport.channel.memory.MemoryChannel",
+        "speed": {
+          "byte": 104857600,
+          "record": 200
+        },
+        "flowControlInterval": 20,
+        "capacity": 1024,
+        "byteCapacity": 67108864
+      },
+      "exchanger": {
+        "class": "com.alibaba.datax.core.plugin.BufferedRecordExchanger",
+        "bufferSize": 128
+      }
+    }
+  },"job": {
+    "setting": {
+      "speed": {
+        "channel":3
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "oraclereader",
+          "parameter": {
+            "username": "@username",
+            "password": "@password",
+            "column": [
+              "@column"
+            ],
+            "splitPk": "@splitPk",
+            "connection": [
+              {
+                "table": [
+                  "@table"
+                ],
+                "jdbcUrl": [
+                  "@jdbcUrl"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

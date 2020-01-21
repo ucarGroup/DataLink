@@ -23,6 +23,7 @@
                             <td>ID</td>
                             <td>集群名称</td>
                             <td>集群描述</td>
+                            <td>所属机房</td>
                             <td>库名</td>
                             <td>创建时间</td>
                             <td>操作</td>
@@ -59,6 +60,7 @@
             {"data": "id"},
             {"data": "name"},
             {"data": "desc"},
+            {"data": "labName"},
             {"data": "kuduMediaSrcParameter.database"},
             {
                 "data": "createTime",
@@ -81,9 +83,9 @@
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
-                                        "<a href='javascript:toEdit(" + oData.id + ")' class='blue'  title='修改'>" +
-                                        "<i class='ace-icon fa fa-pencil bigger-130'></i>" + "</a>" +
-                                        "</div> &nbsp; &nbsp;"
+                                "<a href='javascript:toEdit(" + oData.id + ")' class='blue'  title='修改'>" +
+                                "<i class='ace-icon fa fa-pencil bigger-130'></i>" + "</a>" +
+                                "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         },
@@ -92,9 +94,9 @@
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
-                                        "<a href='javascript:doDelete(" + oData.id + ")' class='red'  title='删除'>" +
-                                        "<i class='ace-icon fa fa-trash-o bigger-130'></i>" + "</a>" +
-                                        "</div> &nbsp; &nbsp;"
+                                "<a href='javascript:doDelete(" + oData.id + ")' class='red'  title='删除'>" +
+                                "<i class='ace-icon fa fa-trash-o bigger-130'></i>" + "</a>" +
+                                "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         },
@@ -103,9 +105,9 @@
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
-                                        "<a href='javascript:checkDataSource(" + oData.id + ")' class='green'  title='验证'>" +
-                                        "<i class='ace-icon fa fa-hand-o-up bigger-130'></i>" + "</a>" +
-                                        "</div> &nbsp; &nbsp;"
+                                "<a href='javascript:checkDataSource(" + oData.id + ")' class='green'  title='验证'>" +
+                                "<i class='ace-icon fa fa-hand-o-up bigger-130'></i>" + "</a>" +
+                                "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         },
@@ -114,9 +116,9 @@
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
-                                        "<a href='javascript:toReloadDB(" + oData.id + ")' class='green'  title='DBReload'>" +
-                                        "<i class='ace-icon fa fa-refresh bigger-130'></i>" + "</a>" +
-                                        "</div> &nbsp; &nbsp;"
+                                    "<a href='javascript:toReloadDB(" + oData.id + ")' class='green'  title='DBReload'>" +
+                                    "<i class='ace-icon fa fa-refresh bigger-130'></i>" + "</a>" +
+                                    "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         }

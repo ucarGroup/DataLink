@@ -25,10 +25,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -68,7 +65,7 @@ public class UserLoginInterceptor implements HandlerInterceptor {
 
         Object userObj = request.getSession().getAttribute("user");
 
-        if (userObj instanceof java.util.HashMap) {
+        if (userObj instanceof HashMap) {
             LOGGER.error(userObj.toString());
             return false;
         }
@@ -86,10 +83,10 @@ public class UserLoginInterceptor implements HandlerInterceptor {
                 }
             }
         }
-        if (user == null  && StringUtils.isNotBlank(userName)) {
-            response.sendRedirect(request.getContextPath() + "/userReq/autoLogin?userName=" + userName);
-            return false;
-        }
+//        if (user == null && StringUtils.isNotBlank(userName)) {
+//            response.sendRedirect(request.getContextPath() + "/userReq/autoLogin?userName=" + userName);
+//            return false;
+//        }
 
         if (user != null) {
             String contextPath = request.getContextPath();
@@ -109,11 +106,13 @@ public class UserLoginInterceptor implements HandlerInterceptor {
                 //将角色的所有权限编码存入cookie中
                 List<String> roleCodeList = new ArrayList<>();
                 if (isSuper) {//SUPER拥有所有权限
+//                    List<MenuInfo> menuList = menuService.getList();
+//                    roleCodeList = menuList.stream().map(MenuInfo::getCode).collect(Collectors.toList());
                     //超级管理员权限码用"super"代替(为解决cookie超长跳转产生502的问题，不把所有的菜单编码放入cookie)
                     roleCodeList.add("\"super\"");
                 } else {
                     List<RoleAuthorityInfo> list = new ArrayList<RoleAuthorityInfo>();
-                    for(RoleInfo info : user.getRoleInfoList()){
+                    for (RoleInfo info : user.getRoleInfoList()) {
                         List<RoleAuthorityInfo> roleAuthList = authorityService.getListByRoleId(info.getId());
                         list.addAll(roleAuthList);
                     }
@@ -158,6 +157,7 @@ public class UserLoginInterceptor implements HandlerInterceptor {
             response.sendRedirect(request.getContextPath() + "/userReq/login");
             return false;
         } else {
+
             response.sendRedirect(request.getContextPath() + "/userReq/login");
             return false;
         }
@@ -181,4 +181,6 @@ public class UserLoginInterceptor implements HandlerInterceptor {
     boolean isAjax(HttpServletRequest request) {
         return (request.getHeader("X-Requested-With") != null && "XMLHttpRequest".equals(request.getHeader("X-Requested-With").toString()));
     }
+
+
 }

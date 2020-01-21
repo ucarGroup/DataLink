@@ -11,8 +11,7 @@
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-properties-key">参数key</label>
 
                     <div class="col-sm-9">
-                        <input type="text" style="width:350px;height:35px" id="form-add-properties-key"
-                               name="propertiesKey"
+                        <input type="text" style="width:350px;height:35px" id="form-add-properties-key" name="propertiesKey"
                                class="col-xs-10 col-sm-5"/>
                     </div>
                 </div>
@@ -20,8 +19,7 @@
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-properties-value">参数值</label>
 
                     <div class="col-sm-9">
-                        <input type="text" style="width:350px;height:35px" id="form-add-properties-value"
-                               name="propertiesValue"
+                        <input type="text" style="width:350px;height:35px" id="form-add-properties-value" name="propertiesValue"
                                class="col-xs-10 col-sm-5"/>
                     </div>
                 </div>
@@ -46,6 +44,11 @@
 </div>
 
 <script type="text/javascript">
+    $('.roleId').css('min-width', '50%').select2({allowClear: false, maximumSelectionLength: 1, width: '45%'});
+
+    $('.roleIdClass').select2({
+        allowClear: false
+    });
 
     function doAdd() {
         var propertiesKey = $.trim($("#form-add-properties-key").val());

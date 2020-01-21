@@ -1,12 +1,16 @@
 package com.ucar.datalink.manager.core.monitor.impl;
 
 import com.ucar.datalink.biz.service.AlarmService;
+import com.ucar.datalink.biz.service.AlarmStrategyService;
 import com.ucar.datalink.biz.service.MonitorService;
 import com.ucar.datalink.biz.service.TaskStatusMismatchLogService;
+import com.ucar.datalink.domain.alarm.AlarmStrategyInfo;
+import com.ucar.datalink.domain.alarm.StrategyConfig;
 import com.ucar.datalink.domain.monitor.MonitorInfo;
 import com.ucar.datalink.domain.monitor.MonitorType;
 import com.ucar.datalink.domain.task.TaskStatusMismatchLogInfo;
 import com.ucar.datalink.manager.core.monitor.Monitor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +32,9 @@ public class TaskStatusMismatchMonitor extends Monitor {
     @Autowired
     AlarmService alarmService;
 
+    @Autowired
+    private AlarmStrategyService alarmStrategyService;
+
     @Override
     public void doMonitor() {
         List<TaskStatusMismatchLogInfo> list = taskStatusMismatchLogService.getLatestList();
@@ -36,8 +43,13 @@ public class TaskStatusMismatchMonitor extends Monitor {
         }
         for (TaskStatusMismatchLogInfo statusMismatchLogInfo : list) {
             MonitorInfo monitorInfo = monitorService.getByResourceAndType(statusMismatchLogInfo.getTaskId(), MonitorType.TASK_STATUS_MISMATCH_MONITOR);
-			if(monitorInfo == null) {
+            if(monitorInfo == null) {
                 continue;
+            }
+            AlarmStrategyInfo alarmStrategyInfo = alarmStrategyService.getByTaskIdAndType(monitorInfo.getResourceId(),monitorInfo.getMonitorType());
+            if(alarmStrategyInfo != null) {
+                StrategyConfig config = alarmStrategyService.getStrategyConfig(alarmStrategyInfo.getStrategys());
+                monitorService.copyStrategy(config,monitorInfo);
             }
             if (!isMoreThan5Min(statusMismatchLogInfo.getCreateTime()) && isAlarm(statusMismatchLogInfo.getTaskId(), Long.MAX_VALUE, monitorInfo)) {
                 alarmService.alarmTaskStatusMismatch(monitorInfo, statusMismatchLogInfo);

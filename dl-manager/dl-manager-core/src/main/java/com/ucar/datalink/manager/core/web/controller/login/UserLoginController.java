@@ -1,3 +1,4 @@
+
 package com.ucar.datalink.manager.core.web.controller.login;
 
 import com.alibaba.fastjson.JSON;
@@ -8,6 +9,7 @@ import com.ucar.datalink.domain.user.RoleInfo;
 import com.ucar.datalink.domain.user.RoleType;
 import com.ucar.datalink.domain.user.UserInfo;
 import com.ucar.datalink.manager.core.web.annotation.LoginIgnore;
+import com.ucar.datalink.manager.core.web.controller.util.ExtendPropertiesUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +23,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
 
 /**
  * Created by sqq on 2017/4/17.
@@ -30,6 +33,7 @@ import javax.servlet.http.HttpSession;
 @LoginIgnore
 public class UserLoginController {
 
+    private static final String USER_LOGIN_PATH_ADMIN = "use_login_path_admin";
     private final static Logger LOGGER = LoggerFactory.getLogger(UserLoginController.class);
 
     @Autowired
@@ -41,9 +45,36 @@ public class UserLoginController {
     @Autowired
     LoginService loginService;
 
+
+    private void redirect(HttpServletResponse response,String url) {            //重定向逻辑
+        try {
+            response.setStatus(302);
+            response.sendRedirect(url);
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage());
+        }
+    }
+
+
+
     @RequestMapping(value = "/login")
-    public ModelAndView login() {
-        return new ModelAndView("login/login");
+    public ModelAndView login(HttpServletRequest request, HttpServletResponse response) {
+        Object op = request.getAttribute("op");
+
+        if("admin".equalsIgnoreCase(String.valueOf(op))){
+            return new ModelAndView("login/login");
+        }
+
+        StringBuilder techplatAndReturnDatalinkURL = new StringBuilder();
+        techplatAndReturnDatalinkURL.append(ExtendPropertiesUtils.getTechplatURL());
+        techplatAndReturnDatalinkURL.append("?rtnUrl=");
+        techplatAndReturnDatalinkURL.append(ExtendPropertiesUtils.getDatalink());
+
+        String url = techplatAndReturnDatalinkURL.toString();
+
+        LOGGER.info(String.format("to techplat url[%s]",url));
+        redirect(response, url);
+        return null;
     }
 
     @RequestMapping(value = "/doLogin")
@@ -57,12 +88,18 @@ public class UserLoginController {
             retString = "密码不能为空";
         } else {
             user.setUcarEmail(loginEmail);
+            user.setUserType(UserInfo.UserType.UCARINC.getValue());
             UserInfo userInfo = userService.getByUserInfo(user);
             if (userInfo == null) {
                 return "toRegister";
             } else {
-                if ((loginEmail.equals("admin") && password.equals("admin")) || loginService.checkPassWord(userInfo, password)) {
-                    saveSession(loginEmail, request);
+                if (loginService.checkUcarPassWord(userInfo, password)) {
+                    saveSession(loginEmail, UserInfo.UserType.UCARINC, request);
+                    setAdminPath(request);
+                    retString = "success";
+                } else if (loginService.checkLuckyPassWord(userInfo, password)) {
+                    saveSession(loginEmail, UserInfo.UserType.UCARINC, request);
+                    setAdminPath(request);
                     retString = "success";
                 } else {
                     retString = "登陆认证失败";
@@ -72,19 +109,28 @@ public class UserLoginController {
         return retString;
     }
 
-    @RequestMapping(value = "/autoLogin")
-    public ModelAndView autoLogin(HttpServletRequest request) {
-        UserInfo user = new UserInfo();
-        String loginEmail = request.getParameter("userName");
-        user.setUcarEmail(loginEmail);
-        UserInfo userInfo = userService.getByUserInfo(user);
-        if (userInfo == null) {
-            return new ModelAndView("register");
-        } else {
-            saveSession(loginEmail, request);
-            return new ModelAndView("index");
-        }
+    /**
+     * 只要通过认证的都是admin登录进来的
+     * @param request
+     */
+    private void setAdminPath(HttpServletRequest request){
+        request.getSession().setAttribute(USER_LOGIN_PATH_ADMIN,"true");
     }
+
+
+//    @RequestMapping(value = "/autoLogin")
+//    public ModelAndView autoLogin(HttpServletRequest request) {
+//        UserInfo user = new UserInfo();
+//        String loginEmail = request.getParameter("userName");
+//        user.setUcarEmail(loginEmail);
+//        UserInfo userInfo = userService.getByUserInfo(user);
+//        if (userInfo == null) {
+//            return new ModelAndView("register");
+//        } else {
+//            saveSession(loginEmail, request);
+//            return new ModelAndView("index");
+//        }
+//    }
 
     @RequestMapping(value = "/toRegister")
     public ModelAndView toRegister() {
@@ -99,6 +145,7 @@ public class UserLoginController {
             userInfo.setUserName(userName);
             userInfo.setUcarEmail(ucarEmail);
             userInfo.setPhone(phone);
+            userInfo.setUserType(UserInfo.UserType.UCARINC.getValue());
             RoleInfo roleInfo = roleService.getByType(RoleType.ORDINARY);
             userInfo.setRoleIdStr(String.valueOf(roleInfo.getId()));
             UserInfo user = userService.getByUserInfo(userInfo);
@@ -137,6 +184,7 @@ public class UserLoginController {
     public String logout(HttpServletRequest request, HttpServletResponse response) {
         String result;
         try {
+            Object loginUserPath = request.getSession().getAttribute(USER_LOGIN_PATH_ADMIN);
             request.getSession().invalidate();
             Cookie[] cookies = request.getCookies();
             if (cookies != null && cookies.length > 0) {
@@ -148,16 +196,21 @@ public class UserLoginController {
                     }
                 }
             }
+            if(loginUserPath != null && Boolean.parseBoolean(loginUserPath.toString())){
+                return "admin_success";
+            }
+
             result = "success";
         } catch (Exception e) {
-            result = "error";
+            return result = "error";
         }
         return result;
     }
 
-    private void saveSession(String loginEmail, HttpServletRequest request) {
+    private void saveSession(String loginEmail, UserInfo.UserType userType, HttpServletRequest request) {
         UserInfo userInfo = new UserInfo();
         userInfo.setUcarEmail(loginEmail);
+        userInfo.setUserType(userType.getValue());
         userInfo = userService.getByUserInfo(userInfo);
         HttpSession session = request.getSession();
         session.setAttribute("user", userInfo);

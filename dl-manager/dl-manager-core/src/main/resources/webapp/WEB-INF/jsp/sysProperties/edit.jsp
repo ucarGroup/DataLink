@@ -45,6 +45,14 @@
 </div>
 
 <script type="text/javascript">
+    $("#form-update-isAlarm").val('${userInfo.isAlarm}');
+    $("#form-update-isReceiveDataxMail").val('${userInfo.isReceiveDataxMail}');
+    $('.roleId').css('min-width', '50%').select2({allowClear: false, maximumSelectionLength: 1, width: '45%'});
+
+    var pe = '${userInfo.roleIdStr}'.split(",");
+    $('.roleIdClass').val(pe).select2({
+        allowClear: false
+    });
 
     function doEdit() {
         var propertiesKey = $.trim($("#form-update-properties-key").val());

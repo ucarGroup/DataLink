@@ -6,6 +6,7 @@ import com.ucar.datalink.biz.utils.AuditLogOperType;
 import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.meta.MetaMappingInfo;
+import com.ucar.datalink.manager.core.web.dto.job.JobMediaMappingView;
 import com.ucar.datalink.manager.core.web.dto.meta.MetaMappingView;
 import com.ucar.datalink.manager.core.web.util.UserUtil;
 import org.slf4j.Logger;

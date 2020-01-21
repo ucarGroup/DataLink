@@ -151,7 +151,7 @@ public class ESMultiClusterManage {
 					}
 					if(hosts.size() > 0){
 						mc.setUrls(hosts) ;
-						LOGGER.info(mc.getClusterName()+":"+hosts.toString());
+						//LOGGER.info(mc.getClusterName()+":"+hosts.toString());
 					}
 					
 					break ;

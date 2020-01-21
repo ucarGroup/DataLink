@@ -14,10 +14,12 @@
         <result property="modifyTime" column="modify_time"/>
         <result property="restPort" column="rest_port"/>
         <result property="groupName" column="group_name"/>
+        <result property="labId" column="lab_id"/>
+        <result property="labName" column="lab_name"/>
     </resultMap>
 
     <!-- all columns -->
-    <sql id="allWorkerColumns">id,worker_name,worker_desc,worker_address,group_id,create_time,modify_time,rest_port</sql>
+    <sql id="allWorkerColumns">id,worker_name,worker_desc,worker_address,group_id,create_time,modify_time,rest_port,lab_id</sql>
 
     <select id="getList" resultMap="workerResult">
         select
@@ -29,8 +31,11 @@
           w.create_time as create_time,
           w.modify_time as modify_time,
           w.rest_port as rest_port,
-          g.group_name as group_name
+          g.group_name as group_name,
+          w.lab_id as lab_id,
+          l.lab_name as lab_name
         from t_dl_worker w left join t_dl_group g on w.group_id=g.id
+                            left join t_dl_lab l on w.lab_id = l.id
     </select>
 
 
@@ -54,9 +59,9 @@
 
     <insert id="insert" parameterType="com.ucar.datalink.domain.worker.WorkerInfo" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO t_dl_worker
-        (worker_name,worker_desc,worker_address,group_id,create_time,modify_time,rest_port)
+        (worker_name,worker_desc,worker_address,group_id,create_time,modify_time,rest_port,lab_id)
         VALUES
-        (#{workerName}, #{workerDesc}, #{workerAddress},#{groupId}, now(), now(),#{restPort})
+        (#{workerName}, #{workerDesc}, #{workerAddress},#{groupId}, now(), now(),#{restPort},#{labId})
     </insert>
 
     <delete id="delete" parameterType="long">
@@ -71,6 +76,7 @@
         worker_address=#{workerAddress},
         group_id=#{groupId},
         rest_port=#{restPort},
+        lab_id=#{labId},
         modify_time = now()
         where id = #{id}
     </update>
@@ -100,8 +106,11 @@
         w.create_time as create_time,
         w.modify_time as modify_time,
         w.rest_port as rest_port,
-        g.group_name as group_name
+        g.group_name as group_name,
+        w.lab_id as lab_id,
+        l.lab_name as lab_name
         from t_dl_worker w left join t_dl_group g on w.group_id=g.id
+                            left join t_dl_lab l on w.lab_id = l.id
         WHERE 1=1
         <if test="groupId != null">
             and w.group_id = #{groupId}

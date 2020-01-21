@@ -8,23 +8,23 @@
 <div class="page-content">
     <div class="row">
         <form id="add_form" class="form-horizontal" role="form">
-            <input type="hidden" value="${taskDecorate.id}" name="id">
-
+            <input type="hidden" value="${taskDecorate.id}" name = "id">
             <div class="tabbable">
                 <div class="tab-content" style="border: 0px">
                     <div id="basicId" class="tab-pane in active">
 
-                        <div class="col-sm-12">
-                            <div class="col-sm-4 form-group">
-                                <label class="col-sm-4 control-label no-padding-right">任务类型</label>
 
-                                <div class="col-sm-8">
-                                    <select style="width:100%;">
-                                        <option value="MYSQL" selected>MYSQL</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
+                           <div class="col-sm-12">
+                                                                                <div class="col-sm-4 form-group">
+                                                                                    <label class="col-sm-4 control-label no-padding-right" >任务类型</label>
+                                                                                    <div class="col-sm-8">
+                                                                                        <select  style="width:100%;">
+                                                                                                <option value="MYSQL" selected>MYSQL</option>
+                                                                                        </select>
+                                                                                    </div>
+                                                                                </div>
+                         </div>
+
 
 
                         <div class="col-sm-12">
@@ -36,56 +36,53 @@
                                     <select multiple="" name="taskId" class="taskId tag-input-style"
                                             data-placeholder="Click to Choose..." id="form-add-taskId"
                                             style="width:100%;">
-                                        <option value="${taskDecorate.taskId}"
-                                                selected="selected">${taskDecorate.taskName} </option>
+                                            <option value="${taskDecorate.taskId}" selected="selected" >${taskDecorate.taskName} </option>
                                     </select>
                                 </div>
                             </div>
 
 
-                            <div class="col-sm-4 form-group">
-                                <label class="col-sm-4 control-label no-padding-right" for="form-add-sourceTableName">源表名称</label>
+                                <div class="col-sm-4 form-group">
+                                                               <label class="col-sm-4 control-label no-padding-right" for="form-add-sourceTableName">源表名称</label>
 
-                                <div class="col-sm-8">
-                                    <select multiple="" name="tableName" class="sourceTableName tag-input-style"
-                                            data-placeholder="Click to Choose..." id="form-add-sourceTableName"
-                                            style="width:100%;">
-                                        <option value="${taskDecorate.tableName}"
-                                                selected="selected">${taskDecorate.tableName} </option>
-                                    </select>
-                                </div>
-                            </div>
+                                                               <div class="col-sm-8">
+                                                                   <select multiple="" name="tableName" class="sourceTableName tag-input-style"
+                                                                           data-placeholder="Click to Choose..." id="form-add-sourceTableName"
+                                                                           style="width:100%;">
+                                                                            <option value="${taskDecorate.tableName}" selected="selected" >${taskDecorate.tableName} </option>
+                                                                   </select>
+                                                               </div>
+                                                           </div>
                         </div>
                         <div class="col-sm-12">
-                            <div class="col-sm-4 form-group">
+                             <div class="col-sm-4 form-group">
                                 <label class="col-sm-4 control-label no-padding-right" for="statement">表达式</label>
-
                                 <div class="col-sm-8">
-                                    <textarea name="statement" id="statement" class="col-xs-12"
-                                              rows="5">${taskDecorate.statement}</textarea>
+                                  <textarea name="statement" id="statement" class="col-xs-12" rows="5" >${taskDecorate.statement}</textarea>
                                 </div>
                             </div>
                             <div class="col-sm-4 form-group">
-                                <label class="col-sm-4 control-label no-padding-right" for="remark">备注</label>
-
-                                <div class="col-sm-8">
-                                    <textarea name="remark" id="remark" class="col-xs-12"
-                                              rows="5">${taskDecorate.remark}</textarea>
-                                </div>
-                            </div>
+                                   <label class="col-sm-4 control-label no-padding-right" for="remark">备注</label>
+                                   <div class="col-sm-8">
+                                         <textarea name="remark" id="remark" class="col-xs-12" rows="5" >${taskDecorate.remark}</textarea>
+                                    </div>
+                              </div>
 
 
-                        </div>
 
-                        <div class="col-sm-12">
-                            <p>源表名称不存在原因 1.任务名称没有对应的映射 2.存在映射但状态为无效</p>
-                        </div>
+                         </div>
 
-                    </div>
+                           <div class="col-sm-12">
+                                  <p>源表名称不存在原因  1.任务名称没有对应的映射  2.存在映射但状态为无效</p>
+                             </div>
+
+                       </div>
                 </div>
             </div>
         </form>
     </div>
+
+
 
 
     <div class="clearfix form-actions">
@@ -128,6 +125,7 @@
     });
 
 
+
     function doEdit() {
         var taskId = $('#form-add-taskId').val();
         if (!validateForm()) {
@@ -145,7 +143,7 @@
             success: function (data) {
                 if (data == "success") {
                     alert("修改成功！");
-                    back2Main();
+                     back2Main();
                 } else {
                     alert(data);
                 }
@@ -171,9 +169,9 @@
         }
 
         if ($.trim($('#remark').val()) == '') {
-            alert('备注不可为空');
-            return false;
-        }
+             alert('备注不可为空');
+             return false;
+         }
 
         var statement = $.trim($('#statement').val());
         if (statement != null && statement != '' && !isSkipIds(statement)) {
@@ -185,19 +183,20 @@
     }
 
     function checkForSave() {
-        var skipIds = $.trim($("#skipIdsHidden").val());
-        if (skipIds != null && skipIds != '' && !isSkipIds(skipIds)) {
-            alert("请输入正确的要跳过的主键ID格式，例如：1,3,5 或者 [1-5],[10-20]");
-            return false;
+            var skipIds = $.trim($("#skipIdsHidden").val());
+            if (skipIds != null && skipIds != '' && !isSkipIds(skipIds)) {
+                alert("请输入正确的要跳过的主键ID格式，例如：1,3,5 或者 [1-5],[10-20]");
+                return false;
+            }
+            return true;
         }
-        return true;
-    }
 
     function isSkipIds(val) {
-        var skipIdsReg1 = /^([0-9]+,)*[0-9]+$/;
-        var skipIdsReg2 = /^(\[[0-9]+\-[0-9]+],)*(\[[0-9]+\-[0-9]+])$/;
-        return (skipIdsReg1.test(val) || skipIdsReg2.test(val));
-    }
+            var skipIdsReg1 = /^([0-9]+,)*[0-9]+$/;
+            var skipIdsReg2 = /^(\[[0-9]+\-[0-9]+],)*(\[[0-9]+\-[0-9]+])$/;
+            return (skipIdsReg1.test(val) || skipIdsReg2.test(val));
+     }
+
 
 
 </script>

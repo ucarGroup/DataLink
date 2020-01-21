@@ -4,6 +4,8 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.ucar.datalink.biz.service.TaskShadowService;
 import com.ucar.datalink.common.errors.DatalinkException;
+import com.ucar.datalink.common.errors.ValidationException;
+import com.ucar.datalink.domain.plugin.reader.mysql.MysqlReaderPosition;
 import com.ucar.datalink.domain.task.TaskShadowInfo;
 import com.ucar.datalink.domain.task.TaskShadowParameter;
 import com.ucar.datalink.manager.core.web.dto.task.TaskShadowView;
@@ -19,11 +21,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
@@ -47,7 +50,7 @@ public class TaskShadowController {
     @RequestMapping(value = "/doShadowList")
     @ResponseBody
     public Page<TaskShadowView> initMediaMapping(@RequestBody Map<String, String> map) {
-        logger.info("收到的参数为:" + map);
+        logger.info("收到的参数为:"+map);
         Long taskId = Long.valueOf(map.get("taskId"));
         String state = map.get("state");
         if (StringUtils.isBlank(state)) {
@@ -56,7 +59,7 @@ public class TaskShadowController {
         Page<TaskShadowView> page = new Page<>(map);
         PageHelper.startPage(page.getPageNum(), page.getLength());
         List<TaskShadowInfo> taskShadowListsForQueryPage = taskShadowService.taskShadowListsForQueryPage(
-                taskId, state);
+                taskId,state);
 
         //构造view
         List<TaskShadowView> taskShadowViews = taskShadowListsForQueryPage.stream().map(i -> {
@@ -66,7 +69,7 @@ public class TaskShadowController {
             view.setTaskId(i.getTaskId());
             view.setState(i.getState());
             String modifyTime = "";
-            if (i.getModifyTime() != null) {
+            if(i.getModifyTime()!=null){
                 modifyTime = sdf.format(i.getModifyTime());
             }
             view.setModifyTime(modifyTime);
@@ -87,7 +90,7 @@ public class TaskShadowController {
     }
 
     @RequestMapping(value = "/toAddShadow")
-    public ModelAndView toAddShadow(HttpServletRequest request, String taskId) {
+    public ModelAndView toAddShadow(HttpServletRequest request,String taskId) {
         ModelAndView mav = new ModelAndView("task/shadowAdd");
         mav.addObject("taskId", taskId);
         return mav;
@@ -97,15 +100,15 @@ public class TaskShadowController {
     @ResponseBody
     public String doAdd(@RequestBody Map<String, String> shadowParams) {
         try {
-            logger.info("收到的请求参数为:" + shadowParams);
+            logger.info("收到的请求参数为:"+shadowParams);
             String mappingIdsStr = shadowParams.get("mappingIds");
             String newTimeStampsStr = shadowParams.get("newTimeStamps");
             String taskId = shadowParams.get("taskId");
             String note = shadowParams.get("note");
-            if (StringUtils.isEmpty(mappingIdsStr)) {
+            if(StringUtils.isEmpty(mappingIdsStr)) {
                 throw new DatalinkException("请选择增量映射!");
             }
-            if (StringUtils.isEmpty(newTimeStampsStr)) {
+            if(StringUtils.isEmpty(newTimeStampsStr)) {
                 throw new DatalinkException("请设置位点信息!");
             }
             Set<Long> mappingIdSet = new HashSet<>();

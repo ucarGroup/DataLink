@@ -16,6 +16,8 @@ public class MediaSourceView{
     private Date modifyTime;
     private RdbMediaSrcParameter rdbMediaSrcParameter = new RdbMediaSrcParameter();
     private BasicDataSourceConfig basicDataSourceConfig = new BasicDataSourceConfig();
+    private Long labId;
+    private String labName;
 
     public String getName() {
         return name;
@@ -63,5 +65,21 @@ public class MediaSourceView{
 
     public void setBasicDataSourceConfig(BasicDataSourceConfig basicDataSourceConfig) {
         this.basicDataSourceConfig = basicDataSourceConfig;
+    }
+
+    public Long getLabId() {
+        return labId;
+    }
+
+    public void setLabId(Long labId) {
+        this.labId = labId;
+    }
+
+    public String getLabName() {
+        return labName;
+    }
+
+    public void setLabName(String labName) {
+        this.labName = labName;
     }
 }

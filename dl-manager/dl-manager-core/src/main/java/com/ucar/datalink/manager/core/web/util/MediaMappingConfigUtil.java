@@ -9,6 +9,8 @@ import com.ucar.datalink.domain.media.MediaInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.ModeUtils;
+import com.ucar.datalink.manager.core.web.controller.meadiaMapping.MediaMappingController;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,20 +33,21 @@ public class MediaMappingConfigUtil {
 
     /**
      * 配置映射时，校验源端数据源是myslq的表是否存在主键
+     * @param realMediaSourceInfoList
      * @param sourceTableName
      * @param tableNameSet
      */
-    public static void validateMysqlTablePk(MediaSourceInfo mediaSourceInfo, String[] sourceTableName, Set<String> tableNameSet) {
-
-            if(mediaSourceInfo.getType()!= MediaSourceType.MYSQL){
-                return;
+    public static void validateMysqlTablePk(List<MediaSourceInfo> realMediaSourceInfoList, String[] sourceTableName, Set<String> tableNameSet) {
+        for(MediaSourceInfo realMediaSourceInfo:realMediaSourceInfoList){
+            if(realMediaSourceInfo.getType()!= MediaSourceType.MYSQL){
+                continue;
             }
             try{
-                getTableNameSet(mediaSourceInfo,sourceTableName,tableNameSet);
+                getTableNameSet(realMediaSourceInfo,sourceTableName,tableNameSet);
                 Iterator<String> it = tableNameSet.iterator();
                 while (it.hasNext()) {
                     String table = it.next();
-                    if(!RDBMSUtil.hasPrimaryKey(mediaSourceInfo,table)){
+                    if(!RDBMSUtil.hasPrimaryKey(realMediaSourceInfo,table)){
                         throw new RuntimeException(String.format("源表%s没有主键", table));
                     }
                 }
@@ -52,16 +55,18 @@ public class MediaMappingConfigUtil {
                 logger.info("校验mysql源表主键时异常",e);
                 throw new RuntimeException(e);
             }
+        }
     }
 
     /**
      * 配置映射时，校验目标端数据源是myslq的表是否存在主键
+     * @param realTargetMediaSourceInfoList
      * @param sourceTableNameSet
      * @param targetTableNames
      */
-    public static void validateExistsTargetMedia(MediaSourceInfo mediaSourceInfo,String[] sourceTableName, Set<String> sourceTableNameSet, String[] targetTableNames) {
+    public static void validateExistsTargetMedia(List<MediaSourceInfo> realTargetMediaSourceInfoList,String[] sourceTableName, Set<String> sourceTableNameSet, String[] targetTableNames) {
         try {
-            if (mediaSourceInfo == null) {
+            if (realTargetMediaSourceInfoList == null||realTargetMediaSourceInfoList.size()<1) {
                 return;
             }
             Set<String> sourceTableSet = Sets.newHashSet(sourceTableName);
@@ -74,30 +79,30 @@ public class MediaMappingConfigUtil {
             if(targetTableNameSet == null||targetTableNameSet.size()==0){
                 return;
             }
-
-            if (mediaSourceInfo.getType() == MediaSourceType.MYSQL || mediaSourceInfo.getType() == MediaSourceType.ORACLE
-                    || mediaSourceInfo.getType() == MediaSourceType.SQLSERVER || mediaSourceInfo.getType() == MediaSourceType.POSTGRESQL) {
-                List<String> tableList = RDBMSUtil.checkTargetTables(mediaSourceInfo, sourceTableName,targetTableNameSet);
-                if (tableList != null && tableList.size() > 0) {
-                    throw new RuntimeException(String.format("rdbms表[%s]在目标端数据库中不存在", StringUtils.join(tableList, ",")));
-                }
-            } else if (mediaSourceInfo.getType() == MediaSourceType.HBASE) {
-                List<String> tableList = HBaseUtil.checkTargetTables(mediaSourceInfo, targetTableNameSet);
-                if (tableList != null && tableList.size() > 0) {
-                    throw new RuntimeException(String.format("hbase表[%s]在目标端数据库中不存在", StringUtils.join(tableList, ",")));
-                }
-            } else if (mediaSourceInfo.getType() == MediaSourceType.ELASTICSEARCH) {
-                List<String> indexList = ElasticSearchUtil.checkTargetIndexes(mediaSourceInfo, targetTableNameSet);
-                if (indexList != null && indexList.size() > 0) {
-                    throw new RuntimeException(String.format("目标端索引[%s]不存在", StringUtils.join(indexList, ",")));
-                }
-            } else if (mediaSourceInfo.getType() == MediaSourceType.KUDU) {
-                List<String> tableList = KuduUtil.checkTargetTables(mediaSourceInfo, targetTableNameSet);
-                if (tableList != null && tableList.size() > 0) {
-                    throw new RuntimeException(String.format("kudu表[%s]在目标端数据库中不存在", StringUtils.join(tableList, ",")));
+            for (MediaSourceInfo realTargetMediaSourceInfo:realTargetMediaSourceInfoList){
+                if (realTargetMediaSourceInfo.getType() == MediaSourceType.MYSQL || realTargetMediaSourceInfo.getType() == MediaSourceType.ORACLE
+                        || realTargetMediaSourceInfo.getType() == MediaSourceType.SQLSERVER || realTargetMediaSourceInfo.getType() == MediaSourceType.POSTGRESQL) {
+                    List<String> tableList = RDBMSUtil.checkTargetTables(realTargetMediaSourceInfo, sourceTableName,targetTableNameSet);
+                    if (tableList != null && tableList.size() > 0) {
+                        throw new RuntimeException(String.format("rdbms表[%s]在目标端数据库中不存在", StringUtils.join(tableList, ",")));
+                    }
+                } else if (realTargetMediaSourceInfo.getType() == MediaSourceType.HBASE) {
+                    List<String> tableList = HBaseUtil.checkTargetTables(realTargetMediaSourceInfo, targetTableNameSet);
+                    if (tableList != null && tableList.size() > 0) {
+                        throw new RuntimeException(String.format("hbase表[%s]在目标端数据库中不存在", StringUtils.join(tableList, ",")));
+                    }
+                } else if (realTargetMediaSourceInfo.getType() == MediaSourceType.ELASTICSEARCH) {
+                    List<String> indexList = ElasticSearchUtil.checkTargetIndexes(realTargetMediaSourceInfo, targetTableNameSet);
+                    if (indexList != null && indexList.size() > 0) {
+                        throw new RuntimeException(String.format("目标端索引[%s]不存在", StringUtils.join(indexList, ",")));
+                    }
+                } else if (realTargetMediaSourceInfo.getType() == MediaSourceType.KUDU) {
+                    List<String> tableList = KuduUtil.checkTargetTables(realTargetMediaSourceInfo, targetTableNameSet);
+                    if (tableList != null && tableList.size() > 0) {
+                        throw new RuntimeException(String.format("kudu表[%s]在目标端数据库中不存在", StringUtils.join(tableList, ",")));
+                    }
                 }
             }
-
         } catch (Exception e) {
             logger.info("校验目标端表是否存在时异常", e);
             throw new RuntimeException(e);

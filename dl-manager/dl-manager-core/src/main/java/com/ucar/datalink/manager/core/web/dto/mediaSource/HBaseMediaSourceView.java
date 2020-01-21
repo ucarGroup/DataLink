@@ -16,6 +16,8 @@ public class HBaseMediaSourceView {
     private Date modifyTime;
     private HBaseMediaSrcParameter hbaseMediaSrcParameter = new HBaseMediaSrcParameter();
     private String zkMediaSourceName;
+    private Long labId;
+    private String labName;
 
     public Long getId() {
         return id;
@@ -71,5 +73,21 @@ public class HBaseMediaSourceView {
 
     public void setZkMediaSourceName(String zkMediaSourceName) {
         this.zkMediaSourceName = zkMediaSourceName;
+    }
+
+    public Long getLabId() {
+        return labId;
+    }
+
+    public void setLabId(Long labId) {
+        this.labId = labId;
+    }
+
+    public String getLabName() {
+        return labName;
+    }
+
+    public void setLabName(String labName) {
+        this.labName = labName;
     }
 }

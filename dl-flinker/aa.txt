@@ -1,0 +1,83 @@
+{
+	"entry": {
+		"jvm": "-Xms1G -Xmx1G",
+		"environment": {}
+	},
+	"core": {
+		"transport": {
+			"exchanger": {
+				"class": "com.alibaba.datax.core.plugin.BufferedRecordExchanger",
+				"bufferSize": 128
+			},
+			"channel": {
+				"byteCapacity": 67108864,
+				"flowControlInterval": 20,
+				"class": "com.alibaba.datax.core.transport.channel.memory.MemoryChannel",
+				"speed": {
+					"byte": 104857600,
+					"record": 5000
+				},
+				"capacity": 1024
+			}
+		}
+	},
+	"job": {
+		"content": [{
+			"reader": {
+				"parameter": {
+					"column": [{
+						"index": "0",
+						"type": "Long"
+					}, {
+						"index": "1",
+						"type": "String"
+					}, {
+						"index": "2",
+						"type": "String"
+					}, {
+						"index": "3",
+						"type": "Date"
+					}, {
+						"index": "4",
+						"type": "Date"
+					}, {
+						"index": "5",
+						"type": "Long"
+					}],
+					"encoding": "UTF-8",
+					"fieldDelimiter": ",",
+					"hadoopUserName": "hadoop",
+					"path": "/user/hive-0.13.1/warehouse/common.db/t_b_role/dt=\\$DATAX_PRE_DATE/*",
+					"password": "BD_user_PW_UCAR_Y/19",
+					"hadoopConfig": {
+						"dfs.ha.namenodes.hadoop2cluster": "n1,n2",
+						"dfs.namenode.rpc-address.hadoop2cluster.n1": "namenode01.bi.10101111.com:8020",
+						"dfs.namenode.rpc-address.hadoop2cluster.n2": "namenode02.bi.10101111.com:8020",
+						"dfs.nameservices": "hadoop2cluster",
+						"dfs.client.failover.proxy.provider.hadoop2cluster": "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider"
+					},
+					"defaultFS": "hdfs://hadoop2cluster",
+					"connection": [{
+						"jdbcUrl": ["jdbc:sap://172.24.24.148:38015/SAPABAP1"],
+						"table": ["SAPABAP1.yyyy"]
+					}],
+					"splitPk": "@splitPk",
+					"ignoreException": "false",
+					"fileType": "orc",
+					"username": "BDUSER"
+				},
+				"name": "hdfsreader"
+			}
+		}],
+		"setting": {
+			"adaptiveFieldModify": "false",
+			"errorLimit": {
+				"record": 0,
+				"percentage": 0.02
+			},
+			"speed": {
+				"channel": "10"
+			}
+		}
+	}
+}

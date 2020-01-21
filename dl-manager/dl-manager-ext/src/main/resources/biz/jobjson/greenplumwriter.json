@@ -1,0 +1,31 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel":10
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "writer": {
+          "name": "greenplumwriter",
+          "parameter": {
+            "username": "@username",
+            "password": "@password",
+            "column": ["@column"],
+            "connection": [
+              {
+                "table": ["@table"],
+                "jdbcUrl": "@jdbcUrl"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

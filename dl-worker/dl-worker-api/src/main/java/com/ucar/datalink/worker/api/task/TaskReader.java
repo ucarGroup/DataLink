@@ -7,6 +7,7 @@ import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.domain.plugin.PluginReaderParameter;
 import com.ucar.datalink.worker.api.util.statistic.BaseReaderStatistic;
 import com.ucar.datalink.worker.api.util.statistic.ReaderStatistic;
+import org.apache.commons.lang.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,13 +53,13 @@ public abstract class TaskReader<T extends PluginReaderParameter, R extends Reco
      * @return a list of source records
      */
     public RecordChunk<R> poll() throws InterruptedException {
-        RecordChunk<R> fetched = toFetch();
 
+        RecordChunk<R> fetched = toFetch();
         if (parameter.isDump()) {
             dump(fetched);
         }
-
-        return toFilter(fetched);
+        RecordChunk<R> rRecordChunk = toFilter(fetched);
+        return rRecordChunk;
     }
 
     private RecordChunk<R> toFetch() throws InterruptedException {

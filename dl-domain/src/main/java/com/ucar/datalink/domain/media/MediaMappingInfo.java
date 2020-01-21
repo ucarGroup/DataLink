@@ -39,7 +39,7 @@ public class MediaMappingInfo implements Serializable, Storable {
     private boolean esUsePrefix;
     private String esRouting;
     private String esRoutingIgnore;
-
+    private String prefixName;
     private String geoPositionConf;
     private String skipIds;
     private Date createTime;
@@ -174,6 +174,14 @@ public class MediaMappingInfo implements Serializable, Storable {
         this.esRoutingIgnore = esRoutingIgnore;
     }
 
+    public String getPrefixName() {
+        return prefixName;
+    }
+
+    public void setPrefixName(String prefixName) {
+        this.prefixName = prefixName;
+    }
+
     public String getGeoPositionConf() {
         return geoPositionConf;
     }
@@ -271,24 +279,40 @@ public class MediaMappingInfo implements Serializable, Storable {
     public String toString() {
         return "MediaMappingInfo{" +
                 "id=" + id +
-                ", taskId=" + taskId +
-                ", sourceMediaId=" + sourceMediaId +
-                ", targetMediaSourceId=" + targetMediaSourceId +
-                ", targetMediaName='" + targetMediaName + '\'' +
-                ", targetMediaNamespace='" + targetMediaNamespace + '\'' +
-                ", parameter='" + parameter + '\'' +
-                ", columnMappingMode=" + columnMappingMode +
-                ", writePriority=" + writePriority +
-                ", valid=" + valid +
-                ", interceptorId=" + interceptorId +
-                ", joinColumn='" + joinColumn + '\'' +
-                ", esUsePrefix=" + esUsePrefix +
-                ", esRouting='" + esRouting + '\'' +
-                ", esRoutingIgnore='" + esRoutingIgnore + '\'' +
-                ", geoPositionConf='" + geoPositionConf + '\'' +
-                ", skipIds='" + skipIds + '\'' +
-                ", createTime=" + createTime +
-                ", modifyTime=" + modifyTime +
                 '}';
+    }
+
+    public String toString2() {
+        final StringBuffer sb = new StringBuffer("MediaMappingInfo{");
+        sb.append("id=").append(id);
+        sb.append(", taskId=").append(taskId);
+        sb.append(", sourceMediaId=").append(sourceMediaId);
+        sb.append(", targetMediaSourceId=").append(targetMediaSourceId);
+        sb.append(", targetMediaName='").append(targetMediaName).append('\'');
+        sb.append(", targetMediaNamespace='").append(targetMediaNamespace).append('\'');
+        sb.append(", parameter='").append(parameter).append('\'');
+        sb.append(", columnMappingMode=").append(columnMappingMode);
+        sb.append(", writePriority=").append(writePriority);
+        sb.append(", valid=").append(valid);
+        sb.append(", interceptorId=").append(interceptorId);
+        sb.append(", joinColumn='").append(joinColumn).append('\'');
+        sb.append(", esUsePrefix=").append(esUsePrefix);
+
+        sb.append(", esRouting='").append(esRouting).append('\'');
+        sb.append(", esRoutingIgnore=").append(esRoutingIgnore);
+
+        sb.append(", prefixName=").append(prefixName);
+        sb.append(", geoPositionConf='").append(geoPositionConf).append('\'');
+        sb.append(", skipIds='").append(skipIds).append('\'');
+        sb.append(", createTime=").append(createTime);
+        sb.append(", modifyTime=").append(modifyTime);
+        sb.append(", sourceMedia=").append(sourceMedia);
+        sb.append(", targetMediaSource=").append(targetMediaSource);
+        sb.append(", columnMappings=").append(columnMappings);
+        sb.append(", taskInfo=").append(taskInfo);
+        sb.append(", geoPositionMappings=").append(geoPositionMappings);
+        sb.append(", parameterObj=").append(parameterObj);
+        sb.append('}');
+        return sb.toString();
     }
 }

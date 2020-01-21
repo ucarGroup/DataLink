@@ -83,6 +83,15 @@
         <div class="space"></div>
 
         <div class="row">
+            <%--<div class="col-md-6">
+
+                <div style="padding-left: 10px;">
+                    <div id="statis" style="width: 650px;height: 350px;"></div>
+                </div>
+                <div style="padding-left: 10px;">
+                    <div id="console"></div>
+                </div>
+            </div>--%>
 
             <div class="col-md-6">
 
@@ -98,7 +107,49 @@
                 </div>
             </div>
 
+            <%--<div class="col-md-4">
+                <div>
+                    <h4>最新通告：</h4>
+                </div>
+                <div>
+                    <!-- 代码开始 -->
+                    <div class="list_lh">
+                        <table class="table table-striped table-bordered table-hover table-notice" style="text-align: center; border: none; margin-top: -18px;">
+                            <tbody>
+                            <tr>
+                                <td width="200">
+                                    <p style="color:red;overflow: hidden">
+                                        <i class="icon-bullhorn"></i>
+                                        &nbsp;&nbsp;DataLink一期已上线！
+                                    </p>
+                                </td>
+                                <td width="120">2017-05-20</td>
+                            </tr>
+                            <tr>
+                                <td width="200">
+                                    <p style="color:red;overflow: hidden">
+                                        <i class="icon-bullhorn"></i>
+                                        &nbsp;&nbsp;数据同步实例迁移陆续进行中！
+                                    </p>
+                                </td>
+                                <td width="120">2017-05-25</td>
+                            </tr>
+                            <tr>
+                                <td width="200">
+                                    <p style="color:red;overflow: hidden">
+                                        <i class="icon-bullhorn"></i>
+                                        &nbsp;&nbsp;大家遇到问题先看首页的使用说明和常见问题，有其他问题及时联系！
+                                    </p>
+                                </td>
+                                <td width="120">2017-05-30</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- 代码结束 -->
+                </div>
 
+            </div>--%>
         </div>
 
         <div class="row">

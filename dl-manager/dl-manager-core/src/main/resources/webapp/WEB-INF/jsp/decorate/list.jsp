@@ -20,19 +20,21 @@
                     <form class="form-horizontal">
                         <div class="row">
                             <div class="form-group col-xs-3">
-                                <label class="col-sm-4 control-label no-padding-right"
-                                       for="id">任务名称</label>
+                                   <label class="col-sm-4 control-label no-padding-right"
+                                           for="id">任务名称</label>
 
-                                <div class="col-sm-8">
-                                    <select class="id width-100 chosen-select" id="taskId"
-                                            style="width:100%">
-                                        <option value="-1">全部</option>
-                                        <c:forEach items="${taskList}" var="item">
-                                            <option value="${item.id}">${item.taskName}</option>
-                                        </c:forEach>
-                                    </select>
-                                </div>
+                                    <div class="col-sm-8">
+                                        <select class="id width-100 chosen-select" id="taskId"
+                                                style="width:100%">
+                                            <option value="-1">全部</option>
+                                            <c:forEach items="${taskList}" var="item">
+                                                <option value="${item.id}">${item.taskName}</option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
                             </div>
+
+
 
 
                             <div class="form-group col-xs-3">
@@ -44,8 +46,8 @@
                             </div>
 
                             <div class="form-group col-xs-3">
-                                <button type="button" id="search" class="btn btn-sm btn-purple">查询</button>
-                            </div>
+                                                                  <button type="button" id="search" class="btn btn-sm btn-purple">查询</button>
+                                                               </div>
                         </div>
                     </form>
                 </div>
@@ -85,7 +87,7 @@
 
     getButtons([
         {
-            code: "004010401",
+            code: "005001002",
             html: '<div class="pull-left tableTools-container" style="padding-top: 10px;">' +
             '<p> <button class="btn btn-sm btn-info" onclick="toAdd();">新增</button> </p>' +
             '</div>'
@@ -127,18 +129,18 @@
                     var timing_yn = oData.timing_yn;
                     getButtons([
                         {
-                            code: '004010402',
+                            code: '005001009',
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
-                                        "<a href='javascript:doStart(" + oData.id + ")' class='green'  title='启动'>" +
+                                        "<a href='javascript:doStart(" + oData.id  + ")' class='green'  title='启动'>" +
                                         "<i class='ace-icon fa fa-play bigger-130'></i>" + "</a>" +
                                         "</div> &nbsp; &nbsp;"
                                 return str;
                             }
                         },
                         {
-                            code: '004010403',
+                            code: '005001006',
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
@@ -149,7 +151,7 @@
                             }
                         },
                         {
-                            code: '004010404',
+                            code: '005001008',
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
@@ -160,7 +162,7 @@
                             }
                         },
                         {
-                            code: '004010405',
+                            code: '005001011',
                             html: function () {
                                 var str;
                                 str = "<div class='radio'>" +
@@ -182,9 +184,14 @@
         var table = $('#jobConfigTable').DataTable();
         $('#jobConfigTable').on('click', 'tr', function () {
             $(this).toggleClass('selected');
+            //alert("?????~~~~~~~~~~~~ !!! @@")
         });
 
     });
+
+
+
+
 
 
     $("#search").click(function () {
@@ -193,24 +200,24 @@
 
 
     function doStart(id) {
-        if (confirm("确定要补录数据吗？")) {
-            $.ajax({
-                type: "post",
-                url: "${basePath}/decorate/start?id=" + id,
-                dataType: "json",
-                async: false,
-                error: function (xhr, status, err) {
-                    alert(err);
-                },
-                success: function (data) {
-                    if (data == "success") {
-                        alert("启动成功！");
-                    } else {
-                        alert(data);
-                    }
+         if (confirm("确定要补录数据吗？")) {
+                    $.ajax({
+                        type: "post",
+                        url: "${basePath}/decorate/start?id=" + id,
+                        dataType: "json",
+                        async: false,
+                        error: function (xhr, status, err) {
+                            alert(err);
+                        },
+                        success: function (data) {
+                            if (data == "success") {
+                                alert("启动成功！");
+                            } else {
+                                alert(data);
+                            }
+                        }
+                    });
                 }
-            });
-        }
     }
 
     function toAdd(id) {
@@ -237,6 +244,7 @@
         $("#history").show();
         $("#mainContentInner").hide();
     }
+
 
 
     function reset() {

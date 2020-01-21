@@ -27,43 +27,53 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
- * Created by lubiao on 2017/7/4.
+ * Created by user on 2017/7/4.
  */
 public class HBaseUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(HBaseUtil.class);
 
     private static final String NULLJSON = "{}";
+
+    private static WorkerService service;
+
+    private static MediaDAO dao;
+
     /**
      * 这个url对应的是worker端机器暴露的rest接口地址，用来获取hbase所有的表
      */
     private static final String GET_TABLES_URL = "/hbase/getTables";
+
     /**
      * 这个url对应的是worker端机器暴露的rest接口地址，用来获取hbase某张表中的所有列元信息
      */
     private static final String GET_COLUMNS_URL = "/hbase/getColumns";
+
     /**
      * 检查当前连接是否正常
      */
     private static final String CHECK_CONNECTION = "/hbase/check/";
+
     /**
      * 获取一个表下的region数量
      */
     private static final String GET_REGION_COUNT = "/hbase/count";
+
     /**
      * 将表分切分成指定的region，并返回对应的startKye和endKey
      */
     private static final String GENERATE_SPLIT_INFO = "/hbase/split";
+
     /**
      * 指定读取若干条数据后解析表结构
      */
     private static final AtomicInteger HBASE_SPECIFIED_NUM = new AtomicInteger();
+
     /**
      * 这个url对应的是worker端机器暴露的rest接口地址，用来获取集群的状态信息
      */
     private static final String GET_STATUS_URL = "/hbase/status";
-    private static WorkerService service;
-    private static MediaDAO dao;
+
 
     static {
         //HBase工具类需要调用远端的worker机器(随机调用一台)，所以需要WorkerService的实现类
@@ -105,7 +115,7 @@ public class HBaseUtil {
      * @param tableName
      * @return
      */
-    public static List<ColumnMeta> getColumns(MediaSourceInfo info, String tableName) {
+    public static List<ColumnMeta> getColumns(MediaSourceInfo info, String tableName) throws ErrorException {
         checkHbase(info);
         HBaseMediaSrcParameter parameter = info.getParameterObj();
         long zkId = parameter.getZkMediaSourceId();
@@ -129,6 +139,52 @@ public class HBaseUtil {
         }
         return JSONObject.parseArray(json, ColumnMeta.class);
     }
+
+
+    /**
+     * 根据传入的MediaSourceInfo和表名，获取这个表下的所有列的元信息
+     *
+     * @param info
+     * @param tableName
+     * @return
+     */
+    public static List<ColumnMeta> getColumnsBySpecifiedAmout(MediaSourceInfo info, String tableName, int fetchAmount) {
+        checkHbase(info);
+        HBaseMediaSrcParameter parameter = info.getParameterObj();
+        long zkId = parameter.getZkMediaSourceId();
+        String znode = parameter.getZnodeParent();
+        MediaSourceInfo zkInfo = dao.findMediaSourceById(zkId);
+        checkZookeepr(zkInfo);
+        ZkMediaSrcParameter zkParameter = zkInfo.getParameterObj();
+
+        HBaseParameterVO vo = new HBaseParameterVO();
+        vo.setTableName(tableName);
+        vo.setZkAddress(zkParameter.getServers());
+        vo.setPort(zkParameter.parsePort() + "");
+        vo.setZnode(parameter.getZnodeParent());
+        vo.setOnceFethAmount(fetchAmount);
+        String json = execute(vo, GET_COLUMNS_URL);
+        return JSONObject.parseArray(json, ColumnMeta.class);
+    }
+
+    /**
+     * 根据传入的hbases media info，检查对应的连接是否正常
+     *
+     * @param info
+     * @return
+     */
+    public static boolean checkConn(MediaSourceInfo info) {
+        checkHbase(info);
+        Long id = info.getId();
+        String url = CHECK_CONNECTION + id.toString();
+        HBaseParameterVO vo = new HBaseParameterVO();
+        String json = execute(vo, url);
+        if (json != null && json.contains("success")) {
+            return true;
+        }
+        return false;
+    }
+
 
     public static int getRegionCount(MediaSourceInfo info, String tableName) {
         checkHbase(info);

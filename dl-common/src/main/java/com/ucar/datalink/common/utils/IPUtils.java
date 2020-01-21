@@ -1,8 +1,5 @@
 package com.ucar.datalink.common.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -10,12 +7,15 @@ import java.net.ServerSocket;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class IPUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger(IPUtils.class);
-    private static final String LOCALHOST_IP = "127.0.0.1";
-    private static final String EMPTY_IP = "0.0.0.0";
-    private static final Pattern IP_PATTERN = Pattern.compile("[0-9]{1,3}(\\.[0-9]{1,3}){3,}");
+    private static final Logger  logger       = LoggerFactory.getLogger(IPUtils.class);
+    private static final String  LOCALHOST_IP = "127.0.0.1";
+    private static final String  EMPTY_IP     = "0.0.0.0";
+    private static final Pattern IP_PATTERN   = Pattern.compile("[0-9]{1,3}(\\.[0-9]{1,3}){3,}");
 
     public static boolean isAvailablePort(int port) {
         ServerSocket ss = null;
@@ -39,7 +39,7 @@ public class IPUtils {
         if (address == null || address.isLoopbackAddress()) return false;
         String name = address.getHostAddress();
         return (name != null && !EMPTY_IP.equals(name) && !LOCALHOST_IP.equals(name) && IP_PATTERN.matcher(name)
-                .matches());
+            .matches());
     }
 
     public static String getHostIp() {
@@ -61,7 +61,7 @@ public class IPUtils {
             }
         } catch (Throwable e) {
             logger.warn("Failed to retriving local host ip address, try scan network card ip address. cause: "
-                    + e.getMessage());
+                        + e.getMessage());
         }
         try {
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
@@ -93,4 +93,13 @@ public class IPUtils {
         logger.error("Could not get local host ip address, will use 127.0.0.1 instead.");
         return localAddress;
     }
+
+    public static boolean checkIP(String ip) {
+        Pattern pattern = Pattern
+                .compile("^((\\d|[1-9]\\d|1\\d\\d|2[0-4]\\d|25[0-5]"
+                        + "|[*])\\.){3}(\\d|[1-9]\\d|1\\d\\d|2[0-4]\\d|25[0-5]|[*])$");
+        return pattern.matcher(ip).matches();
+    }
+
+
 }

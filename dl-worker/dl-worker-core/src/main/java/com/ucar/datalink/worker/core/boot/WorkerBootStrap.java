@@ -1,6 +1,7 @@
 package com.ucar.datalink.worker.core.boot;
 
 import com.alibaba.fastjson.parser.ParserConfig;
+import com.ucar.datalink.biz.datasource.DataSourceHolder;
 import com.ucar.datalink.biz.service.*;
 import com.ucar.datalink.common.utils.IPUtils;
 import com.ucar.datalink.domain.worker.WorkerInfo;
@@ -56,6 +57,21 @@ public class WorkerBootStrap {
             } else {
                 workerProps = Utils.propsToStringMap(buildWorkerProps());
             }
+
+            //initial zkclient
+            DLinkZkUtils.init(new ZkConfig(
+                    workerProps.get(WorkerConfig.ZK_SERVER_CONFIG),
+                    Integer.valueOf(workerProps.get(WorkerConfig.ZK_SESSION_TIMEOUT_MS_CONFIG)),
+                    Integer.valueOf(workerProps.get(WorkerConfig.ZK_CONNECTION_TIMEOUT_MS_CONFIG))), workerProps.get(WorkerConfig.ZK_ROOT_CONFIG));
+
+            //initial dataSource
+            DataSourceHolder dataSourceHolder = new DataSourceHolder(DLinkZkUtils.get(), workerProps.get("doubleCenter.whoIsCentral.url"));
+            dataSourceHolder.init();
+
+            //初始化数据库中参数
+            buildWorkerDBProps(workerProps);
+
+            //init WorkerConfig
             WorkerConfig config = WorkerConfig.fromProps(workerProps, true);
 
             //get boot mode
@@ -65,14 +81,6 @@ public class WorkerBootStrap {
             PluginListenersBootStrap.boot(config);
 
             SigarBootStrap.boot();
-
-            //initial zkclient
-            if (BootMode.DISTRIBUTED.equals(bootMode)) {
-                DLinkZkUtils.init(new ZkConfig(
-                        config.getString(WorkerConfig.ZK_SERVER_CONFIG),
-                        config.getInt(WorkerConfig.ZK_SESSION_TIMEOUT_MS_CONFIG),
-                        config.getInt(WorkerConfig.ZK_CONNECTION_TIMEOUT_MS_CONFIG)), config.getString(WorkerConfig.ZK_ROOT_CONFIG));
-            }
 
             //initial restserver
             RestServer rest = new RestServer(config);
@@ -137,33 +145,36 @@ public class WorkerBootStrap {
             } else {
                 properties.load(new FileInputStream(conf));
             }
-
-            WorkerInfo workerInfo;
-            WorkerService service = DataLinkFactory.getObject(WorkerService.class);
-            String clientId = properties.getProperty(CommonClientConfigs.CLIENT_ID_CONFIG);
-            if (!StringUtils.isBlank(clientId)) {
-                workerInfo = service.getById(Long.valueOf(clientId));
-            } else {
-                workerInfo = service.getByAddress(IPUtils.getHostIp());
-            }
-
-            if (workerInfo != null) {
-                properties.setProperty(WorkerConfig.GROUP_ID_CONFIG, String.valueOf(workerInfo.getGroupId()));
-                properties.setProperty(WorkerConfig.REST_PORT_CONFIG, workerInfo.getRestPort().toString());
-                if (StringUtils.isBlank(clientId)) {
-                    properties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, String.valueOf(workerInfo.getId()));
-                }
-            } else {
-                throw new DatalinkException(String.format("Worker is not found for client id [%s] or ip [%s] ", clientId, IPUtils.getHostIp()));
-            }
-
-            //ddl_sync、sync_auto_addcolumn参数从数据库中读取
-            SysPropertiesService propertiesService = DataLinkFactory.getObject(SysPropertiesService.class);
-            Map<String,String> map = propertiesService.map();
-            properties.setProperty(WorkerConfig.DDL_SYNC_CONFIG,StringUtils.isNotBlank((map.get(WorkerConfig.DDL_SYNC_CONFIG))) ? map.get(WorkerConfig.DDL_SYNC_CONFIG) : String.valueOf(WorkerConfig.DDL_SYNC_DEFAULT));
-            properties.setProperty(WorkerConfig.SYNC_AUTO_ADD_COLUMN_CONFIG,StringUtils.isNotBlank((map.get(WorkerConfig.SYNC_AUTO_ADD_COLUMN_CONFIG))) ? map.get(WorkerConfig.SYNC_AUTO_ADD_COLUMN_CONFIG) : String.valueOf(WorkerConfig.SYNC_AUTO_ADD_COLUMN_DEFAULT));
         }
         return properties;
+    }
+
+    private void buildWorkerDBProps(Map<String, String> workerProps) throws IOException {
+        WorkerInfo workerInfo;
+        WorkerService service = DataLinkFactory.getObject(WorkerService.class);
+        String clientId = workerProps.get(CommonClientConfigs.CLIENT_ID_CONFIG);
+        if (!StringUtils.isBlank(clientId)) {
+            workerInfo = service.getById(Long.valueOf(clientId));
+        } else {
+            workerInfo = service.getByAddress(IPUtils.getHostIp());
+        }
+
+        if (workerInfo != null) {
+            workerProps.put(WorkerConfig.GROUP_ID_CONFIG, String.valueOf(workerInfo.getGroupId()));
+            workerProps.put(WorkerConfig.REST_PORT_CONFIG, workerInfo.getRestPort().toString());
+            if (StringUtils.isBlank(clientId)) {
+                workerProps.put(CommonClientConfigs.CLIENT_ID_CONFIG, String.valueOf(workerInfo.getId()));
+            }
+            workerProps.put(WorkerConfig.LAB_ID, String.valueOf(workerInfo.getLabId()));
+        } else {
+            throw new DatalinkException(String.format("Worker is not found for client id [%s] or ip [%s] ", clientId, IPUtils.getHostIp()));
+        }
+
+        //ddl_sync、sync_auto_addcolumn参数从数据库中读取
+        SysPropertiesService propertiesService = DataLinkFactory.getObject(SysPropertiesService.class);
+        Map<String, String> map = propertiesService.map();
+        workerProps.put(WorkerConfig.DDL_SYNC_CONFIG, StringUtils.isNotBlank((map.get(WorkerConfig.DDL_SYNC_CONFIG))) ? map.get(WorkerConfig.DDL_SYNC_CONFIG) : String.valueOf(WorkerConfig.DDL_SYNC_DEFAULT));
+        workerProps.put(WorkerConfig.SYNC_AUTO_ADD_COLUMN_CONFIG, StringUtils.isNotBlank((map.get(WorkerConfig.SYNC_AUTO_ADD_COLUMN_CONFIG))) ? map.get(WorkerConfig.SYNC_AUTO_ADD_COLUMN_CONFIG) : String.valueOf(WorkerConfig.SYNC_AUTO_ADD_COLUMN_DEFAULT));
     }
 
     private Keeper buildKeeper(WorkerConfig config, Worker worker, Time time, String restUrl, String bootMode) {

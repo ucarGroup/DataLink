@@ -27,6 +27,7 @@
                             <td>HTTP端口</td>
                             <td>TCP端口</td>
                             <td>用户名</td>
+                            <td>所属机房</td>
                             <td>创建时间</td>
                             <td>操作</td>
                         </tr>
@@ -73,6 +74,7 @@
             {"data": "esMediaSrcParameter.httpPort"},
             {"data": "esMediaSrcParameter.tcpPort"},
             {"data": "esMediaSrcParameter.userName"},
+            {"data": "labName"},
             {
                 "data": "createTime",
                 "bSortable": false,

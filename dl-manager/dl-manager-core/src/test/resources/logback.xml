@@ -17,6 +17,11 @@
 		<appender-ref ref="STDOUT" />
 	</logger>
 
+	<logger name="com.ucar.gaeaclient" additivity="false">
+		<level value="fatal"/>
+		<appender-ref ref="FILE"/>
+	</logger>
+
 	<root level="INFO">
 		<appender-ref ref="STDOUT" />
 	</root>

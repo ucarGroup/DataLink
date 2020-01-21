@@ -8,10 +8,7 @@ import com.ucar.datalink.contract.log.rdbms.EventColumn;
 import com.ucar.datalink.contract.log.rdbms.EventType;
 import com.ucar.datalink.contract.log.rdbms.RdbEventRecord;
 import com.ucar.datalink.domain.RecordMeta;
-import com.ucar.datalink.domain.media.ColumnMappingMode;
-import com.ucar.datalink.domain.media.MediaColumnMappingInfo;
-import com.ucar.datalink.domain.media.MediaInfo;
-import com.ucar.datalink.domain.media.MediaMappingInfo;
+import com.ucar.datalink.domain.media.*;
 import com.ucar.datalink.domain.media.parameter.MediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.rdb.RdbMediaSrcParameter;
 import com.ucar.datalink.worker.api.task.TaskWriterContext;
@@ -72,11 +69,23 @@ public class BuiltInRdbEventRecordTransformer extends Transformer<RdbEventRecord
      * 设置了schema别名或media-name别名的时候，需要进行名称转换
      */
     protected void transformSchemaAndTableName(RdbEventRecord record, MediaMappingInfo mappingInfo) {
-        MediaSrcParameter targetMediaSrcPara = mappingInfo.getTargetMediaSource().getParameterObj();
+        MediaSourceInfo targetMediaSource = mappingInfo.getTargetMediaSource();
+        String schemaName;
+        if(targetMediaSource.getType().equals(MediaSourceType.VIRTUAL)){
+            //优先取Task所属机房对应的数据源，没有的话再取中心机房的数据源
+            MediaSourceInfo targetMediaSourceInfo = DataLinkFactory.getObject(MediaService.class).getRealDataSource(targetMediaSource);
+            MediaSrcParameter targetMediaSrcPara = targetMediaSourceInfo.getParameterObj();
+            schemaName = StringUtils.isEmpty(mappingInfo.getTargetMediaNamespace()) ?
+                    (targetMediaSrcPara instanceof RdbMediaSrcParameter ? targetMediaSrcPara.getNamespace() : record.getSchemaName())
+                    : mappingInfo.getTargetMediaNamespace();
 
-        String schemaName = StringUtils.isEmpty(mappingInfo.getTargetMediaNamespace()) ?
-                (targetMediaSrcPara instanceof RdbMediaSrcParameter ? targetMediaSrcPara.getNamespace() : record.getSchemaName())
-                : mappingInfo.getTargetMediaNamespace();
+        }else{
+            MediaSrcParameter targetMediaSrcPara = targetMediaSource.getParameterObj();
+            schemaName = StringUtils.isEmpty(mappingInfo.getTargetMediaNamespace()) ?
+                    (targetMediaSrcPara instanceof RdbMediaSrcParameter ? targetMediaSrcPara.getNamespace() : record.getSchemaName())
+                    : mappingInfo.getTargetMediaNamespace();
+
+        }
         String tableName = StringUtils.isEmpty(mappingInfo.getTargetMediaName()) ?
                 record.getTableName() : mappingInfo.getTargetMediaName();
         record.setSchemaName(schemaName);

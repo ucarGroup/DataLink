@@ -159,7 +159,13 @@ public class DbConfigEncryption {
 	}
 
 	public static void main(String[] args) throws Exception {
-		String str1 = "uziEAqtOfM*ym2";
+
+		String s = "root";
+		String str3 = encrypt(s);
+
+		System.out.println("密文:" + str3);
+
+		String str1 = "ucar_dev_soa";
 
 		// DES加密
 		String str2 = encrypt(str1);

@@ -24,7 +24,19 @@
                         <div class="row">
                             <form class="form-horizontal">
                                 <div class="form-group col-xs-3">
-                                    <label class="col-sm-4 control-label">源数据库</label>
+                                    <label class="col-sm-4 control-label">源库类型</label>
+
+                                    <div class="col-sm-8">
+                                        <select class="width-20 chosen-select" id="srcType" style="width:100%">
+                                            <option selected="selected" value="-1">全部</option>
+                                            <c:forEach items="${srcTypeList}" var="item">
+                                                <option value="${item}">${item}</option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group col-xs-3">
+                                    <label class="col-sm-4 control-label" for="readerMediaSourceId">源数据库</label>
 
                                     <div class="col-sm-8">
                                         <select class="readerMediaSourceId width-20 chosen-select"
@@ -90,13 +102,15 @@
                                     <th style="text-align:center;" class="detail-col">当前日志时间</th>
                                     <th style="text-align:center;">最近启动时间</th>
                                     <th style="text-align:center;display:none">reader地址</th>
+                                    <th style="text-align:center;display:none">所属机房</th>
+                                    <th style="text-align:center;display:none">机房同步模式</th>
                                     <th style="text-align:center;display:none">最后binlog文件</th>
                                     <th style="text-align:center;display:none">最后binlog位点</th>
                                     <th style="text-align:center;display:none">任务同步状态</th>
                                     <th style="text-align:center;display:none">影子位点当前时间</th>
                                     <th style="text-align:center;display:none">影子位点最后binlog文件</th>
                                     <th style="text-align:center;display:none">影子位点最后binlog位点</th>
-
+                                    <th style="text-align:center;">任务级别</th>
                                     <th style="text-align:center;width: 150px">操作</th>
                                 </tr>
                                 </thead>
@@ -113,13 +127,13 @@
     getButtons([{
         code: "004010101",
         html: '<div class="pull-left tableTools-container" style="padding-top: 10px;">' +
-        '<p> <button class="btn btn-sm btn-info" onclick="toAdd();">新增</button> </p>' +
-        '</div>'
+            '<p> <button class="btn btn-sm btn-info" onclick="toAdd();">新增</button> </p>' +
+            '</div>'
     }, {
-        code: "004010108",
+        code: "004010102",
         html: '<div class="pull-left tableTools-container" style="padding-top: 10px;padding-left: 10px;">' +
-        '<p> <button class="btn btn-sm btn-info" onclick="resetPosition();">批量重置位点</button> </p>' +
-        '</div>'
+            '<p> <button class="btn btn-sm btn-info" onclick="resetPosition();">批量重置位点</button> </p>' +
+            '</div>'
     }], $("#OperPanel"));
 
     var oTable;
@@ -143,6 +157,7 @@
             ajax: {
                 "url": "${basePath}/mysqlTask/mysqlTaskDatas",
                 "data": function (d) {
+                    d.srcType = $("#srcType").val();
                     d.readerMediaSourceId = $("#readerMediaSourceId").val();
                     d.groupId = $("#groupId").val();
                     d.id = $("#id").val();
@@ -169,11 +184,11 @@
                     "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
 
                         var temp = "<div class='action-buttons'>" +
-                                "    <a onclick='showDetailBtn(this)' href='#' class='green bigger-140 show-details-btn' title='Show Details'>" +
-                                "        <i class='ace-icon fa fa-angle-double-down'></i>" +
-                                "        <span class='sr-only'>Details</span>" +
-                                "    </a>" +
-                                "</div>";
+                            "    <a onclick='showDetailBtn(this)' href='#' class='green bigger-140 show-details-btn' title='Show Details'>" +
+                            "        <i class='ace-icon fa fa-angle-double-down'></i>" +
+                            "        <span class='sr-only'>Details</span>" +
+                            "    </a>" +
+                            "</div>";
                         $(nTd).html(temp);
                     }
                 },
@@ -194,13 +209,40 @@
                 {"data": "currentTimeStamp"},
                 {"data": "startTime"},
                 {"data": "readerIp"},
+                {"data": "labName"},
+                {"data": "taskSyncMode"},
                 {"data": "latestEffectSyncLogFileName"},
                 {"data": "latestEffectSyncLogFileOffset"},
                 {"data": "taskSyncStatus"},
                 {"data": "shadowCurrentTimeStamp"},
                 {"data": "shadowLatestEffectSyncLogFileName"},
-                {"data": "shadowLatestEffectSyncLogFileOffset"}
-
+                {"data": "shadowLatestEffectSyncLogFileOffset"},
+                {
+                    "data": "taskPriorityId",
+/*                    render: function (data, type, row) {
+                        if (data == 1) {
+                            return "一级";
+                        } else if (data == 2) {
+                            return "二级";
+                        } else if (data == 3) {
+                            return "三级";
+                        }
+                        return "无";
+                    },*/
+                    createdCell: function (nTd, sData, oData, iRow, iCol) {
+                        var taskPriorityId = oData.taskPriorityId;
+                        if (taskPriorityId == "1") {
+                            //设置满足条件行的背景颜色
+                            $(nTd).css("background", "#FF6A6A");
+                        } else if (taskPriorityId == "2") {
+                            //设置满足条件行的背景颜色
+                            $(nTd).css("background", "#FFB90F");
+                        } else if (taskPriorityId == "3") {
+                            //设置满足条件行的背景颜色
+                            $(nTd).css("background", "#32CD32");
+                        }
+                    }
+                }
             ],
             language: {
                 "sUrl": "${basePath}/assets/json/zh_CN.json",
@@ -214,7 +256,6 @@
                 var preTd = null;
 
                 api.column(0, {page: 'current'}).data().each(function (group, i) {
-
                     tr = $(rows[i]);
 
                     var t10 = tr.find("td").eq(10);
@@ -245,37 +286,47 @@
                     t16.hide();
                     var t16_text = t16.text();
 
+                    var t17 = tr.find("td").eq(17);
+                    t17.hide();
+                    var t17_text = t17.text();
+
+                    var t18 = tr.find("td").eq(18);
+                    t18.hide();
+                    var t18_text = t18.text();
+
                     var temp = "<tr class='detail-row'>" +
-                            "    <td colspan='12'>" +
-                            "        <div class='table-detail'>" +
-                            "            <table border='1' width='100%' class='table table-striped table-bordered table-hover'" +
-                            "                   style='padding: 0px;margin: 0px;'>" +
-                            "                <tr width='auto'>" +
-                            "                    <th>reader地址</th>" +
-
-                            "                    <th>最后binlog文件</th>" +
-                            "                    <th>最后binlog位点</th>" +
-                            "                    <th>任务同步状态</th>" +
-                            "                    <th>影子位点当前时间</th>" +
-                            "                    <th>影子位点最后binlog文件</th>" +
-                            "                    <th>影子位点最后binlog位点</th>" +
-                            "                </tr>" +
-                            "                <tbody>" +
-                            "                <tr width='auto'>" +
-                            "                    <td>" + t10_text + "</td>" +
-                            "                    <td>" + t11_text + "</td>" +
-                            "                    <td>" + t12_text + "</td>" +
-                            "                    <td>" + t13_text + "</td>" +
-                            "                    <td>" + t14_text + "</td>" +
-                            "                    <td>" + t15_text + "</td>" +
-                            "                    <td>" + t16_text + "</td>" +
-
-                            "                </tr>" +
-                            "                </tbody>" +
-                            "            </table>" +
-                            "        </div>" +
-                            "    </td>" +
-                            "</tr>";
+                        "    <td colspan='12'>" +
+                        "        <div class='table-detail'>" +
+                        "            <table border='1' width='100%' class='table table-striped table-bordered table-hover'" +
+                        "                   style='padding: 0px;margin: 0px;'>" +
+                        "                <tr width='auto'>" +
+                        "                    <th>reader地址</th>" +
+                        "                    <th>所属机房</th>" +
+                        "                    <th>机房同步模式</th>" +
+                        "                    <th>最后binlog文件</th>" +
+                        "                    <th>最后binlog位点</th>" +
+                        "                    <th>任务同步状态</th>" +
+                        "                    <th>影子位点当前时间</th>" +
+                        "                    <th>影子位点最后binlog文件</th>" +
+                        "                    <th>影子位点最后binlog位点</th>" +
+                        "                </tr>" +
+                        "                <tbody>" +
+                        "                <tr width='auto'>" +
+                        "                    <td>" + t10_text + "</td>" +
+                        "                    <td>" + t11_text + "</td>" +
+                        "                    <td>" + t12_text + "</td>" +
+                        "                    <td>" + t13_text + "</td>" +
+                        "                    <td>" + t14_text + "</td>" +
+                        "                    <td>" + t15_text + "</td>" +
+                        "                    <td>" + t16_text + "</td>" +
+                        "                    <td>" + t17_text + "</td>" +
+                        "                    <td>" + t18_text + "</td>" +
+                        "                </tr>" +
+                        "                </tbody>" +
+                        "            </table>" +
+                        "        </div>" +
+                        "    </td>" +
+                        "</tr>";
                     $(tr).after(temp);
 
                     if (last !== group) {
@@ -292,7 +343,7 @@
             },
             columnDefs: [
                 {
-                    "aTargets": [17],
+                    "aTargets": [20],
                     "mData": null,
                     "bSortable": false,
                     "bSearchable": false,
@@ -305,9 +356,9 @@
                                 html: function () {
                                     var str;
                                     str = "<div class='radio'>" +
-                                            "<a href='javascript:toUpdate(" + oData.id + ")' class='blue'  title='修改'  disable='true'>" +
-                                            "<i class='ace-icon fa fa-pencil bigger-130'></i>" + "</a>" +
-                                            "</div> &nbsp; &nbsp;"
+                                        "<a href='javascript:toUpdate(" + oData.id + ")' class='blue'  title='修改'  disable='true'>" +
+                                        "<i class='ace-icon fa fa-pencil bigger-130'></i>" + "</a>" +
+                                        "</div> &nbsp; &nbsp;"
                                     return str;
                                 }
                             },
@@ -316,9 +367,9 @@
                                 html: function () {
                                     var str;
                                     str = "<div class='radio'>" +
-                                            "<a href='javascript:doDelete(" + oData.id + ")' class='red'  title='删除'>" +
-                                            "<i class='ace-icon fa fa-trash-o bigger-130'></i>" + "</a>" +
-                                            "</div> &nbsp; &nbsp;"
+                                        "<a href='javascript:doDelete(" + oData.id + ")' class='red'  title='删除'>" +
+                                        "<i class='ace-icon fa fa-trash-o bigger-130'></i>" + "</a>" +
+                                        "</div> &nbsp; &nbsp;"
                                     return str;
                                 }
                             },
@@ -328,9 +379,9 @@
                                     var str;
                                     if (listenedState != "UNASSIGNED") {
                                         str = "<div class='radio'>" +
-                                                "<a href='javascript:toRestart(" + oData.id + ")' class='green'  title='重启'>" +
-                                                "<i class='ace-icon fa fa-refresh bigger-130'></i>" + "</a>" +
-                                                "</div> &nbsp; &nbsp;"
+                                            "<a href='javascript:toRestart(" + oData.id + ")' class='green'  title='重启'>" +
+                                            "<i class='ace-icon fa fa-refresh bigger-130'></i>" + "</a>" +
+                                            "</div> &nbsp; &nbsp;"
                                     }
                                     return str;
                                 }
@@ -341,9 +392,9 @@
                                     var str;
                                     if (state == "PAUSED") {
                                         str = "<div class='radio'>" +
-                                                "<a href='javascript:doResume(" + oData.id + ")' class='inverse'  title='恢复运行'>" +
-                                                "<i class='ace-icon fa fa-play bigger-130'></i>" + "</a>" +
-                                                "</div> &nbsp; &nbsp;"
+                                            "<a href='javascript:doResume(" + oData.id + ")' class='inverse'  title='恢复运行'>" +
+                                            "<i class='ace-icon fa fa-play bigger-130'></i>" + "</a>" +
+                                            "</div> &nbsp; &nbsp;"
                                     }
                                     return str;
                                 }
@@ -354,9 +405,9 @@
                                     var str;
                                     if (state != "PAUSED") {
                                         str = "<div class='radio'>" +
-                                                "<a href='javascript:doPause(" + oData.id + ")' class='grey'  title='暂停'>" +
-                                                "<i class='ace-icon fa fa-pause bigger-130'></i>" + "</a>" +
-                                                "</div> &nbsp; &nbsp;"
+                                            "<a href='javascript:doPause(" + oData.id + ")' class='grey'  title='暂停'>" +
+                                            "<i class='ace-icon fa fa-pause bigger-130'></i>" + "</a>" +
+                                            "</div> &nbsp; &nbsp;"
                                     }
                                     return str;
                                 }
@@ -366,9 +417,9 @@
                                 html: function () {
                                     var str;
                                     str = "<div class='radio'>" +
-                                            "<a href='javascript:toGroupMigrate(" + oData.id + ")' class='green'  title='Task组迁移'>" +
-                                            "<i class='ace-icon fa fa-random bigger-130'></i>" + "</a>" +
-                                            "</div> &nbsp; &nbsp;"
+                                        "<a href='javascript:toGroupMigrate(" + oData.id + ")' class='green'  title='Task组迁移'>" +
+                                        "<i class='ace-icon fa fa-random bigger-130'></i>" + "</a>" +
+                                        "</div> &nbsp; &nbsp;"
                                     return str;
                                 }
                             },
@@ -377,9 +428,9 @@
                                 html: function () {
                                     var str;
                                     str = "<div class='radio'>" +
-                                            "<a href='javascript:toShadowList(" + oData.id + ")' class='blue'  title='影子位点'>" +
-                                            "<i class='ace-icon fa fa-list bigger-130'></i>" + "</a>" +
-                                            "</div> &nbsp; &nbsp;"
+                                        "<a href='javascript:toShadowList(" + oData.id + ")' class='blue'  title='影子位点'>" +
+                                        "<i class='ace-icon fa fa-list bigger-130'></i>" + "</a>" +
+                                        "</div> &nbsp; &nbsp;"
                                     return str;
                                 }
                             }
@@ -387,7 +438,36 @@
 
                     }
 
-                }]
+                }]/*,
+            "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                var elements = $(nRow).find("td");
+                //改行满足的条件
+                var taskPriorityId = aData.taskPriorityId;
+                if(taskPriorityId == "1"){
+                    $(elements).each(function (index,element) {
+                        if(index !=0 && index != elements.length-1) {
+                            //设置满足条件行的背景颜色
+                            $(element).css("background", "#FF6A6A");
+                        }
+                    });
+                    //设置满足条件行的字体颜色
+                    /!*$(nRow).css("color", "black");*!/
+                }else if(taskPriorityId == "2") {
+                    $(elements).each(function (index,element) {
+                        if(index !=0 && index != elements.length-1) {
+                            //设置满足条件行的背景颜色
+                            $(element).css("background", "#FFB90F");
+                        }
+                    });
+                }else if(taskPriorityId == "3") {
+                    $(elements).each(function (index,element) {
+                        if(index !=0 && index != elements.length-1) {
+                            //设置满足条件行的背景颜色
+                            $(element).css("background", "#32CD32");
+                        }
+                    });
+                }
+            }*/
         });
 
         $("#readerMediaSourceId").change(function () {
@@ -421,8 +501,35 @@
                             $("<option value='" + result.taskIds[i] + "' >" + result.taskNames[i] + "</option>").appendTo(".id");
                         }
                         $(".id").trigger("chosen:updated");
+                    } else {
+                        alert(result);
                     }
-                    else {
+                }
+            });
+
+            oTable.ajax.reload();
+        });
+
+        $("#srcType").change(function () {
+            var srcType = $('#srcType').val();
+
+            $("#readerMediaSourceId").val(-1);
+
+            $.ajax({
+                type: "post",
+                url: "${basePath}/task/getSrcMediaSourceListByType?srcType=" + srcType,
+                async: true,
+                dataType: "json",
+                success: function (result) {
+                    if (result != null && result != '') {
+                        document.getElementById("readerMediaSourceId").innerHTML = "";
+
+                        $("<option value=\"-1\">全部</option>").appendTo(".readerMediaSourceId");
+                        for (i = 0; i < result.msIds.length; i++) {
+                            $("<option value='" + result.msIds[i] + "' >" + result.msNames[i] + "</option>").appendTo(".readerMediaSourceId");
+                        }
+                        $(".readerMediaSourceId").trigger("chosen:updated");
+                    } else {
                         alert(result);
                     }
                 }

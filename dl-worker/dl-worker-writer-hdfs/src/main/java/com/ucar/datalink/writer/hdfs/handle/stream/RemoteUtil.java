@@ -2,10 +2,7 @@ package com.ucar.datalink.writer.hdfs.handle.stream;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.ucar.datalink.biz.service.WorkerService;
-import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.common.event.CommonEvent;
-import com.ucar.datalink.domain.worker.WorkerInfo;
 import com.ucar.datalink.writer.hdfs.handle.util.Dict;
 import org.apache.hadoop.hdfs.protocol.AlreadyBeingCreatedException;
 import org.apache.hadoop.ipc.RemoteException;
@@ -49,13 +46,7 @@ public class RemoteUtil {
         map.put(CommonEvent.EVENT_NAME_KEY, Dict.EVENT_CLOSE_STREAM);
         map.put(Dict.EVENT_CLOSE_STREAM_FILE_NAME, hdfsFilePath);
 
-        WorkerInfo workerInfo = getWorkerInfo(address);
-        String url;
-        if (workerInfo == null) {
-            url = "http://" + address + ":8083" + "/worker/eventProcess";
-        } else {
-            url = "http://" + address + ":" + workerInfo.getRestPort() + "/worker/eventProcess";
-        }
+        String url = "http://" + address + ":8083" + "/worker/eventProcess";//TODO,暂时写死为8083，后期改为动态获取
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity request = new HttpEntity(JSONObject.toJSONString(map, SerializerFeature.WriteClassName), headers);
@@ -70,16 +61,5 @@ public class RemoteUtil {
             ip = m.group().replace("[", "").replace("]", "");
         }
         return ip;
-    }
-
-    private static WorkerInfo getWorkerInfo(String address) {
-        try {
-            WorkerService workerService = DataLinkFactory.getObject(WorkerService.class);
-            WorkerInfo workerInfo = workerService.getByAddress(address);
-            return workerInfo;
-        } catch (Exception e) {
-            logger.error("get worker info failed.", e);
-        }
-        return null;
     }
 }

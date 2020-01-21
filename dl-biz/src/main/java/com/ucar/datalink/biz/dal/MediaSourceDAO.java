@@ -6,6 +6,7 @@ import com.ucar.datalink.domain.statis.StatisDetail;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -15,9 +16,9 @@ public interface MediaSourceDAO {
 
     List<MediaSourceInfo> getList();
 
-    List<MediaSourceInfo> getListByType(@Param(value = "mediaSourceType") Set mediaSourceType);
+    List<MediaSourceInfo> getListByType(@Param(value="mediaSourceType")Set mediaSourceType);
 
-    List<MediaSourceInfo> getListForQueryPage(@Param("mediaSourceType") Set<MediaSourceType> mediaSourceType, @Param("mediaSourceName") String mediaSourceName, @Param("mediaSourceIp") String mediaSourceIp);
+    List<MediaSourceInfo> getListForQueryPage(@Param("mediaSourceType")Set<MediaSourceType> mediaSourceType, @Param("mediaSourceName")String mediaSourceName,@Param("mediaSourceIp") String mediaSourceIp);
 
     Integer insert(MediaSourceInfo mediaSourceInfo);
 
@@ -30,6 +31,12 @@ public interface MediaSourceDAO {
     Integer msCount();
 
     List<StatisDetail> getCountByType();
+
+    List<MediaSourceInfo> findRealListByVirtualMsId(Long id);
+
+    MediaSourceInfo getOneByName(String msName);
+
+    MediaSourceInfo findRealSignleByMsIdAndLab(Map<String, Object> parameterMap);
 
     List<MediaSourceInfo> getListByNameList(@Param("list") List<String> mediaSourceNameList);
 

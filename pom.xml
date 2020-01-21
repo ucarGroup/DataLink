@@ -17,6 +17,10 @@
         <module>dl-contract</module>
         <module>dl-domain</module>
         <module>dl-extend</module>
+		<module>dl-flinker</module>
+		
+		
+		
     </modules>
 
     <profiles>
@@ -319,6 +323,19 @@
                 <version>2.22.2</version>
             </dependency>
 
+            <!-- mysql -->
+            <!--<dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>8.0.11</version>
+            </dependency>-->
+
+            <!--sqlserver-->
+            <dependency>
+                <groupId>com.microsoft.sqlserver</groupId>
+                <artifactId>sqljdbc4</artifactId>
+                <version>4.0</version>
+            </dependency>
             <dependency>
                 <groupId>dom4j</groupId>
                 <artifactId>dom4j</artifactId>

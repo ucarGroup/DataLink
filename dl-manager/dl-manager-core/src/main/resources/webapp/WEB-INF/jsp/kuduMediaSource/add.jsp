@@ -24,6 +24,21 @@
                                            id="form-add-name"/>
                                 </div>
                             </div>
+                            <div class="col-sm-4 form-group">
+                                <label class="col-sm-3 control-label no-padding-right"
+                                       for="form-add-labId">所属机房</label>
+
+                                <div class="col-sm-7">
+                                    <select multiple="" id="form-add-labId" name="labId"
+                                            class="labId col-xs-10 col-sm-12"
+                                            data-placeholder="Click to Choose...">
+                                        <c:forEach items="${labInfoList}" var="bean">
+                                            <option value="${bean.id}">${bean.labName} </option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
+                            </div>
+
                         </div>
                         <div class="col-sm-12" id="readSourceBaseDiv">
                             <div class="col-sm-4 form-group">
@@ -31,17 +46,15 @@
                                        for="form-add-readerHost">kudu_host</label>
 
                                 <div class="col-sm-7">
-                                    <input type="text" name="kuduMediaSrcParameter.kuduMasterConfigs.host"
-                                           class="col-sm-12"
+                                    <input type="text" name="kuduMediaSrcParameter.kuduMasterConfigs.host" class="col-sm-12"
                                            id="form-add-readerHost"/>
                                 </div>
                             </div>
                             <div class="col-sm-4 form-group">
                                 <label class="col-sm-3 control-label no-padding-right" for="form-add-readerPort">kudu_port</label>
-
                                 <div class="col-sm-7">
                                     <input type="text" name="kuduMediaSrcParameter.kuduMasterConfigs.port"
-                                           class="col-sm-12" id="form-add-readerPort"/>
+                                           class="col-sm-12" id="form-add-readerPort" />
                                 </div>
                                 <label class="col-sm-2 control-label no-padding-right" for="form-add-readerPort">
                                     <a href="javascript:void(0)" onclick="buildReadDataSource()">新增</a>
@@ -56,17 +69,15 @@
                                        for="form-add-readerImpalaHost">impala_host</label>
 
                                 <div class="col-sm-7">
-                                    <input type="text" name="kuduMediaSrcParameter.impalaCconfigs.host"
-                                           class="col-sm-12"
+                                    <input type="text" name="kuduMediaSrcParameter.impalaCconfigs.host" class="col-sm-12"
                                            id="form-add-readerImpalaHost"/>
                                 </div>
                             </div>
                             <div class="col-sm-4 form-group">
                                 <label class="col-sm-3 control-label no-padding-right" for="form-add-readerImpalaPort">impala_port</label>
-
                                 <div class="col-sm-7">
                                     <input type="text" name="kuduMediaSrcParameter.impalaCconfigs.port"
-                                           class="col-sm-12" id="form-add-readerImpalaPort"/>
+                                           class="col-sm-12" id="form-add-readerImpalaPort" />
                                 </div>
                                 <label class="col-sm-2 control-label no-padding-right" for="form-add-readerImpalaPort">
                                     <a href="javascript:void(0)" onclick="buildImpalaReadDataSource()">新增</a>
@@ -78,7 +89,7 @@
 
                         <div class="col-sm-12">
                             <div class="col-sm-4 form-group">
-                                <label class="col-sm-3 control-label no-padding-right">数据库名称</label>
+                                <label class="col-sm-3 control-label no-padding-right" >数据库名称</label>
 
                                 <div class="col-sm-7">
                                     <input type="text" name="kuduMediaSrcParameter.database"
@@ -111,17 +122,17 @@
 
                 <div class="col-sm-7">
                     <input type="text" name="kuduMediaSrcParameter.kuduMasterConfigs.host"
-                           class="col-sm-12"/>
+                           class="col-sm-12" />
                 </div>
             </div>
             <div class="col-sm-4 form-group">
-                <label class="col-sm-3 control-label no-padding-right">kudu_port</label>
+                <label class="col-sm-3 control-label no-padding-right" >kudu_port</label>
 
                 <div class="col-sm-7">
                     <input type="text" name="kuduMediaSrcParameter.kuduMasterConfigs.port"
-                           class="col-sm-12"/>
+                           class="col-sm-12" />
                 </div>
-                <label class="col-sm-2 control-label no-padding-right">
+                <label class="col-sm-2 control-label no-padding-right" >
                     <a href="javascript:void(0)" onclick="deleteReadDataSource(this)">删除</a>
                 </label>
             </div>
@@ -136,17 +147,17 @@
 
                 <div class="col-sm-7">
                     <input type="text" name="kuduMediaSrcParameter.impalaCconfigs.host"
-                           class="col-sm-12"/>
+                           class="col-sm-12" />
                 </div>
             </div>
             <div class="col-sm-4 form-group">
-                <label class="col-sm-3 control-label no-padding-right">impala_port</label>
+                <label class="col-sm-3 control-label no-padding-right" >impala_port</label>
 
                 <div class="col-sm-7">
                     <input type="text" name="kuduMediaSrcParameter.impalaCconfigs.port"
-                           class="col-sm-12"/>
+                           class="col-sm-12" />
                 </div>
-                <label class="col-sm-2 control-label no-padding-right">
+                <label class="col-sm-2 control-label no-padding-right" >
                     <a href="javascript:void(0)" onclick="deleteReadDataSource(this)">删除</a>
                 </label>
             </div>
@@ -172,6 +183,8 @@
 <!-- /.page-content -->
 
 <script type="text/javascript">
+
+    $('.labId').select2({allowClear: false, maximumSelectionLength: 1});
 
     function buildReadDataSource() {
         var e = $("#copyReadSourceBase>div").clone(true);
@@ -201,7 +214,7 @@
         if (impala_hosts != null && impala_hosts.length > 0) {
             for (var i = 0; i < impala_hosts.length - 1; i++) {
                 impala_hosts.eq(i).attr('name', 'kuduMediaSrcParameter.impalaCconfigs[' + i + '].host');
-                impala_ports.eq(i).attr('name', 'kuduMediaSrcParameter.impalaCconfigs[' + i + '].port');
+                impala_ports.eq(i).attr('name', 'kuduMediaSrcParameter.impalaCconfigs[' + i  + '].port');
             }
         }
 
@@ -210,7 +223,7 @@
         if (hosts != null && hosts.length > 0) {
             for (var i = 0; i < hosts.length - 1; i++) {
                 hosts.eq(i).attr('name', 'kuduMediaSrcParameter.kuduMasterConfigs[' + i + '].host');
-                ports.eq(i).attr('name', 'kuduMediaSrcParameter.kuduMasterConfigs[' + i + '].port');
+                ports.eq(i).attr('name', 'kuduMediaSrcParameter.kuduMasterConfigs[' + i  + '].port');
             }
         }
 
@@ -235,6 +248,7 @@
         });
 
 
+
     }
 
     function back2Main() {
@@ -246,6 +260,10 @@
     function validateForm() {
         if ($.trim($('#form-add-name').val()) == '') {
             alert('数据源名称不能为空');
+            return false;
+        }
+        if ($.trim($('#form-add-labId').val()) == '') {
+            alert('所属机房不能为空');
             return false;
         }
 
@@ -265,7 +283,7 @@
             if ($.trim(port) == '') {
                 alert('port不能为空!');
                 return false;
-            } else {
+            }else{
                 var r = /^\+?[1-9][0-9]*$/;　　//正整数
                 var flag = r.test(port);
                 if (!flag) {
@@ -287,7 +305,7 @@
             if ($.trim(port) == '') {
                 alert('port不能为空!');
                 return false;
-            } else {
+            }else{
                 var r = /^\+?[1-9][0-9]*$/;　　//正整数
                 var flag = r.test(port);
                 if (!flag) {

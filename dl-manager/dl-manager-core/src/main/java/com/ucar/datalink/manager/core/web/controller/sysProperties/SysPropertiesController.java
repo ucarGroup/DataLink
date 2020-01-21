@@ -7,8 +7,11 @@ import com.ucar.datalink.biz.utils.AuditLogOperType;
 import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.sysProperties.SysPropertiesInfo;
+import com.ucar.datalink.domain.user.UserInfo;
+import com.ucar.datalink.domain.user.UserRoleInfo;
 import com.ucar.datalink.manager.core.web.util.Page;
 import com.ucar.datalink.manager.core.web.util.UserUtil;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,7 +19,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +38,7 @@ public class SysPropertiesController {
     SysPropertiesService sysPropertiesService;
 
     @RequestMapping(value = "/propertieList")
-    public String propertieList() {
+    public String userList() {
         return "sysProperties/list";
     }
 

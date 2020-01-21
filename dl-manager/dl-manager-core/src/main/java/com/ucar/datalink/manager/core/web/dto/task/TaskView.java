@@ -21,13 +21,18 @@ public class TaskView {
     private String startTime;//task启动时间
     private String readerIp;//reader地址
     private String detail;//详情
+    private String labName;
+    private String taskSyncMode;
+
     private String latestEffectSyncLogFileName;
     private String latestEffectSyncLogFileOffset;
+
     private String taskSyncStatus;
+
     private String shadowCurrentTimeStamp; //影子位点当前时间
     private String shadowLatestEffectSyncLogFileName;//影子位点最后binlog文件
     private String shadowLatestEffectSyncLogFileOffset;//影子位点最后binlog位点
-
+    private String taskPriorityId;
 
     public Long getId() {
         return id;
@@ -133,12 +138,20 @@ public class TaskView {
         this.detail = detail;
     }
 
-    public String getTaskSyncStatus() {
-        return taskSyncStatus;
+    public String getLabName() {
+        return labName;
     }
 
-    public void setTaskSyncStatus(String taskSyncStatus) {
-        this.taskSyncStatus = taskSyncStatus;
+    public void setLabName(String labName) {
+        this.labName = labName;
+    }
+
+    public String getTaskSyncMode() {
+        return taskSyncMode;
+    }
+
+    public void setTaskSyncMode(String taskSyncMode) {
+        this.taskSyncMode = taskSyncMode;
     }
 
     public String getLatestEffectSyncLogFileName() {
@@ -157,6 +170,14 @@ public class TaskView {
         this.latestEffectSyncLogFileOffset = latestEffectSyncLogFileOffset;
     }
 
+    public String getTaskSyncStatus() {
+        return taskSyncStatus;
+    }
+
+    public void setTaskSyncStatus(String taskSyncStatus) {
+        this.taskSyncStatus = taskSyncStatus;
+    }
+
     public String getShadowCurrentTimeStamp() {
         return shadowCurrentTimeStamp;
     }
@@ -172,7 +193,15 @@ public class TaskView {
     public void setShadowLatestEffectSyncLogFileName(String shadowLatestEffectSyncLogFileName) {
         this.shadowLatestEffectSyncLogFileName = shadowLatestEffectSyncLogFileName;
     }
-    
+
+    public String getTaskPriorityId() {
+        return taskPriorityId;
+    }
+
+    public void setTaskPriorityId(String taskPriorityId) {
+        this.taskPriorityId = taskPriorityId;
+    }
+
     public String getShadowLatestEffectSyncLogFileOffset() {
         return shadowLatestEffectSyncLogFileOffset;
     }

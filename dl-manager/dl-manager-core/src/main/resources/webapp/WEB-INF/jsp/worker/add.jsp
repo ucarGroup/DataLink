@@ -30,6 +30,19 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="col-sm-3 control-label no-padding-right" for="form-add-labId">所属机房</label>
+
+                    <div class="col-sm-9">
+                        <select multiple="" id="form-add-labId" name="labId" class="labId col-xs-10 col-sm-5"
+                                data-placeholder="Click to Choose..." style="width:350px;height:35px">
+                            <c:forEach items="${labInfoList}" var="bean">
+                                <option value="${bean.id}">${bean.labName} </option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-workerAddress">机器IP</label>
 
                     <div class="col-sm-9">
@@ -75,12 +88,14 @@
 
 <script type="text/javascript">
     $('.groupId').css('min-width', '50%').select2({allowClear: false, maximumSelectionLength: 1});
+    $('.labId').css('min-width', '50%').select2({allowClear: false, maximumSelectionLength: 1});
     function doAdd() {
         var workerName = $.trim($("#form-add-workerName").val());
         var groupId = $.trim($("#form-add-groupId").val());
         var workerAddress = $.trim($("#form-add-workerAddress").val());
         var restPort = $.trim($("#form-add-restPort").val());
         var workerDesc = $.trim($("#form-add-workerDesc").val());
+        var labId = $.trim($("#form-add-labId").val());
 
         if (workerName == "") {
             alert("机器名称不能为空!");
@@ -88,6 +103,10 @@
         }
         if (groupId == "") {
             alert("分组名称不能为空!");
+            return false;
+        }
+        if (labId == "") {
+            alert("所属机房不能为空!");
             return false;
         }
         if (workerAddress == "") {

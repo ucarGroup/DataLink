@@ -42,6 +42,15 @@ public class CommunicationController {
         }
     }
 
+    @RequestMapping(value = "/putDataxExceptionAndSend", method = RequestMethod.POST)
+    @ResponseBody
+    public void putDataxException(@RequestBody final Map<Long, String> map) {
+        logger.info("Receive Exception Monitor Info : {}", map);
+        if (map != null && map.size() > 0) {
+            taskExceptionMonitor.sendDataxException(map);
+        }
+    }
+
     @RequestMapping(value = "/clearException", method = RequestMethod.POST)
     @ResponseBody
     public void clearException() {

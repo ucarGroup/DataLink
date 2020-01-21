@@ -1,7 +1,9 @@
 package com.ucar.datalink.biz.dal;
 
+import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.monitor.TaskMonitorInfo;
 import com.ucar.datalink.domain.statis.StatisDetail;
+import com.ucar.datalink.domain.task.TargetState;
 import com.ucar.datalink.domain.task.TaskInfo;
 import com.ucar.datalink.domain.task.TaskType;
 import org.apache.ibatis.annotations.Param;
@@ -26,13 +28,15 @@ public interface TaskDAO {
 
     Date findMaxModifyTime();
 
-    List<TaskInfo> listByCondition(@Param(value = "readerMediaSourceId") Long readerMediaSourceId, @Param(value = "groupId") Long groupId, @Param(value = "id") Long id, @Param(value = "taskType") TaskType taskType);
+    List<TaskInfo> listByCondition(@Param(value = "srcType") MediaSourceType srcType, @Param(value = "readerMediaSourceId") Long readerMediaSourceId, @Param(value = "groupId") Long groupId, @Param(value = "id") Long id, @Param(value = "taskType") TaskType taskType);
 
     TaskInfo findById(Long id);
 
     Integer insert(TaskInfo taskInfo);
 
     Integer update(TaskInfo taskInfo);
+
+    Integer updateTask(TaskInfo taskInfo);
 
     Integer delete(Long id);
 
@@ -50,6 +54,16 @@ public interface TaskDAO {
 
     List<TaskInfo> getTaskListByGroupId(Long groupId);
 
+    List<TaskInfo> findAcrossLabList();
+
+    List<TaskInfo> findListBySyncMode(@Param("taskSyncMode") String taskSyncMode, @Param("start") Long start, @Param("pageSize") Long pageSize);
+
+    Long countTasksBySyncMode(String taskSyncMode);
+
+    List<TaskInfo> batchUpdateTaskStatus(@Param("taskIdList") List taskIdList, @Param("targetState") TargetState targetState);
+
+    List<TaskInfo> findMysqlAndHBaseTasks();
+
     /**
      * 批量修改taskInfo的信息
      *
@@ -63,4 +77,11 @@ public interface TaskDAO {
      * @param taskInfoList
      */
     void batchInsertTask(@Param("taskInfoList") List<TaskInfo> taskInfoList);
+
+    List<TaskInfo> findAcrossLabTaskListByMsList(@Param("mediaSourceIdList") List<Long> mediaSourceIdList);
+
+    List<TaskInfo> findTaskInfoByBatchId(@Param("taskIdList") List<Long> taskIdList);
+
+    List<TaskInfo> findTaskListNoPage(TaskInfo taskInfo);
+
 }

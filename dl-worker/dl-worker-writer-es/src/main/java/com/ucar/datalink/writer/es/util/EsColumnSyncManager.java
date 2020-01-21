@@ -16,6 +16,7 @@ import com.ucar.datalink.domain.event.EsColumnSyncEvent;
 import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
+import com.ucar.datalink.domain.media.ModeUtils;
 import com.ucar.datalink.domain.meta.ColumnMeta;
 import com.ucar.datalink.domain.relationship.SqlCheckColumnInfo;
 import com.ucar.datalink.domain.relationship.SqlCheckItem;
@@ -25,11 +26,12 @@ import com.ucar.datalink.writer.es.client.rest.client.EsClient;
 import com.ucar.datalink.writer.es.client.rest.loadBalance.ESConfigVo;
 import com.ucar.datalink.writer.es.client.rest.vo.MappingIndexVo;
 import org.apache.commons.lang.StringUtils;
+import org.apache.ibatis.jdbc.SQL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +47,7 @@ public class EsColumnSyncManager {
     private static final String WILD_PATTERN = "(.*)_(\\[(\\d+)\\-(\\d+)\\])$"; // 匹配类似"offer[0000-0031]"的分库分表模式
     private static final String NUMBER_PATTERN = "(.*)_(\\d{1,4})$";
 
-    public static ResponseVo syncColumnDefinition(EsColumnSyncEvent event) {
+    public static ResponseVo syncColumnDefinition(EsColumnSyncEvent event){
         ResponseVo responseVo = new ResponseVo();
         Long mediaSourceId = event.getMediaSourceId();
         String sql = event.getSql();
@@ -55,39 +57,38 @@ public class EsColumnSyncManager {
             StringBuilder stringBuilder = new StringBuilder();
             MediaMappingInfo mappingInfo = DataLinkFactory.getObject(MediaService.class).findMediaMappingsById(mappingId);
             if (mappingInfo == null) {
-                throw new ErrorException(CodeContext.NOTFIND_MAPPING_ERROR_CODE, CodeContext.getErrorDesc(CodeContext.NOTFIND_MAPPING_ERROR_CODE));
+                throw new ErrorException(CodeContext.NOTFIND_MAPPING_ERROR_CODE,CodeContext.getErrorDesc(CodeContext.NOTFIND_MAPPING_ERROR_CODE));
             }
             MediaSourceInfo targetMediaSource = DataLinkFactory.getObject(MediaSourceService.class).getById(mediaSourceId);
             //获取es集群配置信息，如果是双中心则是两个
-            List<ESConfigVo> esConfigVoList = new ArrayList<>();
-            esConfigVoList.add(EsConfigManager.getESConfig(targetMediaSource));
+            List<ESConfigVo> esConfigVoList = EsConfigManager.getESConfigList(targetMediaSource);
             //获取es集群地址，如果是双中心则是两个
-            Map<String, ESConfigVo> esConfigMap = getEsAddres(mappingInfo, esConfigVoList);
-            if (esConfigMap == null || esConfigMap.size() < 1) {
-                throw new ErrorException(CodeContext.NOTFIND_ADDRESS_ERROR_CODE, CodeContext.getErrorDesc(CodeContext.NOTFIND_ADDRESS_ERROR_CODE));
+            Map<String,ESConfigVo> esConfigMap = getEsAddres(mappingInfo, esConfigVoList);
+            if (esConfigMap == null||esConfigMap.size()<1) {
+                throw new ErrorException(CodeContext.NOTFIND_ADDRESS_ERROR_CODE,CodeContext.getErrorDesc(CodeContext.NOTFIND_ADDRESS_ERROR_CODE));
             }
             for (Map.Entry<String, ESConfigVo> entry : esConfigMap.entrySet()) {
                 //获取索引对象
                 MappingIndexVo indexVo = getMappingIndexVo(mappingInfo, entry.getKey(), entry.getValue());
-                MediaSourceType mediaSourceType = mappingInfo.getSourceMedia().getMediaSource().getType();
+                MediaSourceType mediaSourceType = getMediaSourceType(mappingInfo);
                 //sql脚本检测解析
                 SQLStatementHolder holder = getSQLStatementHolder(mediaSourceType, sql);
                 //获取添加的字段及类型
-                Map<String, ColumnOperationInfo> columnsMap = getAddColumnMap(holder);
+                Map<String,ColumnOperationInfo> columnsMap = getAddColumnMap(holder);
                 //获取es版本号
                 String version = getEsVersion(indexVo);
                 //幂等性判断,并返回请求数据
-                Map<String, Object> requestMap = idempotency(mappingInfo, indexVo, columnsMap, version);
+                Map<String, Object> requestMap = idempotency(mappingInfo, indexVo, columnsMap,version);
                 //执行字段同步，考虑双中心同步
-                if (!syncToManyEs(indexVo, requestMap, stringBuilder)) {
+                if(!syncToManyEs(indexVo,requestMap,stringBuilder)){
                     flag = false;
                 }
             }
-            if (!flag) {
-                throw new ErrorException(CodeContext.ES_EXECUTE_ERROR_CODE, stringBuilder.deleteCharAt(stringBuilder.length() - 1).toString());
+            if(!flag){
+                throw new ErrorException(CodeContext.ES_EXECUTE_ERROR_CODE,stringBuilder.deleteCharAt(stringBuilder.length()-1).toString());
             }
             return responseVo;
-        } catch (ErrorException e) {
+        }  catch (ErrorException e) {
             logger.info("[ {} ]语句执行失败！", sql, e);
             responseVo.setCode(e.getCode());
             responseVo.setMessage(e.getMessage());
@@ -107,12 +108,12 @@ public class EsColumnSyncManager {
         return EsClient.getEsVersion(versionVo);
     }
 
-    private static boolean syncToManyEs(MappingIndexVo indexVo, Map<String, Object> requestMap, StringBuilder stringBuilder) {
+    private static boolean syncToManyEs(MappingIndexVo indexVo, Map<String, Object> requestMap,StringBuilder stringBuilder) {
         boolean flag = true;
         if (requestMap.size() < 1) {
             stringBuilder.append("集群为:").append(indexVo.getClusterName()).append(",ip为:").append(indexVo.getHost()).append("的机器执行失败,执行结果 [ ").append("没有找到要新增的字段").append(" ]").append("\n");
             return true;
-        }
+       }
         try {
             String response = EsClient.updateMappingIndex(indexVo, JSON.toJSONString(requestMap).getBytes("utf-8"));
             if (StringUtils.isEmpty(response) || !"true".equals(JSON.parseObject(response).getString("acknowledged"))) {
@@ -128,62 +129,60 @@ public class EsColumnSyncManager {
         return flag;
     }
 
-    private static Map<String, ColumnOperationInfo> getAddColumnMap(SQLStatementHolder holder) throws ErrorException {
-        if (holder.getSqlType() != SqlType.AlterTable) {
-            throw new ErrorException(CodeContext.SQL_NOTADD_ERROR_CODE, CodeContext.getErrorDesc(CodeContext.SQL_NOTADD_ERROR_CODE));
+    private static Map<String,ColumnOperationInfo> getAddColumnMap(SQLStatementHolder holder) throws ErrorException {
+        if(holder.getSqlType()!=SqlType.AlterTable){
+            throw  new ErrorException(CodeContext.SQL_NOTADD_ERROR_CODE,CodeContext.getErrorDesc(CodeContext.SQL_NOTADD_ERROR_CODE));
         }
         List<SqlCheckItem> items = holder.getSqlCheckItems();
-        if (items.size() != 1) {
-            throw new ErrorException(CodeContext.SQL_COUNT_ERROR_CODE, CodeContext.getErrorDesc(CodeContext.SQL_COUNT_ERROR_CODE));
+        if(items.size()!=1){
+            throw  new ErrorException(CodeContext.SQL_COUNT_ERROR_CODE,CodeContext.getErrorDesc(CodeContext.SQL_COUNT_ERROR_CODE));
         }
         SqlCheckItem sqlItem = items.get(0);
 
         List<SqlCheckColumnInfo> columnsAddInfo = sqlItem.getColumnsAddInfo();
         List<SqlCheckColumnInfo> columnModifyInfo = sqlItem.getColumnsModifyInfo();
-        Map<String, ColumnOperationInfo> map = Maps.newHashMap();
-        columnsAddInfo.forEach(e -> {
+        Map<String,ColumnOperationInfo> map = Maps.newHashMap();
+        columnsAddInfo.forEach(e->{
             ColumnOperationInfo operationInfo = new ColumnOperationInfo();
-            operationInfo.setTableName(sqlItem.getTableName());
             operationInfo.setName(e.getName());
             operationInfo.setType(e.getDataType());
-            map.put(e.getName(), operationInfo);
+            map.put(e.getName(),operationInfo);
         });
-        columnModifyInfo.forEach(e -> {
+        columnModifyInfo.forEach(e->{
             ColumnOperationInfo operationInfo = new ColumnOperationInfo();
-            operationInfo.setTableName(sqlItem.getTableName());
             operationInfo.setName(e.getName());
             operationInfo.setType(e.getDataType());
             operationInfo.setModify(true);
-            map.put(e.getName(), operationInfo);
+            map.put(e.getName(),operationInfo);
         });
-        return map;
+        return  map;
     }
 
 
-    public static SQLStatementHolder getSQLStatementHolder(MediaSourceType mediaSourceType, String sqls) throws ErrorException {
-        try {
-            List<SQLStatementHolder> holders = DdlSqlUtils.buildSQLStatement(mediaSourceType, sqls, false);
+    public static SQLStatementHolder getSQLStatementHolder(MediaSourceType mediaSourceType, String sqls) throws ErrorException{
+        try{
+            List<SQLStatementHolder> holders = DdlSqlUtils.buildSQLStatement(mediaSourceType, sqls,false);
             if (holders.isEmpty()) {
-                throw new ErrorException(CodeContext.SQL_COUNT_ERROR_CODE, CodeContext.getErrorDesc(CodeContext.SQL_COUNT_ERROR_CODE));
+                throw new ErrorException(CodeContext.SQL_COUNT_ERROR_CODE,CodeContext.getErrorDesc(CodeContext.SQL_COUNT_ERROR_CODE));
             }
             if (holders.size() > 1) {
                 throw new ErrorException(CodeContext.SQL_COUNT_ERROR_CODE, CodeContext.getErrorDesc(CodeContext.SQL_COUNT_ERROR_CODE));
             }
             SQLStatementHolder holder = holders.get(0);
             holder.check();
-            if (holder.getSqlType() != SqlType.AlterTable) {
+            if (holder.getSqlType()!= SqlType.AlterTable) {
                 throw new ErrorException(CodeContext.SQL_VALIDATE_ERROR_CODE, CodeContext.getErrorDesc(CodeContext.SQL_VALIDATE_ERROR_CODE));
             }
             return holder;
-        } catch (ParserException e) {
-            throw new ErrorException(CodeContext.SQL_SYNTAX_ERROR_CODE, CodeContext.getErrorDesc(CodeContext.SQL_SYNTAX_ERROR_CODE));
+        }catch (ParserException e){
+           throw new ErrorException(CodeContext.SQL_SYNTAX_ERROR_CODE,CodeContext.getErrorDesc(CodeContext.SQL_SYNTAX_ERROR_CODE));
         }
     }
 
     private static boolean containsModifyColumn(SQLStatementHolder holder) {
         List<SqlCheckItem> items = holder.getSqlCheckItems();
         for (SqlCheckItem item : items) {
-            if (item.isContainsColumnModify()) {
+            if(item.isContainsColumnModify()){
                 return true;
             }
         }
@@ -192,11 +191,10 @@ public class EsColumnSyncManager {
 
     /**
      * 获取es请求的所需要的元数据
-     *
      * @param mappingInfo
      * @return
      */
-    private static MappingIndexVo getMappingIndexVo(MediaMappingInfo mappingInfo, String esAddr, ESConfigVo esConfigVo) {
+    private static MappingIndexVo getMappingIndexVo(MediaMappingInfo mappingInfo,String esAddr,ESConfigVo esConfigVo){
         MappingIndexVo indexVo = new MappingIndexVo();
         String targetMediaName = mappingInfo.getTargetMediaName();
         String[] array = targetMediaName.split("\\.");
@@ -212,20 +210,19 @@ public class EsColumnSyncManager {
 
     /**
      * 获取地址列表
-     *
      * @param mappingInfo
      * @return
      */
-    private static Map<String, ESConfigVo> getEsAddres(MediaMappingInfo mappingInfo, List<ESConfigVo> esConfigVoList) throws ErrorException {
-        if (esConfigVoList == null || esConfigVoList.size() < 1) {
-            throw new ErrorException(CodeContext.NOTFIND_ESCONFIG_ERROR_CODE, CodeContext.getErrorDesc(CodeContext.NOTFIND_ESCONFIG_ERROR_CODE));
+    private static Map<String,ESConfigVo> getEsAddres(MediaMappingInfo mappingInfo,List<ESConfigVo> esConfigVoList) throws ErrorException {
+        if (esConfigVoList == null||esConfigVoList.size()<1) {
+            throw new ErrorException(CodeContext.NOTFIND_ESCONFIG_ERROR_CODE,CodeContext.getErrorDesc(CodeContext.NOTFIND_ESCONFIG_ERROR_CODE));
         }
-        Map<String, ESConfigVo> esConfigVoMap = Maps.newHashMap();
-        for (ESConfigVo esConfigVo : esConfigVoList) {
+        Map<String,ESConfigVo> esConfigVoMap = Maps.newHashMap();
+        for(ESConfigVo esConfigVo:esConfigVoList){
             String hosts = esConfigVo.getHosts();
-            if (!StringUtils.isEmpty(hosts)) {
+            if(!StringUtils.isEmpty(hosts)){
                 String[] hostArray = hosts.split(",");
-                esConfigVoMap.put(hostArray[0] + ":" + esConfigVo.getHttp_port(), esConfigVo);
+                esConfigVoMap.put(hostArray[0]+":"+esConfigVo.getHttp_port(),esConfigVo);
             }
         }
         return esConfigVoMap;
@@ -233,13 +230,12 @@ public class EsColumnSyncManager {
 
     /**
      * 根据幂等性过滤掉已经添加的参数，并返回添加或修改的列集合
-     *
      * @param mappingInfo
      * @param indexVo
      * @param columnsMap
      * @return
      */
-    private static Map<String, Object> idempotency(MediaMappingInfo mappingInfo, MappingIndexVo indexVo, Map<String, ColumnOperationInfo> columnsMap, String version) throws ErrorException {
+    private static Map<String, Object> idempotency( MediaMappingInfo mappingInfo,MappingIndexVo indexVo,  Map<String,ColumnOperationInfo> columnsMap,String version) throws ErrorException {
         Map<String, Object> columnPro = Maps.newHashMap();
         Map<String, Object> columnObject = Maps.newHashMap();
         RDBMSMapping rdbmsMapping = new RDBMSMapping();
@@ -253,10 +249,10 @@ public class EsColumnSyncManager {
         JSONObject json = JSON.parseObject(response);
         Map<String, String> propMap = Maps.newHashMap();
         toIndexPropMap(json, propMap);
-        for (Map.Entry<String, ColumnOperationInfo> entry : columnsMap.entrySet()) {
+        for (Map.Entry<String,ColumnOperationInfo> entry : columnsMap.entrySet()) {
             String columnName = entry.getKey().replace("`", "");
             if (mappingInfo.isEsUsePrefix()) {
-                columnName = EsPrefixUtil.getEsPrefixName(entry.getValue().getTableName(), mappingInfo) + columnName;
+                columnName = getTableName(mappingInfo.getSourceMedia().getName()) + "|" + columnName;
             }
             ColumnOperationInfo columnOperationInfo = entry.getValue();
             ColumnMeta columnMeta = new ColumnMeta();
@@ -267,9 +263,9 @@ public class EsColumnSyncManager {
             columnMap.put("type", esColumnType);
             //es5.0版本以后不再使用string类型，而是用keyword和text代替
             if (esColumnType.equals("string")) {
-                if (compareVersion(version, baseVal) > 0) {
+                if(compareVersion(version,baseVal)>0){
                     columnMap.put("type", "keyword");
-                } else {
+                }else{
                     columnMap.put("index", "not_analyzed");
                 }
             }
@@ -279,11 +275,11 @@ public class EsColumnSyncManager {
             //新增字段已添加
             if (propMap.containsKey(columnName) && columnMap.get("type").equals(propMap.get(columnName))) {
                 continue;
-            } else if (propMap.containsKey(columnName) && columnOperationInfo.isModify()) {
+            }else if(propMap.containsKey(columnName) && columnOperationInfo.isModify()){
                 throw new ErrorException(CodeContext.MODIFY_ES_TYPE_ERROR_CODE);
-            } else if (!propMap.containsKey(columnName) && columnOperationInfo.isModify()) {
+            }else if(!propMap.containsKey(columnName) && columnOperationInfo.isModify()){
                 throw new ErrorException(CodeContext.MODIFY_ES_TYPE_ERROR_CODE);
-            } else if (propMap.containsKey(columnName)) {
+            }else if(propMap.containsKey(columnName)){
                 throw new ErrorException(CodeContext.COLUMN_EXISTS_ERROR_CODE);
             }
             columnObject.put(columnName, columnMap);
@@ -292,28 +288,42 @@ public class EsColumnSyncManager {
         return columnPro;
     }
 
+    private static String getTableName(String name) {
+        if(StringUtils.isEmpty(name)) {
+            return "";
+        }
+        int index = name.lastIndexOf("_");
+        if(name.matches(WILD_PATTERN)) {
+            return name.substring(0,index);
+        }
+        if(name.matches(NUMBER_PATTERN)) {
+            return name.substring(0,index);
+        }
+        return name;
+    }
+
     private static int compareVersion(String version, String otherVersion) {
         String[] vArray1 = version.split("\\.");
         String[] vArray2 = otherVersion.split("\\.");
         int v1Size = vArray1.length;
         int v2Size = vArray2.length;
         int size = v1Size;
-        if (size > v2Size) {
+        if(size > v2Size){
             size = v2Size;
         }
-        for (int i = 0; i < size; i++) {
-            if (Integer.valueOf(vArray1[i]) == Integer.valueOf(vArray2[i])) {
+        for (int i = 0; i< size; i++){
+            if(Integer.valueOf(vArray1[i])==Integer.valueOf(vArray2[i])){
                 continue;
             }
-            if (Integer.valueOf(vArray1[i]) > Integer.valueOf(vArray2[i])) {
+            if(Integer.valueOf(vArray1[i])>Integer.valueOf(vArray2[i])){
                 return 1;
             }
             return -1;
         }
-        if (v1Size > size) {
+        if(v1Size>size){
             return 1;
         }
-        if (v2Size > size) {
+        if(v2Size>size){
             return -1;
         }
         return 0;
@@ -321,43 +331,44 @@ public class EsColumnSyncManager {
 
     /**
      * 获取索引所对应的参数
-     *
      * @param json
      * @return
      */
-    private static void toIndexPropMap(JSONObject json, Map<String, String> propMap) {
+    private static void toIndexPropMap(JSONObject json,Map<String,String> propMap) {
         Iterator it = json.keySet().iterator();
-        while (it.hasNext()) {
+        while (it.hasNext()){
             String key = (String) it.next();
-            Object object = json.getObject(key, Object.class);
-            if (key.equals("properties")) {
+            Object object = json.getObject(key,Object.class);
+            if (key.equals("properties")){
                 JSONObject propJson = json.getJSONObject(key);
                 Iterator propIt = propJson.keySet().iterator();
-                while (propIt.hasNext()) {
+                while (propIt.hasNext()){
                     String prop = (String) propIt.next();
                     JSONObject valJson = propJson.getJSONObject(prop);
                     String type = valJson.getString("type");
-                    propMap.put(prop, type);
+                    propMap.put(prop,type);
                 }
-            } else if (object instanceof JSONObject) {
-                toIndexPropMap((JSONObject) object, propMap);
+            }else if(object instanceof JSONObject){
+                  toIndexPropMap((JSONObject)object,propMap);
             }
         }
     }
 
+    public static MediaSourceType getMediaSourceType(MediaMappingInfo mappingInfo) {
+        //返回操作类型以及列和类型映射关系
+        MediaSourceType mediaSourceType;
+        if (mappingInfo.getSourceMedia().getMediaSource().getType() == MediaSourceType.VIRTUAL) {
+            mediaSourceType = mappingInfo.getSourceMedia().getMediaSource().getSimulateMsType();
+        } else {
+            mediaSourceType = mappingInfo.getSourceMedia().getMediaSource().getType();
+        }
+        return mediaSourceType;
+    }
+
     static class ColumnOperationInfo {
-        private String tableName;
         private String name;
         private String type;
         private boolean modify = false;
-
-        public String getTableName() {
-            return tableName;
-        }
-
-        public void setTableName(String tableName) {
-            this.tableName = tableName;
-        }
 
         public String getName() {
             return name;
@@ -382,6 +393,10 @@ public class EsColumnSyncManager {
         public void setModify(boolean modify) {
             this.modify = modify;
         }
+    }
+
+    public static void main(String[] args) {
+        System.out.println(getTableName("t_oss_device_abnormal_[0000-0031]"));
     }
 
 }

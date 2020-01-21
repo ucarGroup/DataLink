@@ -5,7 +5,7 @@
     <id>manager</id>
     <formats>
         <format>dir</format>
-        <format>tar.gz</format>
+        <!--<format>tar.gz</format>-->
     </formats>
     <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
@@ -27,6 +27,13 @@
         <fileSet>
             <directory>../../dl-biz/target/classes/conf</directory>
             <outputDirectory>conf</outputDirectory>
+            <includes>
+                <include>*.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>../../dl-biz/target/lib</directory>
+            <outputDirectory>lib</outputDirectory>
             <includes>
                 <include>*.*</include>
             </includes>

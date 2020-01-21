@@ -43,7 +43,7 @@
                                     <input type="text" style="width:100%;" readonly="readonly"
                                            value="${mediaMappingInfo.targetMediaNamespace}">
                                 </div>
-                            </div>
+                            </div>·
                         </div>
                         <div class="col-sm-12">
                             <div class="col-sm-4 form-group">
@@ -81,10 +81,14 @@
                                    value="${mediaMappingInfo.valid}">
                             <input type="hidden" name="esUsePrefixHidden" id="esUsePrefixHidden"
                                    value="${mediaMappingInfo.esUsePrefix}">
+
                             <input type="hidden" name="esRoutingHidden" id="esRoutingHidden"
                                    value="${mediaMappingInfo.esRouting}">
                             <input type="hidden" name="esRoutingIgnoreHidden" id="esRoutingIgnoreHidden"
                                    value="${mediaMappingInfo.esRoutingIgnore}">
+
+                            <input type="hidden" name="prefixNameHidden" id="prefixNameHidden"
+                                   value="${mediaMappingInfo.prefixName}">
                             <input type="hidden" name="geoPositionConfHidden" id="geoPositionConfHidden"
                                    value='${mediaMappingInfo.geoPositionConf}'>
                             <input type="hidden" name="skipIdsHidden" id="skipIdsHidden"
@@ -228,7 +232,7 @@
                                                         <div class="col-sm-8">
                                                             <input type="text" name="esRouting" id="form-add-esRouting"
                                                                    value=""
-                                                                   style="width:100%;" readonly="false">
+                                                                   style="width:100%;" readonly="true">
                                                         </div>
                                                     </div>
                                                     <div class="col-sm-6 form-group">
@@ -238,7 +242,7 @@
                                                         <div class="col-sm-8">
                                                             <select name="esRoutingIgnore" class="col-sm-12"
                                                                     id="form-add-esRoutingIgnore"
-                                                                    style="width:100%;" disabled="false">
+                                                                    style="width:100%;" disabled="true">
                                                                 <option value="">请选择</option>
                                                                 <option value="true">是</option>
                                                                 <option value="false">否</option>
@@ -248,6 +252,20 @@
                                                 </div>
 
                                             </div>
+
+                                            <div class="col-sm-12" id="form-add-prefixName-div" >
+                                                <div class="col-sm-6 form-group">
+                                                    <label class="col-sm-4 control-label no-padding-right"
+                                                           for="form-add-prefixName">聚合表前缀(kudu)</label>
+
+                                                    <div class="col-sm-8">
+                                                        <input type="text" name="prefixName" id="form-add-prefixName"
+                                                               style="width:100%;">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+
                                         </div>
                                         <div class="form-group" id="duallistbox_demo1" style="display: none;">
                                             <div class="col-sm-12">
@@ -471,6 +489,7 @@
             $('#form-add-esUsePrefix').val(esUsePrefix);
         }
 
+        debugger;
         var esRouting = $('#esRoutingHidden').val();
         if (esRouting != null && esRouting != '') {
             $('#form-add-esRouting').val(esRouting);
@@ -479,6 +498,11 @@
         var esRoutingIgnore = $('#esRoutingIgnoreHidden').val();
         if (esRoutingIgnore != null && esRoutingIgnore != '') {
             $('#form-add-esRoutingIgnore').val(esRoutingIgnore);
+        }
+
+        var prefixName = $('#prefixNameHidden').val();
+        if (prefixName != null && prefixName != '') {
+            $('#form-add-prefixName').val(prefixName);
         }
 
         var geoPositionConf = $('#geoPositionConfHidden').val();
@@ -582,6 +606,10 @@
 
         var esUsePrefix = $('#form-add-esUsePrefix').val();
         $('#esUsePrefixHidden').val(esUsePrefix);
+
+
+        var prefixName = $('#form-add-prefixName').val();
+        $('#prefixNameHidden').val(prefixName);
 
         var sourceColumnName = $('input[name=sourceColumnName]');
         var scn = '';

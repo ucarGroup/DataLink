@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>dl-worker</artifactId>
         <groupId>com.ucar.datalink</groupId>
-        <version>1.0.0-beta</version>
+        <version>0.0.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,10 +13,29 @@
     <name>dl-worker-writer-kafka</name>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>2.2.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.zuche.framework</groupId>
+            <artifactId>base-business-common</artifactId>
+            <version>${framework.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-clients</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-worker-api</artifactId>
-            <version>1.0.0-beta</version>
+            <version>0.0.1</version>
             <exclusions>
                 <exclusion>
                     <artifactId>zkclient</artifactId>
@@ -35,11 +54,6 @@
             <version>4.0.7</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
-            <version>2.2.1</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -51,8 +65,7 @@
                     <descriptors>
                         <descriptor>src/main/assembly/package.xml</descriptor>
                     </descriptors>
-                    <finalName>writer-kafka</finalName>
-                    <!--将finalName替换为自己的插件名称即可-->
+                    <finalName>writer-kafka</finalName><!--将finalName替换为自己的插件名称即可-->
                     <appendAssemblyId>false</appendAssemblyId>
                     <outputDirectory>${project.parent.parent.build.directory}/dl-worker/plugin/writer
                     </outputDirectory>
@@ -68,5 +81,8 @@
             </plugin>
         </plugins>
     </build>
+
+
+
 
 </project>

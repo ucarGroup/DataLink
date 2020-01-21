@@ -10,6 +10,8 @@ import com.ucar.datalink.domain.Parameter;
  */
 public class TaskParameter extends Parameter {
     private Long taskId;
+    private Long sourceLabId;
+    private Long targetLabId;
 
     public Long getTaskId() {
         return taskId;
@@ -17,5 +19,21 @@ public class TaskParameter extends Parameter {
 
     public void setTaskId(Long taskId) {
         this.taskId = taskId;
+    }
+
+    public Long getSourceLabId() {
+        return sourceLabId;
+    }
+
+    public void setSourceLabId(Long sourceLabId) {
+        this.sourceLabId = sourceLabId;
+    }
+
+    public Long getTargetLabId() {
+        return targetLabId;
+    }
+
+    public void setTargetLabId(Long targetLabId) {
+        this.targetLabId = targetLabId;
     }
 }

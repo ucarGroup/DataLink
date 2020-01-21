@@ -20,6 +20,7 @@ import com.ucar.datalink.domain.meta.ColumnMeta;
 import com.ucar.datalink.domain.relationship.SqlCheckColumnInfo;
 import com.ucar.datalink.domain.relationship.SqlCheckItem;
 import com.ucar.datalink.domain.relationship.SqlType;
+import com.ucar.datalink.writer.kudu.handle.Constants;
 import org.apache.kudu.client.KuduClient;
 import org.apache.kudu.client.KuduException;
 import org.apache.kudu.client.KuduTable;
@@ -27,13 +28,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * kudu 同步修改字段
  */
 public class KuduColumnSyncManager {
+
 
     private static final Logger logger = LoggerFactory.getLogger(KuduColumnSyncManager.class);
 
@@ -43,40 +44,41 @@ public class KuduColumnSyncManager {
 
         MediaMappingInfo mediaMappingInfo = DataLinkFactory.getObject(MediaService.class).findMediaMappingsById(mappingId);
         if (mediaMappingInfo == null) {
-            logger.info(CodeContext.getErrorDesc(CodeContext.NOTFIND_MAPPING_ERROR_CODE), String.format("mappingId[%s]", mappingId));
+            logger.info(CodeContext.getErrorDesc(CodeContext.NOTFIND_MAPPING_ERROR_CODE),String.format("mappingId[%s]",mappingId));
             throw new ErrorException(CodeContext.NOTFIND_MAPPING_ERROR_CODE, CodeContext.getErrorDesc(CodeContext.NOTFIND_MAPPING_ERROR_CODE));
         }
 
         KuduMediaSrcParameter kuduMediaSrcParameter = getKuduMediaSrcParameter(mediaMappingInfo.getTargetMediaSourceId());
         //获取需要更改的列和类型
         Map<String, String> columnNameAndType = getColumnNameAndType(mediaMappingInfo, sql);
-        if (columnNameAndType != null) {
+        if(columnNameAndType!=null){
             mysqlTypeConvertKuduType(columnNameAndType);
             String database = kuduMediaSrcParameter.getDatabase();
             List<KuduMediaSrcParameter.ImpalaCconfig> impalaCconfig = kuduMediaSrcParameter.getImpalaCconfigs();
             String tableName = mediaMappingInfo.getTargetMediaName();
-            for (Map.Entry<String, String> entry : columnNameAndType.entrySet()) {
+            for(Map.Entry<String, String> entry : columnNameAndType.entrySet()){
                 KuduTableDDLUtils.KuduColumnDDL kuduColumnDDL = new KuduTableDDLUtils.KuduColumnDDL(tableName, entry.getKey(), entry.getValue());
-                KuduTableDDLUtils.addColumn(impalaCconfig, database, kuduColumnDDL);
+                KuduTableDDLUtils.addColumn(impalaCconfig,database,kuduColumnDDL);
             }
         }
     }
 
 
-    private static void mysqlTypeConvertKuduType(Map<String, String> columnNameAndType) {
+
+    private static void mysqlTypeConvertKuduType(Map<String, String> columnNameAndType){
         RDBMSMapping rdbmsMapping = new RDBMSMapping();
-        for (String column : columnNameAndType.keySet()) {
+        for(String column : columnNameAndType.keySet()){
             ColumnMeta columnMeta = new ColumnMeta();
             columnMeta.setType(columnNameAndType.get(column));
             ColumnMeta columnMeta1 = rdbmsMapping.toKudu(columnMeta);
-            columnNameAndType.put(column, columnMeta1.getType());
+            columnNameAndType.put(column,columnMeta1.getType());
         }
     }
 
 
-    private static KuduMediaSrcParameter getKuduMediaSrcParameter(Long mediaSourceId) throws Exception {
+    private static  KuduMediaSrcParameter getKuduMediaSrcParameter(Long mediaSourceId) throws Exception {
         MediaSourceInfo targetMediaSource = DataLinkFactory.getObject(MediaSourceService.class).getById(mediaSourceId);
-        Assert.notNull(targetMediaSource, String.format("can not found mediaSource by mediaSourceId[%d]", mediaSourceId));
+        Assert.notNull(targetMediaSource,String.format("can not found mediaSource by mediaSourceId[%d]",mediaSourceId));
 
         MediaSrcParameter parameterObj = targetMediaSource.getParameterObj();
         if (!(parameterObj instanceof KuduMediaSrcParameter)) {
@@ -86,7 +88,7 @@ public class KuduColumnSyncManager {
     }
 
 
-    private static Map<String, String> getColumnNameAndType(MediaMappingInfo mediaMappingInfo, String sql) throws ErrorException {
+    private static Map<String,String> getColumnNameAndType(MediaMappingInfo mediaMappingInfo,String sql) throws ErrorException {
         MediaSourceType mediaSourceType = getMediaSourceType(mediaMappingInfo);
         SQLStatementHolder holder = getSQLStatementHolder(mediaSourceType, sql);
         //获取添加的字段及类型
@@ -95,16 +97,16 @@ public class KuduColumnSyncManager {
     }
 
 
-    private static KuduTable getKuduTable(KuduClient client, KuduMediaSrcParameter kuduMediaSrcParameter, MediaMappingInfo mediaMappingInfo) throws KuduException {
+    private static KuduTable getKuduTable(KuduClient client,KuduMediaSrcParameter kuduMediaSrcParameter,MediaMappingInfo mediaMappingInfo) throws KuduException {
         String database = kuduMediaSrcParameter.getDatabase();
         String tableName = mediaMappingInfo.getTargetMediaName();
         KuduTable kuduTable = client.openTable(String.format("%s.%s", database, tableName));
         return kuduTable;
     }
 
-    private static KuduClient getKuduClient(KuduMediaSrcParameter kuduMediaSrcParameter) {
+    private static  KuduClient getKuduClient(KuduMediaSrcParameter kuduMediaSrcParameter){
         List<String> host2Ports = kuduMediaSrcParameter.getHost2Ports();
-        return KuduUtils.createClient(host2Ports);
+        return  KuduUtils.createClient(host2Ports);
     }
 
     private static Map<String, String> getAddColumnMap(SQLStatementHolder holder) throws ErrorException {
@@ -113,14 +115,14 @@ public class KuduColumnSyncManager {
             throw new ErrorException(CodeContext.SQL_COUNT_ERROR_CODE, CodeContext.getErrorDesc(CodeContext.SQL_COUNT_ERROR_CODE));
         }
         SqlCheckItem sqlItem = items.get(0);
-        if (sqlItem.isContainsColumnAdd() && SqlType.AlterTable.equals(holder.getSqlType())) {
+        if (sqlItem.isContainsColumnAdd()&&SqlType.AlterTable.equals(holder.getSqlType())) {
             List<SqlCheckColumnInfo> columnsInfo = sqlItem.getColumnsAddInfo();
             Map<String, String> map = Maps.newHashMap();
             columnsInfo.forEach(e -> {
                 map.put(e.getName(), e.getDataType());
             });
             return map;
-        } else {
+        }else {
             return null;
         }
     }
@@ -143,7 +145,11 @@ public class KuduColumnSyncManager {
     public static MediaSourceType getMediaSourceType(MediaMappingInfo mappingInfo) {
         //返回操作类型以及列和类型映射关系
         MediaSourceType mediaSourceType;
-        mediaSourceType = mappingInfo.getSourceMedia().getMediaSource().getType();
+        if (mappingInfo.getSourceMedia().getMediaSource().getType() == MediaSourceType.VIRTUAL) {
+            mediaSourceType = mappingInfo.getSourceMedia().getMediaSource().getSimulateMsType();
+        } else {
+            mediaSourceType = mappingInfo.getSourceMedia().getMediaSource().getType();
+        }
         return mediaSourceType;
     }
 }

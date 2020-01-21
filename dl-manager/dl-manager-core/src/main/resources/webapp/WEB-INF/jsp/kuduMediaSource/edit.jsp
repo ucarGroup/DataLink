@@ -25,47 +25,58 @@
                                     <input type="hidden" name="id" value="${kuduMediaSourceView.id}">
                                 </div>
                             </div>
+                            <div class="col-sm-4 form-group">
+                                <label class="col-sm-3 control-label no-padding-right"
+                                       for="form-add-labId">所属机房</label>
+
+                                <div class="col-sm-7">
+                                    <select multiple="" id="form-add-labId" name="labId"
+                                            class="labId col-xs-10 col-sm-12"
+                                            data-placeholder="Click to Choose...">
+                                        <c:forEach items="${labInfoList}" var="bean">
+                                            <option value="${bean.id}">${bean.labName} </option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
+                            </div>
+
                         </div>
 
 
-                        <c:forEach items="${kuduMediaSourceView.kuduMediaSrcParameter.kuduMasterConfigs}" var="bean"
-                                   begin="0"
-                                   varStatus="status">
-                            <div class="col-sm-12">
-                                <div class="col-sm-4 form-group">
-                                    <label class="col-sm-3 control-label no-padding-right"
-                                           for="form-add-writerHost">master_host</label>
+                    <c:forEach items="${kuduMediaSourceView.kuduMediaSrcParameter.kuduMasterConfigs}" var="bean" begin="0"
+                                                             varStatus="status">
+                        <div class="col-sm-12">
+                            <div class="col-sm-4 form-group">
+                                <label class="col-sm-3 control-label no-padding-right"
+                                       for="form-add-writerHost">master_host</label>
 
-                                    <div class="col-sm-7">
-                                        <input type="text" name="kuduMediaSrcParameter.kuduMasterConfigs.host"
-                                               class="col-sm-12" id="form-add-writerHost" value="${bean.host}"/>
-                                    </div>
-                                </div>
-                                <div class="col-sm-4 form-group">
-                                    <label class="col-sm-3 control-label no-padding-right"
-                                           for="form-add-writerUserName">kudu_port</label>
-
-                                    <div class="col-sm-7">
-                                        <input type="text" name="kuduMediaSrcParameter.kuduMasterConfigs.port"
-                                               class="col-sm-12" id="form-add-writerUserName" value="${bean.port}"/>
-                                    </div>
-
-                                    <label class="col-sm-2 control-label no-padding-right">
-                                        <c:if test="${status.index==0}">
-                                            <a href="javascript:void(0)" onclick="buildReadDataSource()">新增</a>
-                                        </c:if>
-                                        <c:if test="${status.index>0}">
-                                            <a href="javascript:void(0)" onclick="deleteReadDataSource(this)">删除</a>
-                                        </c:if>
-                                    </label>
+                                <div class="col-sm-7">
+                                    <input type="text" name="kuduMediaSrcParameter.kuduMasterConfigs.host"
+                                           class="col-sm-12" id="form-add-writerHost" value="${bean.host}"/>
                                 </div>
                             </div>
-                        </c:forEach>
+                            <div class="col-sm-4 form-group">
+                                <label class="col-sm-3 control-label no-padding-right" for="form-add-writerUserName">kudu_port</label>
+                                <div class="col-sm-7">
+                                    <input type="text" name="kuduMediaSrcParameter.kuduMasterConfigs.port"
+                                           class="col-sm-12" id="form-add-writerUserName" value="${bean.port}"/>
+                                </div>
+
+                                <label class="col-sm-2 control-label no-padding-right">
+                                    <c:if test="${status.index==0}">
+                                        <a href="javascript:void(0)" onclick="buildReadDataSource()">新增</a>
+                                    </c:if>
+                                    <c:if test="${status.index>0}">
+                                        <a href="javascript:void(0)" onclick="deleteReadDataSource(this)">删除</a>
+                                    </c:if>
+                                </label>
+                            </div>
+                        </div>
+                    </c:forEach>
 
                         <div id="copyBaseSourceDivId"></div>
 
-                        <c:forEach items="${kuduMediaSourceView.kuduMediaSrcParameter.impalaCconfigs}" var="bean"
-                                   begin="0"
+                        <c:forEach items="${kuduMediaSourceView.kuduMediaSrcParameter.impalaCconfigs}" var="bean" begin="0"
                                    varStatus="status">
                             <div class="col-sm-12">
                                 <div class="col-sm-4 form-group">
@@ -78,9 +89,7 @@
                                     </div>
                                 </div>
                                 <div class="col-sm-4 form-group">
-                                    <label class="col-sm-3 control-label no-padding-right"
-                                           for="form-add-writerImpalaPort">impala_port</label>
-
+                                    <label class="col-sm-3 control-label no-padding-right" for="form-add-writerImpalaPort">impala_port</label>
                                     <div class="col-sm-7">
                                         <input type="text" name="kuduMediaSrcParameter.impalaCconfigs.port"
                                                class="col-sm-12" id="form-add-writerImpalaPort" value="${bean.port}"/>
@@ -106,8 +115,7 @@
 
                                 <div class="col-sm-7">
                                     <input type="text" name="kuduMediaSrcParameter.database" id="form-add-database"
-                                           class="col-sm-12"
-                                           value="${kuduMediaSourceView.kuduMediaSrcParameter.database}"/>
+                                           class="col-sm-12" value="${kuduMediaSourceView.kuduMediaSrcParameter.database}"/>
                                 </div>
                             </div>
 
@@ -118,7 +126,7 @@
                                 <div class="col-sm-7">
                                     <textarea type="text" name="desc" class="col-sm-12"
                                               id="form-add-desc"
-                                              style="margin: 0px;height: 106px;width: 100%;">${kuduMediaSourceView.desc}</textarea>
+                                              style="margin: 0px;height: 106px;width: 100%;" >${kuduMediaSourceView.desc}</textarea>
                                 </div>
                             </div>
                         </div>
@@ -127,6 +135,7 @@
 
                 </div>
             </div>
+
 
 
         </form>
@@ -139,19 +148,18 @@
 
                 <div class="col-sm-7">
                     <input type="text" name="kuduMediaSrcParameter.kuduMasterConfigs.host"
-                           class="col-sm-12" value="${bean.host}"/>
+                           class="col-sm-12"  value="${bean.host}"/>
                 </div>
             </div>
             <div class="col-sm-4 form-group">
                 <label class="col-sm-3 control-label no-padding-right" for="form-add-writerUserName">kudu_port</label>
-
                 <div class="col-sm-7">
                     <input type="text" name="kuduMediaSrcParameter.kuduMasterConfigs.port"
-                           class="col-sm-12" value="${bean.port}"/>
+                           class="col-sm-12"  value="${bean.port}"/>
                 </div>
 
                 <label class="col-sm-2 control-label no-padding-right">
-                    <a href="javascript:void(0)" onclick="deleteReadDataSource(this)">删除</a>
+                        <a href="javascript:void(0)" onclick="deleteReadDataSource(this)">删除</a>
                 </label>
             </div>
         </div>
@@ -166,16 +174,14 @@
 
                 <div class="col-sm-7">
                     <input type="text" name="kuduMediaSrcParameter.impalaCconfigs.host"
-                           class="col-sm-12" value="${bean.host}"/>
+                           class="col-sm-12"  value="${bean.host}"/>
                 </div>
             </div>
             <div class="col-sm-4 form-group">
-                <label class="col-sm-3 control-label no-padding-right"
-                       for="form-add-writerImpalaPort">impala_port</label>
-
+                <label class="col-sm-3 control-label no-padding-right" for="form-add-writerImpalaPort">impala_port</label>
                 <div class="col-sm-7">
                     <input type="text" name="kuduMediaSrcParameter.impalaCconfigs.port"
-                           class="col-sm-12" value="${bean.port}"/>
+                           class="col-sm-12"  value="${bean.port}"/>
                 </div>
 
                 <label class="col-sm-2 control-label no-padding-right">
@@ -184,6 +190,7 @@
             </div>
         </div>
     </div>
+
 
 
     <div class="clearfix form-actions">
@@ -204,6 +211,8 @@
 <!-- /.page-content -->
 
 <script type="text/javascript">
+
+    $('.labId').val('${labId}').select2({allowClear: false, maximumSelectionLength: 1});
 
     $("#form-update-desc").val('${mediaSourceView.desc}');
     $("#form-update-mediaSourceType").val('${mediaSourceView.mediaSourceType}');
@@ -241,9 +250,10 @@
         if (impala_hosts != null && impala_hosts.length > 0) {
             for (var i = 0; i < impala_hosts.length - 1; i++) {
                 impala_hosts.eq(i).attr('name', 'kuduMediaSrcParameter.impalaCconfigs[' + i + '].host');
-                impala_ports.eq(i).attr('name', 'kuduMediaSrcParameter.impalaCconfigs[' + i + '].port');
+                impala_ports.eq(i).attr('name', 'kuduMediaSrcParameter.impalaCconfigs[' + i  + '].port');
             }
         }
+
 
 
         $.ajax({
@@ -273,9 +283,14 @@
     }
 
 
+
     function validateForm() {
         if ($.trim($('#form-add-name').val()) == '') {
             alert('数据源名称不能为空');
+            return false;
+        }
+        if ($.trim($('#form-add-labId').val()) == '') {
+            alert('所属机房不能为空');
             return false;
         }
 
@@ -295,7 +310,7 @@
             if ($.trim(port) == '') {
                 alert('port不能为空!');
                 return false;
-            } else {
+            }else{
                 var r = /^\+?[1-9][0-9]*$/;　　//正整数
                 var flag = r.test(port);
                 if (!flag) {
@@ -317,7 +332,7 @@
             if ($.trim(port) == '') {
                 alert('port不能为空!');
                 return false;
-            } else {
+            }else{
                 var r = /^\+?[1-9][0-9]*$/;　　//正整数
                 var flag = r.test(port);
                 if (!flag) {
@@ -329,5 +344,6 @@
         }
         return true;
     }
+
 
 </script>

@@ -4,7 +4,6 @@ import com.ucar.datalink.contract.log.rdbms.RdbEventRecord;
 import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.worker.api.task.TaskWriterContext;
 import com.ucar.datalink.worker.api.transform.BuiltInRdbEventRecordTransformer;
-import com.ucar.datalink.writer.es.util.EsPrefixUtil;
 
 
 /**
@@ -12,12 +11,11 @@ import com.ucar.datalink.writer.es.util.EsPrefixUtil;
  */
 public class RdbEventRecordTransformer extends BuiltInRdbEventRecordTransformer {
 
-
     @Override
     protected RdbEventRecord transformOne(RdbEventRecord record, MediaMappingInfo mappingInfo, TaskWriterContext context) {
         //在执行父类的方法之前，先拿到原始的表名，然后构造列名前缀
         String tableName = record.getTableName();
-        String fieldNamePrefix = EsPrefixUtil.getEsPrefixName(record.getTableName(), mappingInfo);
+        String fieldNamePrefix = getEsPrefix(record, mappingInfo);
 
         RdbEventRecord result = super.transformOne(record, mappingInfo, context);
         if (result != null) {
@@ -25,5 +23,20 @@ public class RdbEventRecordTransformer extends BuiltInRdbEventRecordTransformer 
             result.metaData().put(Constants.FIELD_NAME_PREFIX, fieldNamePrefix);
         }
         return result;
+    }
+
+    /**
+     * 根据mapping配置情况获取前缀信息
+     */
+    private static String getEsPrefix(RdbEventRecord record, MediaMappingInfo mappingInfo) {
+        if (mappingInfo.isEsUsePrefix()) {
+            String tableName = record.getTableName();
+            String tableSuffix = tableName.substring(tableName.length() - 5, tableName.length());
+            if (tableSuffix.startsWith("_0")) {
+                tableName = tableName.substring(0, tableName.length()-5);
+            }
+            return tableName + Constants.SEPARATOR;
+        }
+        return "";
     }
 }

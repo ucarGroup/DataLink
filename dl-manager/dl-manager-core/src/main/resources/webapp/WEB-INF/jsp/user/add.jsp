@@ -16,7 +16,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-add-ucarEmail">集团邮箱前缀</label>
+                    <label class="col-sm-3 control-label no-padding-right" for="form-add-ucarEmail">邮箱前缀</label>
 
                     <div class="col-sm-9">
                         <input type="text" style="width:350px;height:35px" id="form-add-ucarEmail" name="ucarEmail"
@@ -31,6 +31,18 @@
                                class="col-xs-10 col-sm-5"/>
                     </div>
                 </div>
+
+
+                   <div class="form-group">
+                                    <label class="col-sm-3 control-label no-padding-right" for="form-add-userType">用户类型</label>
+
+                                    <div class="col-sm-6">
+                                        <select name="userType" id="form-add-userType" class="chosen-select col-sm-5">
+                                            <option value="0">神州优车</option>
+                                            <option value="1">咖啡</option>
+                                        </select>
+                                    </div>
+                                </div>
 
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-role">角色</label>
@@ -57,6 +69,15 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label class="col-sm-3 control-label no-padding-right" for="form-add-isReceiveDataxMail">是否接收邮件</label>
+                    <div class="col-sm-6">
+                        <select name="isReceiveDataxMail" id="form-add-isReceiveDataxMail" class="chosen-select col-sm-5">
+                            <option value="false">否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                </div>
             </form>
         </div>
         <div class="clearfix form-actions">

@@ -9,6 +9,7 @@
         <result property="userName" column="user_name"/>
         <result property="ucarEmail" column="ucar_email"/>
         <result property="phone" column="phone"/>
+        <result property="userType" column="user_type"/>
         <result property="isAlarm" column="is_alarm"/>
         <result property="createTime" column="create_time"/>
         <result property="modifyTime" column="modify_time"/>
@@ -23,7 +24,7 @@
         <result property="modifyTime" column="modify_time"/>
     </resultMap>
 
-    <sql id="allUserColumns">id,user_name,ucar_email,phone,is_alarm,create_time,modify_time</sql>
+    <sql id="allUserColumns">id,user_name,ucar_email,phone,is_alarm,isReceiveDataxMail,create_time,modify_time,user_type</sql>
 
     <select id="findRoleInfoByUserId" parameterType="long" resultMap="roleResult">
         SELECT r.* from t_dl_role r INNER JOIN t_dl_user_role u on r.id = u.role_id where u.user_id = #{id}
@@ -50,22 +51,27 @@
             </if>
         </where>
     </select>
+
     <insert id="insert" parameterType="user" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO t_dl_user
         (user_name,
          ucar_email,
 	     phone,
 	     is_alarm,
+         isReceiveDataxMail,
 	     create_time,
-	     modify_time
+	     modify_time,
+        user_type
 	     )
 	     VALUE
 	     (#{userName},
          #{ucarEmail},
          #{phone},
          #{isAlarm},
+         #{isReceiveDataxMail},
          now(),
-         now()
+         now(),
+        #{userType}
 	     )
     </insert>
 
@@ -76,7 +82,9 @@
          ucar_email=#{ucarEmail},
 	     phone=#{phone},
 	     is_alarm=#{isAlarm},
-	     modify_time=now()
+	     isReceiveDataxMail=#{isReceiveDataxMail},
+	     modify_time=now(),
+         user_type=#{userType}
 	     WHERE id=#{id}
     </update>
 
@@ -102,8 +110,18 @@
         <if test="ucarEmail != null">
             and ucar_email = #{ucarEmail}
         </if>
+        <if test="userType != null">
+            and user_type = #{userType}
+        </if>
     </select>
 
+
+    <select id="getUserInfoByReceiveMail" resultMap="userResult">
+        SELECT
+            <include refid="allUserColumns"/>
+        FROM t_dl_user WHERE isReceiveDataxMail='1'
+
+    </select>
 
     <select id="getUserInfoByRoleType" resultMap="userResult" parameterType="com.ucar.datalink.domain.user.RoleType">
         SELECT * from t_dl_user u INNER JOIN t_dl_user_role r on u.id = r.user_id and r.role_id = (SELECT id from t_dl_role where code = #{roleType})

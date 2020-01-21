@@ -1,10 +1,10 @@
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.ucar.datalink</groupId>
         <artifactId>dl-manager</artifactId>
-        <version>1.0.0-beta</version>
+        <version>0.0.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -16,18 +16,22 @@
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-common</artifactId>
-            <version>1.0.0-beta</version>
+            <version>0.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-biz</artifactId>
-            <version>1.0.0-beta</version>
+            <version>0.0.1</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.ucar.datalink</groupId>
+            <artifactId>dl-manager-ext</artifactId>
+            <version>0.0.1</version>
+        </dependency>
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-extend</artifactId>
-            <version>1.0.0-beta</version>
+            <version>0.0.1</version>
         </dependency>
 
         <!-- rdbms -->
@@ -55,6 +59,16 @@
             <version>0.10.1.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper_ucar</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>netty</artifactId>
+                    <groupId>org.jboss.netty</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
         <!--apache commons-->
         <dependency>
@@ -175,10 +189,23 @@
         </dependency>
 
         <dependency>
+            <groupId>com.ucar.gaea</groupId>
+            <artifactId>gaeaclient</artifactId>
+            <version>[1.0.0,4.0.0-SNAPSHOT)</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.kudu</groupId>
             <artifactId>kudu-client-tools</artifactId>
             <version>1.7.1</version>
         </dependency>
+
 
         <dependency>
             <groupId>org.apache.kudu</groupId>
@@ -190,7 +217,7 @@
 
     <build>
         <filters>
-            <filter>src/main/filters/release.properties</filter>
+            <filter>src/main/filters/${env}.properties</filter>
         </filters>
         <resources>
             <resource>

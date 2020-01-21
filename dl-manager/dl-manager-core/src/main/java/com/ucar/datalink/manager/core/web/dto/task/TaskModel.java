@@ -1,13 +1,15 @@
 package com.ucar.datalink.manager.core.web.dto.task;
 
 import com.ucar.datalink.domain.group.GroupInfo;
+import com.ucar.datalink.domain.lab.LabInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.plugin.PluginWriterParameter;
-import com.ucar.datalink.domain.plugin.writer.kafka.PartitionMode;
-import com.ucar.datalink.domain.plugin.writer.kafka.SerializeMode;
+import com.ucar.datalink.domain.plugin.writer.fq.PartitionMode;
+import com.ucar.datalink.domain.plugin.writer.fq.SerializeMode;
 import com.ucar.datalink.domain.plugin.writer.hdfs.CommitMode;
 import com.ucar.datalink.domain.plugin.writer.rdbms.RdbmsWriterParameter;
 import com.ucar.datalink.domain.task.TargetState;
+import com.ucar.datalink.domain.task.TaskSyncModeEnum;
 
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,8 @@ public class TaskModel {
     private List<SerializeMode> serializeModeList;
     private List<PartitionMode> partitionModeList;
     private Map<String, String> currentWriters;
+    private List<LabInfo> labInfoList;
+    private List<TaskSyncModeEnum> taskSyncModes;
 
     public TaskModel() {
     }
@@ -41,8 +45,9 @@ public class TaskModel {
                      List<RdbmsWriterParameter.SyncMode> rdbSyncModeList,
                      List<CommitMode> commitModeList,
                      List<SerializeMode> serializeModeList,
-                     List<PartitionMode> partitionModeList
-					 ) {
+                     List<PartitionMode> partitionModeList,
+                     List<LabInfo> labInfoList,
+                     List<TaskSyncModeEnum> taskSyncModes) {
         this.taskBasicInfo = taskBasicInfo;
         this.writerParameterMap = writerParameterMap;
         this.groupList = groupList;
@@ -53,6 +58,8 @@ public class TaskModel {
         this.commitModeList = commitModeList;
         this.serializeModeList = serializeModeList;
         this.partitionModeList = partitionModeList;
+        this.labInfoList = labInfoList;
+        this.taskSyncModes = taskSyncModes;
     }
 
     public TaskBasicInfo getTaskBasicInfo() {
@@ -135,6 +142,22 @@ public class TaskModel {
         this.currentWriters = currentWriters;
     }
 
+    public List<LabInfo> getLabInfoList() {
+        return labInfoList;
+    }
+
+    public void setLabInfoList(List<LabInfo> labInfoList) {
+        this.labInfoList = labInfoList;
+    }
+
+    public List<TaskSyncModeEnum> getTaskSyncModes() {
+        return taskSyncModes;
+    }
+
+    public void setTaskSyncModes(List<TaskSyncModeEnum> taskSyncModes) {
+        this.taskSyncModes = taskSyncModes;
+    }
+
 
     public List<PartitionMode> getPartitionModeList() {
         return partitionModeList;
@@ -150,17 +173,23 @@ public class TaskModel {
         private String taskDesc;
         private TargetState targetState;
         private Long groupId;
+        private Long labId;
+        private String taskSyncMode;
+        private Long alarmPriorityId;
 
         public TaskBasicInfo() {
 
         }
 
-        public TaskBasicInfo(Long id, String taskName, String taskDesc, TargetState targetState, Long groupId) {
+        public TaskBasicInfo(Long id, String taskName, String taskDesc, TargetState targetState, Long groupId,Long labId,String taskSyncMode,Long alarmPriorityId) {
             this.id = id;
             this.taskName = taskName;
             this.taskDesc = taskDesc;
             this.targetState = targetState;
             this.groupId = groupId;
+            this.labId = labId;
+            this.taskSyncMode = taskSyncMode;
+            this.alarmPriorityId = alarmPriorityId;
         }
 
         public Long getId() {
@@ -201,6 +230,30 @@ public class TaskModel {
 
         public void setGroupId(Long groupId) {
             this.groupId = groupId;
+        }
+
+        public Long getLabId() {
+            return labId;
+        }
+
+        public void setLabId(Long labId) {
+            this.labId = labId;
+        }
+
+        public String getTaskSyncMode() {
+            return taskSyncMode;
+        }
+
+        public void setTaskSyncMode(String taskSyncMode) {
+            this.taskSyncMode = taskSyncMode;
+        }
+
+        public Long getAlarmPriorityId() {
+            return alarmPriorityId;
+        }
+
+        public void setAlarmPriorityId(Long alarmPriorityId) {
+            this.alarmPriorityId = alarmPriorityId;
         }
     }
 }

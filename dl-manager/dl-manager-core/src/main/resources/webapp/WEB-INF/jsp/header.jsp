@@ -55,6 +55,23 @@
             <ul class="nav ace-nav">
 
                 <li class="light-blue dropdown-modal">
+                    <a href="#" id="contactUs">
+
+								<span class="help-info">
+									<small>联系我们</small>
+								</span>
+
+                        <i class="ace-icon fa fa-caret-down"></i>
+                    </a>
+
+                </li>
+            </ul>
+        </div>
+
+        <div class="navbar-buttons navbar-header pull-right" role="navigation">
+            <ul class="nav ace-nav">
+
+                <li class="light-blue dropdown-modal">
                     <a data-toggle="dropdown" href="#" class="dropdown-toggle">
                         <%--<img class="nav-user-photo" src="assets/images/avatars/user.jpg" alt="Jason's Photo" />--%>
 								<span class="user-info">

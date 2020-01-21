@@ -6,6 +6,8 @@ import com.ucar.datalink.domain.task.TaskShadowInfo;
 import com.ucar.datalink.domain.task.TaskShadowParameter;
 import org.apache.commons.lang.StringUtils;
 
+import java.util.Date;
+
 public class TaskShadowView {
 
     private Long id;
@@ -16,9 +18,9 @@ public class TaskShadowView {
     private String note;
     private String createTime;
     private String modifyTime;
+
     private String mappingIds;
     private String resetTime;
-    private transient TaskShadowParameter parameterObj;
 
     public Long getId() {
         return id;
@@ -89,6 +91,7 @@ public class TaskShadowView {
         this.taskName = taskName;
     }
 
+    private transient TaskShadowParameter parameterObj;
     public TaskShadowParameter getParameterObj() {
         if (parameterObj == null) {
             throw new DatalinkException("Task-shadow-parameter can not be null.");

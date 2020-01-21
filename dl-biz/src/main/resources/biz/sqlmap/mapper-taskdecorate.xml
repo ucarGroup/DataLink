@@ -4,6 +4,7 @@
 
 <mapper namespace="com.ucar.datalink.biz.dal.TaskDecorateDAO">
 
+
     <resultMap id="taskDecorateMap" type="com.ucar.datalink.domain.decorate.TaskDecorate">
         <result property="id" column="id"/>
         <result property="taskId" column="task_id"/>
@@ -17,8 +18,7 @@
 
     </resultMap>
 
-    <select id="listByCondition" resultMap="taskDecorateMap"
-            parameterType="com.ucar.datalink.domain.decorate.TaskDecorate">
+    <select id="listByCondition" resultMap="taskDecorateMap" parameterType="com.ucar.datalink.domain.decorate.TaskDecorate">
         SELECT
         t.id,
         t.task_id,
@@ -59,8 +59,7 @@
     </select>
 
 
-    <insert id="insert" parameterType="com.ucar.datalink.domain.decorate.TaskDecorate" useGeneratedKeys="true"
-            keyProperty="id">
+    <insert id="insert" parameterType="com.ucar.datalink.domain.decorate.TaskDecorate" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO t_dl_task_decorate
         (task_id,table_name,remark,create_time,modify_time,statement) VALUES
         (#{taskId},#{tableName},#{remark},now(),now(),#{statement})
@@ -93,5 +92,6 @@
         FROM t_dl_task_decorate
         WHERE deleted='false'
     </select>
+
 
 </mapper>

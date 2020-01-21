@@ -11,14 +11,16 @@ import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
+import com.ucar.datalink.domain.plugin.writer.rdbms.RdbmsWriterParameter;
 import com.ucar.datalink.worker.api.task.TaskWriterContext;
 import com.ucar.datalink.worker.api.util.dialect.DbDialect;
 import com.ucar.datalink.worker.api.util.dialect.DbDialectFactory;
-import com.ucar.datalink.worker.api.util.dialect.SqlUtils;
 import com.ucar.datalink.worker.api.util.dialect.mysql.MysqlDialect;
+
 import com.ucar.datalink.worker.api.util.dialect.sqlserver.SqlServerDialect;
 import com.ucar.datalink.writer.rdbms.handle.SqlBuilder;
 import com.ucar.datalink.writer.rdbms.load.RecordLoader;
+import com.ucar.datalink.worker.api.util.dialect.SqlUtils;
 import com.ucar.datalink.writer.rdbms.utils.TableCheckUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ddlutils.model.Column;
@@ -37,10 +39,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * RecordLoader for RdbEventRecord.
@@ -202,11 +201,13 @@ public class RdbEventRecordLoader extends RecordLoader<RdbEventRecord> {
     private boolean autoAddColumn(RdbEventRecord record, DbDialect targetDbDialect, String targetSchemaName, String targetTableName, String columnName) {
         MediaMappingInfo mappingInfo = RecordMeta.mediaMapping(record);
         if (!mappingInfo.getSourceMedia().getMediaSource().getType().equals(MediaSourceType.MYSQL) &&
-                !mappingInfo.getSourceMedia().getMediaSource().getType().equals(MediaSourceType.SDDL)) {
+                !mappingInfo.getSourceMedia().getMediaSource().getType().equals(MediaSourceType.SDDL) &&
+                !mappingInfo.getSourceMedia().getMediaSource().getSimulateMsType().equals(MediaSourceType.MYSQL)
+        ) {
             return false;//暂时只支持源为mysql和sddl的同步
         }
 
-        if (mappingInfo.getTargetMediaSource().getType() == MediaSourceType.MYSQL || mappingInfo.getTargetMediaSource().getType() == MediaSourceType.SDDL) {
+        if (mappingInfo.getTargetMediaSource().getType() == MediaSourceType.MYSQL || mappingInfo.getTargetMediaSource().getType() == MediaSourceType.SDDL || mappingInfo.getTargetMediaSource().getSimulateMsType() == MediaSourceType.MYSQL) {
             Boolean isRowLimit = TableCheckUtils.isRowNumLimit(record, columnName);
             if (isRowLimit) {
                 logger.info("column name {} is not found in Table {} because row count is over 5000000.", columnName, targetTableName);
@@ -253,6 +254,9 @@ public class RdbEventRecordLoader extends RecordLoader<RdbEventRecord> {
                 } else if (mappingInfo.getTargetMediaSource().getType().equals(MediaSourceType.MYSQL)) {
                     String tableSql = "`" + targetSchemaName + "`.`" + targetTableName + "`";
                     addSql = "Alter table " + tableSql + " add column " + columnSql;
+                } else if (mappingInfo.getTargetMediaSource().getType().equals(MediaSourceType.VIRTUAL) && mappingInfo.getTargetMediaSource().getSimulateMsType().equals(MediaSourceType.MYSQL)) {
+                    String tableSql = "`" + targetSchemaName + "`.`" + targetTableName + "`";
+                    addSql = "Alter table " + tableSql + " add column " + columnSql;
                 } else if (mappingInfo.getTargetMediaSource().getType().equals(MediaSourceType.SDDL)) {
                     //do nothing
                 } else {
@@ -264,6 +268,16 @@ public class RdbEventRecordLoader extends RecordLoader<RdbEventRecord> {
                     boolean result = true;
                     result &= executeForSecondaryDbs(columnSql, mappingInfo, targetTableName);
                     result &= executeForPrimaryDbs(columnSql, mappingInfo, targetTableName);
+                    return result;
+                }
+                //虚拟数据源
+                else if (mappingInfo.getTargetMediaSource().getType().equals(MediaSourceType.VIRTUAL)) {
+                    List<MediaSourceInfo> list = DataLinkFactory.getObject(MediaSourceService.class).findRealListByVirtualMsId(mappingInfo.getTargetMediaSource().getId());
+                    boolean result = true;
+                    for (MediaSourceInfo mediaSourceInfo : list) {
+                        DbDialect dbDialect = DbDialectFactory.getDbDialect(mediaSourceInfo);
+                        result &= executeSql(dbDialect, addSql);
+                    }
                     return result;
                 } else {
                     return executeSql(targetDbDialect, addSql);
@@ -337,8 +351,16 @@ public class RdbEventRecordLoader extends RecordLoader<RdbEventRecord> {
         MediaSourceType srcMediaSourceType = mappingInfo.getSourceMedia().getMediaSource().getType();
         if (srcMediaSourceType == MediaSourceType.SDDL) {
             srcMediaSourceType = MediaSourceType.MYSQL;
+        } else if (srcMediaSourceType == MediaSourceType.VIRTUAL) {
+            MediaSourceType simulateMsType = mappingInfo.getSourceMedia().getMediaSource().getSimulateMsType();
+            srcMediaSourceType = simulateMsType;
         }
+
         MediaSourceType targetMediaSourceType = mappingInfo.getTargetMediaSource().getType();
+        if (targetMediaSourceType == MediaSourceType.VIRTUAL) {
+            MediaSourceType simulateMsType = mappingInfo.getTargetMediaSource().getSimulateMsType();
+            targetMediaSourceType = simulateMsType;
+        }
 
         //源库和目标库字段类型可能不一致,需要采用目标端的数据类型
         //只对异构数据库进行判断，同构数据库约定两边结构肯定是一致的

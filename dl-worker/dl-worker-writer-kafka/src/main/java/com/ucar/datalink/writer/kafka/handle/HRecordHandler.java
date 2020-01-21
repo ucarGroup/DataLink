@@ -14,9 +14,9 @@ import com.ucar.datalink.domain.plugin.writer.kafka.PartitionMode;
 import com.ucar.datalink.domain.plugin.writer.kafka.SerializeMode;
 import com.ucar.datalink.worker.api.handle.AbstractHandler;
 import com.ucar.datalink.worker.api.task.TaskWriterContext;
-import com.ucar.datalink.writer.kafka.handle.util.HessianUtil;
 import com.ucar.datalink.writer.kafka.handle.util.KafkaFactory;
 import com.ucar.datalink.writer.kafka.handle.util.KafkaUtils;
+import com.zuche.framework.remote.nio.codec.HessianSerializerUtils;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +41,7 @@ public class HRecordHandler extends AbstractHandler<HRecord> {
             KafkaWriterParameter kafkaWriterParameter = (KafkaWriterParameter) context.getWriterParameter();
             KafkaFactory.KafkaClientModel kafkaClientModel;
             try {
-                kafkaClientModel = KafkaFactory.getKafkaProducer(sourceInfo, kafkaWriterParameter);
+                kafkaClientModel = KafkaFactory.getKafkaProducer(sourceInfo,kafkaWriterParameter);
             } catch (Exception e) {
                 throw new RuntimeException(e.getMessage());
             }
@@ -49,29 +49,29 @@ public class HRecordHandler extends AbstractHandler<HRecord> {
                 throw new RuntimeException("创建KafkaProducer失败,具体原因请查看worker执行日志!");
             }
 
-            Map<String, List<HRecord>> hrecordByTables = new HashMap<>();
-            for (HRecord record : records) {
-                String key = KafkaUtils.getDBTable(record.getNamespace(), record.getTableName());
-                if (!hrecordByTables.containsKey(key)) {
-                    hrecordByTables.put(key, new ArrayList<>());
+            Map<String,List<HRecord>> hrecordByTables = new HashMap<>();
+            for(HRecord record  : records){
+                String key = KafkaUtils.getDBTable(record.getNamespace(),record.getTableName());
+                if(!hrecordByTables.containsKey(key)){
+                    hrecordByTables.put(key,new ArrayList<>());
                 }
                 hrecordByTables.get(key).add(record);
             }
 
             KafkaMediaSrcParameter kafkaMediaSrcParameter = sourceInfo.getParameterObj();
             String expressionTopic = kafkaMediaSrcParameter.getTopic();
-            if (!KafkaUtils.hasExpression(expressionTopic)) {
-                KafkaUtils.verifyTopicName(expressionTopic, kafkaClientModel);
-            } else if (KafkaUtils.hasExpression(expressionTopic)) {
+            if(!KafkaUtils.hasExpression(expressionTopic)){
+                KafkaUtils.verifyTopicName(expressionTopic,kafkaClientModel);
+            }else if(KafkaUtils.hasExpression(expressionTopic)){
                 Set<String> dbTables = hrecordByTables.keySet();
                 Set<String> topics = KafkaUtils.getTopics(expressionTopic, dbTables);
-                KafkaUtils.verifyTopicName(topics, kafkaClientModel);
+                KafkaUtils.verifyTopicName(topics,kafkaClientModel);
             }
 
             List<Future> results = new ArrayList<>();
-            for (Map.Entry<String, List<HRecord>> hrecordByTable : hrecordByTables.entrySet()) {
+            for(Map.Entry<String, List<HRecord>> hrecordByTable :  hrecordByTables.entrySet()){
                 List<HRecord> hRecords = hrecordByTable.getValue();
-                results.add(this.executorService.submit(() -> {
+                results.add(this.executorService.submit(() ->{
                     hRecords.stream().forEach(r -> {
                         Map<String, Object> data = Maps.newHashMap();
                         data.put("rowkey", HUtil.toString(r.getRowKey()));
@@ -90,12 +90,12 @@ public class HRecordHandler extends AbstractHandler<HRecord> {
                     });
                 }));
             }
-            this.checkFutures(results, "something goes wrong when do writing to kafka.");
+            this.checkFutures(results,"something goes wrong when do writing to kafka.");
         }
     }
 
 
-    void submitToKafka(Map<String, Object> map, String topic, KafkaWriterParameter kafkaWriterParameter, KafkaFactory.KafkaClientModel kafkaClientModel) {
+    void submitToKafka(Map<String, Object> map, String topic, KafkaWriterParameter kafkaWriterParameter,  KafkaFactory.KafkaClientModel kafkaClientModel) {
         String namespace = map.get("namespace").toString();
         String tableName = map.get("tableName").toString();
 
@@ -109,7 +109,7 @@ public class HRecordHandler extends AbstractHandler<HRecord> {
 
         byte[] data;
         if (kafkaWriterParameter.getSerializeMode() == SerializeMode.Hessian) {
-            data = HessianUtil.serialize(map);
+            data = HessianSerializerUtils.serialize(map);
         } else if (kafkaWriterParameter.getSerializeMode() == SerializeMode.Json) {
             data = JSON.toJSONBytes(map);
         } else {
@@ -122,5 +122,8 @@ public class HRecordHandler extends AbstractHandler<HRecord> {
             logger.error(e.getMessage());
             throw new RuntimeException(e);
         }
+
+
     }
+
 }

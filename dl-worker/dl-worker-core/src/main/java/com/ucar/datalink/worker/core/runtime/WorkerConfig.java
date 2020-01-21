@@ -226,6 +226,12 @@ public class WorkerConfig extends AbstractConfig {
     public static final String WORKER_PROBE_BLACKLIST_DOC = "The probe in the blacklist will not start,This list should be"
             + " in the form <code>probe1,probe2,...</code>";
 
+    /**
+     *<code>lab.id</code>
+     */
+    public static final String LAB_ID= "lab.id";
+    public static final String LAB_ID_DOC= "The worker belongs to which lab";
+
     static {
         CONFIG = new ConfigDef()
                 .define(BOOTSTRAP_SERVERS_CONFIG,
@@ -419,7 +425,12 @@ public class WorkerConfig extends AbstractConfig {
                         Type.STRING,
                         "",
                         Importance.LOW,
-                        WORKER_PROBE_BLACKLIST_DOC);
+                        WORKER_PROBE_BLACKLIST_DOC)
+                .define(LAB_ID,
+                        Type.LONG,
+                        null,
+                        Importance.HIGH,
+                        LAB_ID_DOC);
     }
 
     private static WorkerConfig instance;

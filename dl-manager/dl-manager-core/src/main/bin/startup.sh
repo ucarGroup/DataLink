@@ -77,11 +77,11 @@ esac
 
 str=`file -L $JAVA | grep 64-bit`
 if [ -n "$str" ]; then
-	JAVA_OPTS="-server -Xms2048m -Xmx3072m -Xmn1024m -XX:SurvivorRatio=2 -Xss256k -XX:-UseAdaptiveSizePolicy -XX:MaxTenuringThreshold=15 -XX:+DisableExplicitGC -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:+UseCMSCompactAtFullCollection -XX:+UseFastAccessorMethods -XX:+UseCMSInitiatingOccupancyOnly -XX:+HeapDumpOnOutOfMemoryError -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:${BASE}/logs/gc/gc-manager-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=20 -XX:GCLogFileSize=1024K"
-echo "manager if"  >> $base/bin/managerJvm.log
+	JAVA_OPTS="-server -Xms2048m -Xmx6144m -Xmn1024m -XX:SurvivorRatio=2 -Xss256k -XX:-UseAdaptiveSizePolicy -XX:MaxTenuringThreshold=15 -XX:+DisableExplicitGC -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:+UseCMSCompactAtFullCollection -XX:+UseFastAccessorMethods -XX:+UseCMSInitiatingOccupancyOnly -XX:+HeapDumpOnOutOfMemoryError -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:${BASE}/logs/gc/gc-manager-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=20 -XX:GCLogFileSize=1024K"
+    echo "manager if"  >> $base/bin/managerJvm.log
 else
 	JAVA_OPTS="-server -Xms1024m -Xmx1024m -XX:NewSize=256m -XX:MaxNewSize=256m -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:${BASE}/logs/gc/gc-manager-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=20 -XX:GCLogFileSize=1024K"
-echo "manager else"  >> $base/bin/managerJvm.log
+    echo "manager else"  >> $base/bin/managerJvm.log
 fi
 
 JAVA_OPTS=" $JAVA_OPTS -Djava.awt.headless=true -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8"
@@ -125,3 +125,14 @@ if [ $? -ne 0 ];then
        /etc/init.d/crond restart
    fi
 fi
+
+   echo "install clear log script"
+   grep "clear_log.sh" /var/spool/cron/root > /dev/null 2>&1
+   if [ $? -ne 0 ]; then
+        cron_asterisk=""0 0 15 1 * ?"
+        cron_content="$base/bin/clear_log.sh"
+        echo "$cron_asterisk sh $cron_content" >> /var/spool/cron/root"
+        if [ ! -f "/etc/init.d/crond" ];then
+            /etc/init.d/crond restart
+        fi
+   fi

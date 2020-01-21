@@ -1,5 +1,6 @@
 package com.ucar.datalink.manager.core.monitor;
 
+import com.ucar.datalink.biz.service.UcarAlarmPlugin;
 import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.common.utils.NamedThreadFactory;
 import com.ucar.datalink.manager.core.server.ManagerConfig;

@@ -11,8 +11,7 @@
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-name">Kafka集群名称</label>
 
                     <div class="col-sm-9">
-                        <input type="text" style="width:350px;height:35px" name="name" class="col-xs-10 col-sm-5"
-                               value="kafka_"
+                        <input type="text" style="width:350px;height:35px" name="name" class="col-xs-10 col-sm-5" value="kafka_"
                                id="form-add-name"/>
                     </div>
                 </div>
@@ -40,36 +39,35 @@
                 </div>
 
 
-                <div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-add-bootstrapServers">bootstrapServers</label>
-
-                    <div class="col-sm-9">
-                        <input type="text" id="form-add-bootstrapServers" name="kafkaMediaSrcParameter.bootstrapServers"
-                               class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="200"/>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-add-paramters">参数</label>
-
-                    <div class="col-sm-9">
-                        <input type="text" id="form-add-paramters" name="kafkaMediaSrcParameter.paramters"
-                               class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="300"/>
-                    </div>
-                </div>
+                 <div class="form-group">
+                                                    <label class="col-sm-3 control-label no-padding-right" for="form-add-bootstrapServers">bootstrapServers</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" id="form-add-bootstrapServers" name="kafkaMediaSrcParameter.bootstrapServers"
+                                                               class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="200"/>
+                                                    </div>
+                                                </div>
 
                 <div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-add-desc">描述</label>
+                                    <label class="col-sm-3 control-label no-padding-right" for="form-add-paramters">参数</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" id="form-add-paramters" name="kafkaMediaSrcParameter.paramters"
+                                               class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="300"/>
+                                    </div>
+                                </div>
 
-                    <div class="col-sm-9">
-                        <input type="text" id="form-add-desc" name="desc"
-                               class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50"/>
-                    </div>
-                </div>
+                 <div class="form-group">
+                                     <label class="col-sm-3 control-label no-padding-right" for="form-add-desc">描述</label>
+
+                                     <div class="col-sm-9">
+                                         <input type="text" id="form-add-desc" name="desc"
+                                                class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50"/>
+                                     </div>
+                                 </div>
 
 
             </form>
         </div>
+
 
 
         <div class="clearfix form-actions">
@@ -136,6 +134,7 @@
         $("#mainContentInner").show();
         kafkaListMyTable.ajax.reload();
     }
+
 
 
 </script>

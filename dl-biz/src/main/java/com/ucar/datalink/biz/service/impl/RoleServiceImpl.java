@@ -1,5 +1,6 @@
 package com.ucar.datalink.biz.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.ucar.datalink.biz.dal.RoleDAO;
 import com.ucar.datalink.biz.service.AuthorityService;
 import com.ucar.datalink.biz.service.RoleService;
@@ -91,7 +92,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public Boolean hasRole(Long menuId, UserInfo userInfo) {
         List<RoleInfo> roleLists = getRolesByMenuId(menuId);
-        for (RoleInfo roleInfo : userInfo.getRoleInfoList()) {
+        for (RoleInfo roleInfo : userInfo.getRoleInfoList()){
             for (RoleInfo info : roleLists) {
                 if (Objects.equals(info.getCode(), roleInfo.getCode())) {
                     return true;

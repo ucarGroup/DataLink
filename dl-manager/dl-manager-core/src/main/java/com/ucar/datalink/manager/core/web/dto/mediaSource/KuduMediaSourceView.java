@@ -1,5 +1,6 @@
 package com.ucar.datalink.manager.core.web.dto.mediaSource;
 
+import com.ucar.datalink.domain.media.parameter.hbase.HBaseMediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.kudu.KuduMediaSrcParameter;
 
 import java.util.Date;
@@ -15,6 +16,8 @@ public class KuduMediaSourceView {
     private Date createTime;
     private Date modifyTime;
     private KuduMediaSrcParameter kuduMediaSrcParameter = new KuduMediaSrcParameter();
+    private Long labId;
+    private String labName;
 
     public Long getId() {
         return id;
@@ -54,6 +57,23 @@ public class KuduMediaSourceView {
 
     public void setModifyTime(Date modifyTime) {
         this.modifyTime = modifyTime;
+    }
+
+
+    public Long getLabId() {
+        return labId;
+    }
+
+    public void setLabId(Long labId) {
+        this.labId = labId;
+    }
+
+    public String getLabName() {
+        return labName;
+    }
+
+    public void setLabName(String labName) {
+        this.labName = labName;
     }
 
     public KuduMediaSrcParameter getKuduMediaSrcParameter() {

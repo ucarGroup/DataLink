@@ -4,6 +4,7 @@ package com.ucar.datalink.worker.core.runtime.rest.resources;
 import com.google.common.eventbus.EventBus;
 import com.ucar.datalink.common.event.EventBusFactory;
 import com.ucar.datalink.common.utils.FutureCallback;
+import com.ucar.datalink.domain.event.EsColumnSyncEvent;
 import com.ucar.datalink.domain.event.KuduColumnSyncEvent;
 import com.ucar.datalink.domain.event.KuduConfigClearEvent;
 import org.slf4j.Logger;
@@ -25,27 +26,28 @@ public class KuduOperatorResource {
 
     @POST
     @Path("/syncCloumn/{mediaSourceId}")
-    public Object syncCloumns(@PathParam("mediaSourceId") Long mediaSourceId, final Map<String, Object> request) {
+    public Object syncCloumns(@PathParam("mediaSourceId") Long mediaSourceId, final Map<String, Object> request){
         try {
             String sql = (String) request.get("sql");
-            Long mappingId = Long.valueOf((Integer) request.get("mappingId"));
+            Long mappingId = Long.valueOf((Integer)request.get("mappingId"));
             EventBus eventBus = EventBusFactory.getEventBus();
-            KuduColumnSyncEvent event = new KuduColumnSyncEvent(new FutureCallback(), mediaSourceId, mappingId, sql);
+            KuduColumnSyncEvent event = new KuduColumnSyncEvent(new FutureCallback(),mediaSourceId,mappingId,sql);
             eventBus.post(event);
 
             //清除缓存
-            KuduConfigClearEvent kuduConfigClearEvent = new KuduConfigClearEvent(new FutureCallback(), null);
+            KuduConfigClearEvent kuduConfigClearEvent = new KuduConfigClearEvent(new FutureCallback(),null);
             eventBus.post(kuduConfigClearEvent);
-            return event.getCallback().get();
+            return  event.getCallback().get();
         } catch (InterruptedException e) {
-            logger.info("中断异常 {}", e);
+            logger.info("中断异常 {}",e);
         } catch (ExecutionException e) {
-            logger.info("执行异常 {}", e);
-        } catch (Exception e) {
-            logger.info("其他异常 {}", e);
+            logger.info("执行异常 {}",e);
+        }catch (Exception e){
+            logger.info("其他异常 {}",e);
         }
         return null;
     }
+
 
 
 }

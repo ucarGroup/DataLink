@@ -1,8 +1,11 @@
 package com.ucar.datalink.manager.core.web.controller.task;
 
 import com.ucar.datalink.biz.service.GroupService;
+import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.biz.service.TaskConfigService;
 import com.ucar.datalink.domain.group.GroupInfo;
+import com.ucar.datalink.domain.media.MediaSourceInfo;
+import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.task.TaskInfo;
 import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;
 import org.slf4j.Logger;
@@ -14,10 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +34,9 @@ public class TaskController extends BaseTaskController {
 
     @Autowired
     private TaskConfigService taskService;
+
+    @Autowired
+    private MediaSourceService mediaSourceService;
 
     @RequestMapping(value = "/toGroupMigrate")
     public ModelAndView toGroupMigrate(Long id) {
@@ -84,6 +87,30 @@ public class TaskController extends BaseTaskController {
         }
         map.put("taskIds", taskIds);
         map.put("taskNames", taskNames);
+        return map;
+    }
+
+    @RequestMapping(value = "/getSrcMediaSourceListByType")
+    @ResponseBody
+    @AuthIgnore
+    public Map<String, Object> getSrcMediaSourceListByType(String srcType) {
+        Map<String, Object> map = new HashMap<>();
+        List<MediaSourceInfo> mediaSourceListByType;
+        Set<MediaSourceType> mediaSourceType = new HashSet<>();
+        if (srcType.equals("-1")) {
+            mediaSourceListByType =mediaSourceService.getList();
+        } else {
+            mediaSourceType.add(MediaSourceType.valueOf(srcType));
+            mediaSourceListByType = mediaSourceService.getListByType(mediaSourceType);
+        }
+        List<Long> msIds = new ArrayList<>();
+        List<String> msNames = new ArrayList<>();
+        for (MediaSourceInfo mediaSourceInfo : mediaSourceListByType) {
+            msIds.add(mediaSourceInfo.getId());
+            msNames.add(mediaSourceInfo.getName());
+        }
+        map.put("msIds", msIds);
+        map.put("msNames", msNames);
         return map;
     }
 }

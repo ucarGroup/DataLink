@@ -36,6 +36,22 @@
                                            class="col-sm-12" id="form-update-namespace"/>
                                 </div>
                             </div>
+
+                            <div class="col-sm-4 form-group">
+                                <label class="col-sm-3 control-label no-padding-right"
+                                       for="form-update-labId">所属机房</label>
+
+                                <div class="col-sm-7">
+                                    <select multiple="" id="form-update-labId" name="labId"
+                                            class="labId col-xs-10 col-sm-12"
+                                            data-placeholder="Click to Choose...">
+                                        <c:forEach items="${labInfoList}" var="bean">
+                                            <option value="${bean.id}">${bean.labName} </option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
+                            </div>
+
                         </div>
                         <div class="col-sm-12">
                             <div class="col-sm-4 form-group">
@@ -188,6 +204,23 @@
                         </div>
                         <div class="col-sm-12">
                             <div class="col-sm-4 form-group">
+                                <label class="col-sm-3 control-label no-padding-right"
+                                       for="form-update-isTIDB">是否TIDB</label>
+
+                                <div class="col-sm-7">
+                                    <select name="isTIDB" id="form-update-isTIDB" class="col-sm-12">
+                                        <c:if test="${mediaSourceView.isTIDB=='true'}">
+                                            <option value="false" >否</option>
+                                            <option value="true" selected>是</option>
+                                        </c:if>
+                                        <c:if test="${mediaSourceView.isTIDB=='false'}">
+                                            <option value="false" selected>否</option>
+                                            <option value="true" >是</option>
+                                        </c:if>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-sm-4 form-group">
                                 <label class="col-sm-3 control-label no-padding-right" for="form-update-desc">描述</label>
 
                                 <div class="col-sm-7">
@@ -195,8 +228,8 @@
                                               style="margin: 0px; width: 755px; height: 106px;"></textarea>
                                 </div>
                             </div>
-
                         </div>
+
                     </div>
                     <div id="specialId" class="tab-pane">
                         <div class="col-sm-12">
@@ -348,6 +381,9 @@
 <!-- /.page-content -->
 
 <script type="text/javascript">
+
+    $('.labId').val('${labId}').select2({allowClear: false, maximumSelectionLength: 1});
+
     $("#form-update-desc").val('${mediaSourceView.desc}');
     $("#form-update-mediaSourceType").val('${mediaSourceView.mediaSourceType}');
     function buildReadDataSource() {
@@ -414,7 +450,10 @@
             alert('schema不能为空');
             return false;
         }
-
+        if ($.trim($('#form-update-labId').val()) == '') {
+            alert('所属机房不能为空');
+            return false;
+        }
         if ($.trim($('#form-update-encoding').val()) == '') {
             alert('编码不能为空');
             return false;

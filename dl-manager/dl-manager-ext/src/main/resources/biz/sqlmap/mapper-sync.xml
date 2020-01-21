@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.SyncApplyDAO">
+
+    <resultMap id="syncApplyMap" type="syncApply">
+        <result property="id" column="id"/>
+        <result property="applyStatus" column="apply_status"/>
+        <result property="applyType" column="apply_type"/>
+        <result property="isInitialData" column="is_initial_data"/>
+        <result property="applyContent" column="apply_content"/>
+        <result property="applyRemark" column="apply_remark"/>
+        <result property="srcMediaSourceId" column="src_media_source_id"/>
+        <result property="targetMediaSourceId" column="target_media_source_id"/>
+        <result property="applyUserId" column="apply_user_id"/>
+        <result property="operateUserId" column="operate_user_id"/>
+        <result property="replyRemark" column="reply_remark"/>
+        <result property="needNotify" column="need_notify"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+        <association property="applyUserInfo" column="APPLY_USER_ID" select="getUserInfoById"/>
+        <association property="operateUserInfo" column="OPERATE_USER_ID" select="getUserInfoById"/>
+    </resultMap>
+
+    <resultMap id="syncApproveMap" type="syncApprove">
+        <result property="id" column="id"/>
+        <result property="applyId" column="apply_id"/>
+        <result property="approveStatus" column="approve_status"/>
+        <result property="approveRemark" column="approve_remark"/>
+        <result property="approveUserId" column="approve_user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <resultMap id="mediaSourceMap" type="mediaSource">
+        <result property="id" column="id"/>
+        <result property="name" column="ms_name"/>
+        <result property="type" column="ms_type"/>
+        <result property="desc" column="ms_desc"/>
+        <result property="parameter" column="ms_parameter"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <resultMap id="userMap" type="user">
+        <result property="id" column="id"/>
+        <result property="userName" column="user_name"/>
+        <result property="ucarEmail" column="ucar_email"/>
+        <result property="phone" column="phone"/>
+        <result property="isAlarm" column="is_alarm"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="syncApply">
+        INSERT INTO t_data_sync_apply
+        (apply_status,
+        apply_type,
+        is_initial_data,
+        apply_content,
+        apply_remark,
+        apply_user_id,
+        operate_user_id,
+        reply_remark,
+        need_notify,
+        create_time,
+        modify_time)
+        VALUES
+        (#{applyStatus},
+        #{applyType},
+        #{isInitialData},
+        #{applyContent},
+        #{applyRemark},
+        #{applyUserId},
+        #{operateUserId},
+        #{replyRemark},
+        #{needNotify},
+        now(),
+        now())
+        <selectKey resultType="long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+    </insert>
+
+    <insert id="insertApproveInfo" parameterType="syncApprove">
+        INSERT INTO t_data_sync_apply_approve
+        (apply_id,
+        approve_user_id,
+        approve_status,
+        approve_remark,
+        create_time,
+        modify_time)
+        VALUES
+        (#{applyId},
+        #{approveUserId},
+        #{approveStatus},
+        #{approveRemark},
+        now(),
+        now())
+        <selectKey resultType="long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+    </insert>
+
+    <update id="update" parameterType="syncApply">
+        UPDATE t_data_sync_apply
+        SET
+        apply_status=#{applyStatus},
+        apply_type=#{applyType},
+        is_initial_data=#{isInitialData},
+        apply_content=#{applyContent},
+        apply_remark=#{applyRemark},
+        apply_user_id=#{applyUserId},
+        operate_user_id=#{operateUserId},
+        reply_remark=#{replyRemark},
+        need_notify=#{needNotify},
+        modify_time=now()
+        WHERE id=#{id}
+    </update>
+
+    <update id="updateApproveInfo" parameterType="syncApprove">
+        UPDATE t_data_sync_apply_approve
+        SET
+        apply_id=#{applyId},
+        approve_status=#{approveStatus},
+        approve_remark=#{approveRemark},
+        approve_user_id=#{approveUserId},
+        modify_time=now()
+        WHERE apply_id=#{applyId} AND approve_user_id=#{approveUserId}
+    </update>
+
+    <select id="getSyncApplyInfoById" parameterType="long" resultMap="syncApplyMap">
+        SELECT *
+        FROM t_data_sync_apply
+        WHERE id = #{id}
+    </select>
+
+    <select id="getSyncApproveInfoByApplyId" parameterType="long" resultMap="syncApproveMap">
+        SELECT *
+        FROM t_data_sync_apply_approve
+        WHERE apply_id = #{applyId}
+    </select>
+
+    <select id="getSyncApproveInfoByApplyIdAndApproveUserId" parameterType="syncApprove" resultMap="syncApproveMap">
+        SELECT *
+        FROM t_data_sync_apply_approve
+        WHERE apply_id=#{applyId} AND approve_user_id = #{approveUserId}
+    </select>
+    <select id="syncApplyListForQueryPage" parameterType="java.util.HashMap" resultMap="syncApplyMap">
+        SELECT *
+        FROM t_data_sync_apply a, t_data_sync_apply_approve b
+        WHERE 1=1
+        <if test="applyStatus != null">
+            AND a.apply_status = #{applyStatus}
+        </if>
+        <if test="applyType != null">
+            AND a.apply_type = #{applyType}
+        </if>
+        <if test="applyUserId != null">
+            AND a.apply_user_id = #{applyUserId}
+        </if>
+        <if test="userId != null">
+            AND (a.apply_user_id = #{userId} OR b.approve_user_id = #{userId})
+        </if>
+        AND b.id=(select min(id) from t_data_sync_apply_approve where apply_id = a.id) ORDER BY a.id DESC
+    </select>
+
+    <select id="getMediaSourceById" parameterType="long" resultMap="mediaSourceMap">
+        select *
+        FROM t_dl_media_source
+        WHERE id = #{id}
+    </select>
+
+    <select id="getUserInfoById" parameterType="long" resultMap="userMap">
+        SELECT *
+        FROM t_dl_user
+        WHERE id=#{id}
+    </select>
+
+    <update id="updateApplyStatus" parameterType="syncApply">
+        UPDATE t_data_sync_apply
+        <set>
+            <if test="applyStatus != null">
+                apply_status = #{applyStatus},
+            </if>
+            <if test="needNotify != null">
+                need_notify = #{needNotify},
+            </if>
+            <if test="operateUserId != null">
+                operate_user_id=#{operateUserId},
+            </if>
+            <if test="replyRemark != null">
+                reply_remark = #{replyRemark},
+            </if>
+            modify_time = now(),
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="getAllApproved" parameterType="syncApprove" resultMap="syncApproveMap">
+        SELECT *
+        FROM t_data_sync_apply_approve
+        WHERE apply_id = #{applyId} AND approve_status = "APPROVED"
+    </select>
+
+    <select id="getAllRejected" parameterType="syncApprove" resultMap="syncApproveMap">
+        SELECT *
+        FROM t_data_sync_apply_approve
+        WHERE apply_id = #{applyId} AND approve_status = "REJECTED"
+    </select>
+
+    <select id="getAllNone" parameterType="syncApprove" resultMap="syncApproveMap">
+        SELECT *
+        FROM t_data_sync_apply_approve
+        WHERE apply_id = #{applyId} AND approve_status = "NONE"
+    </select>
+
+    <select id="getAutoApproveList" resultMap="syncApproveMap">
+        SELECT *
+        FROM t_data_sync_apply_approve a
+        INNER JOIN t_dl_user_role r ON a.approve_user_id = r.user_id and r.role_id = (SELECT id from t_dl_role where code ="AUTOKEEPER")
+        WHERE a.approve_status = "NONE"
+    </select>
+
+    <select id="getNotifyApplyList" resultMap="syncApplyMap">
+        SELECT *
+        FROM t_data_sync_apply
+        WHERE need_notify = TRUE
+    </select>
+
+    <select id="getApprovedApplyList" resultMap="syncApplyMap">
+        SELECT *
+        FROM t_data_sync_apply
+        WHERE apply_status = "APPROVED"
+    </select>
+
+    <select id="getFullApprovedApplyList" resultMap="syncApplyMap">
+        SELECT *
+        FROM t_data_sync_apply
+        WHERE apply_status = "APPROVED" AND apply_type = "Full"
+    </select>
+
+    <select id="getFullExecutingOrFailedApplyList" resultMap="syncApplyMap">
+        SELECT *
+        FROM t_data_sync_apply
+        WHERE (apply_status = "FULL_EXECUTING" OR apply_status = "FULL_FAILED") AND apply_type = "Full"
+    </select>
+
+    <select id="getIncrementApprovedApplyList" resultMap="syncApplyMap">
+        SELECT *
+        FROM t_data_sync_apply
+        WHERE apply_status = "APPROVED" AND apply_type = "Increment" AND is_initial_data = FALSE
+    </select>
+
+    <select id="getIncrementFinishOrFailedList" resultMap="syncApplyMap">
+        SELECT *
+        FROM t_data_sync_apply
+        WHERE (apply_status = "INCREMENT_FINISH" OR apply_status = "INCREMENT_FAILED") AND apply_type = "Increment" AND is_initial_data = FALSE
+    </select>
+
+    <select id="getFullAndIncrementApprovedApplyList" resultMap="syncApplyMap">
+        SELECT *
+        FROM t_data_sync_apply
+        WHERE apply_status = "APPROVED" AND apply_type = "Increment" AND is_initial_data = TRUE
+    </select>
+
+    <select id="getFAIFullExecutingOrFailedApplyList" resultMap="syncApplyMap">
+        SELECT *
+        FROM t_data_sync_apply
+        WHERE (apply_status = "FULL_EXECUTING" OR apply_status = "FULL_FAILED") AND apply_type = "Increment" AND is_initial_data = TRUE
+    </select>
+
+    <select id="getFAIIncrementFinishOrFailedList" resultMap="syncApplyMap">
+        SELECT *
+        FROM t_data_sync_apply
+        WHERE (apply_status = "INCREMENT_FINISH" OR apply_status = "INCREMENT_FAILED") AND apply_type = "Increment" AND is_initial_data = TRUE
+    </select>
+
+    <select id="getTimeOutUnfinishedList" resultMap="syncApplyMap">
+        <![CDATA[
+        SELECT *
+        FROM t_data_sync_apply
+        WHERE apply_status != "SUCCEEDED" AND apply_status != "FAILED" AND apply_status != "ABANDONED" AND create_time < (sysdate()-interval 1 day)
+        ]]>
+    </select>
+
+    <select id="getRejectedApproveByApplyId" parameterType="long" resultMap="syncApproveMap">
+        SELECT *
+        FROM t_data_sync_apply_approve
+        WHERE apply_id = #{applyId} AND approve_status = "REJECTED"
+    </select>
+
+</mapper>

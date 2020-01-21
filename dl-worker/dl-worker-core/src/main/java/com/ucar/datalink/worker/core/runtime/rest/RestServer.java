@@ -70,6 +70,9 @@ public class RestServer {
         resourceConfig.register(FlushResource.class);
         resourceConfig.register(HBaseMetaResource.class);
         resourceConfig.register(WorkerResource.class);
+        resourceConfig.register(RdbmsOperatorResource.class);
+
+
 
         ServletContainer servletContainer = new ServletContainer(resourceConfig);
         ServletHolder servletHolder = new ServletHolder(servletContainer);

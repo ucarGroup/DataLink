@@ -6,14 +6,15 @@ import com.ucar.datalink.biz.service.*;
 import com.ucar.datalink.biz.utils.AuditLogOperType;
 import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.domain.auditLog.AuditLogInfo;
+import com.ucar.datalink.domain.job.JobConfigInfo;
 import com.ucar.datalink.domain.monitor.MonitorCat;
 import com.ucar.datalink.domain.monitor.MonitorInfo;
 import com.ucar.datalink.domain.monitor.MonitorType;
 import com.ucar.datalink.domain.task.TaskInfo;
 import com.ucar.datalink.domain.user.UserInfo;
 import com.ucar.datalink.domain.worker.WorkerInfo;
-import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;
 import com.ucar.datalink.manager.core.web.dto.monitor.MonitorView;
+import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;
 import com.ucar.datalink.manager.core.web.util.Page;
 import com.ucar.datalink.manager.core.web.util.UserUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -22,10 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
@@ -45,30 +43,21 @@ public class MonitorController {
 
     @Autowired
     UserService userService;
-    @Autowired
-    WorkerService workerService;
-    @Autowired
-    GroupService groupService;
+
     @Autowired
     private MonitorService monitorService;
+
     @Autowired
     private TaskConfigService taskConfigService;
 
-    private static AuditLogInfo getAuditLogInfo(MonitorInfo info, String menuCode, String operType) {
-        AuditLogInfo logInfo = new AuditLogInfo();
-        logInfo.setUserId(UserUtil.getUserIdFromRequest());
-        logInfo.setMenuCode(menuCode);
-        logInfo.setOperName(info.getResourceName());
-        logInfo.setOperType(operType);
-        logInfo.setOperKey(info.getId());
-        logInfo.setOperRecord(info.toString());
-        return logInfo;
-    }
+    @Autowired
+    WorkerService workerService;
 
-    public static void main(String[] arg) throws ParseException {
-        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        System.out.print(sf.format(new Date()));
-    }
+    @Autowired
+    JobService jobService;
+
+    @Autowired
+    GroupService groupService;
 
     @RequestMapping(value = "/monitorList")
     public ModelAndView monitorList() {
@@ -136,6 +125,17 @@ public class MonitorController {
         return "fail";
     }
 
+    private static AuditLogInfo getAuditLogInfo(MonitorInfo info, String menuCode, String operType){
+        AuditLogInfo logInfo=new AuditLogInfo();
+        logInfo.setUserId(UserUtil.getUserIdFromRequest());
+        logInfo.setMenuCode(menuCode);
+        logInfo.setOperName(info.getResourceName());
+        logInfo.setOperType(operType);
+        logInfo.setOperKey(info.getId());
+        logInfo.setOperRecord(info.toString());
+        return logInfo;
+    }
+
     @ResponseBody
     @RequestMapping(value = "/doDelete")
     public String doDelete(Long id) {
@@ -169,11 +169,15 @@ public class MonitorController {
         if (StringUtils.isNotBlank(id)) {
             monitorInfo = monitorService.getById(Long.valueOf(id));
         }
-
+        List<JobConfigInfo> configInfos = jobService.allTinmingJobWithoutMonitor();
+        JobConfigInfo configInfo = jobService.getJobConfigById(monitorInfo.getResourceId());
+        configInfos.add(configInfo);
         mav.addObject("taskList", taskList);
         mav.addObject("workerList", workerList);
         mav.addObject("userList", userList);
+        mav.addObject("jobList",configInfos);
         mav.addObject("monitorCatList", MonitorCat.getMonitorCatList());
+
         mav.addObject("monitorInfo", monitorInfo);
         return mav;
     }
@@ -245,6 +249,11 @@ public class MonitorController {
         return "fail";
     }
 
+    public static void main(String[] arg) throws ParseException {
+        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.print(sf.format(new Date()));
+    }
+
     @RequestMapping(value = "/getMonitorTypeListByCat")
     @ResponseBody
     @AuthIgnore
@@ -277,8 +286,89 @@ public class MonitorController {
                 resourceName.add(workerInfo.getWorkerName());
             }
         }
+        if(catKey == 3) {
+            List<JobConfigInfo> configInfos = jobService.allTinmingJobWithoutMonitor();
+            for(JobConfigInfo i : configInfos) {
+                resourceId.add(i.getId());
+                resourceName.add(i.getJob_name());
+            }
+        }
         map.put("resourceId", resourceId);
         map.put("resourceName", resourceName);
         return map;
     }
+
+
+
+    @RequestMapping(value = "/getMonitorType")
+    @ResponseBody
+    @AuthIgnore
+    public Map<String, Object> getMonitorType(String monitorCat) {
+        Map<String, Object> map = new HashMap<>();
+        Integer catKey = Integer.valueOf(monitorCat);
+        List<MonitorType> monitorTypeList = MonitorType.getMonitorTypeListByCat(catKey);
+        List<Integer> key = new ArrayList<>();
+        List<String> desc = new ArrayList<>();
+        for (MonitorType monitorType : monitorTypeList) {
+            key.add(monitorType.getKey());
+            desc.add(monitorType.getDesc());
+        }
+        map.put("key", key);
+        map.put("desc", desc);
+        List<Long> resourceId = new ArrayList<>();
+        List<String> resourceName = new ArrayList<>();
+        if (catKey == 1) {
+            List<TaskInfo> taskInfoList = taskConfigService.getList();
+            List<TaskInfo> taskList = CollectionUtils.isEmpty(taskInfoList) ? taskInfoList : taskInfoList.stream().filter(t -> t.getLeaderTaskId() == null).collect(Collectors.toList());
+            for (TaskInfo task : taskList) {
+                resourceId.add(task.getId());
+                resourceName.add(task.getTaskName());
+            }
+        }
+        if (catKey == 2) {
+            List<WorkerInfo> workerInfoList = workerService.getList();
+            for (WorkerInfo workerInfo : workerInfoList) {
+                resourceId.add(workerInfo.getId());
+                resourceName.add(workerInfo.getWorkerName());
+            }
+        }
+        if(catKey == 3) {
+            List<JobConfigInfo> configInfos = jobService.allTinmingJobInMonitor();
+            for(JobConfigInfo i : configInfos) {
+                resourceId.add(i.getId());
+                resourceName.add(i.getJob_name());
+            }
+        }
+        map.put("resourceId", resourceId);
+        map.put("resourceName", resourceName);
+        return map;
+    }
+
+
+    @RequestMapping(value = "/createAllDataxMonitor")
+    @ResponseBody
+    @AuthIgnore
+    public String createAllDataxMonitor(String monitorCat) {
+        try {
+            List<JobConfigInfo> configInfos = jobService.allTinmingJobWithoutMonitor();
+            configInfos.stream().forEach((i) -> {
+                MonitorInfo info = new MonitorInfo();
+                info.setResourceId(i.getId());
+                info.setResourceName(i.getJob_name());
+                info.setMonitorCat(MonitorCat.DATAX_MONITOR.getKey());
+                info.setMonitorType(MonitorType.DATAX_EXCEPTION_MONITOR.getKey());
+                info.setIsEffective(1);
+                info.setThreshold(60000);
+                info.setIntervalTime(600L);
+                info.setMonitorRange("00:00-23:59");
+                monitorService.insert(info);
+            });
+            return "success";
+        } catch(Exception e) {
+            logger.error(e.getMessage(),e);
+        }
+        return "failure";
+    }
+
+
 }

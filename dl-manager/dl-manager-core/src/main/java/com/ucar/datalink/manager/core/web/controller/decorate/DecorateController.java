@@ -11,12 +11,14 @@ import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.task.TaskInfo;
+import com.ucar.datalink.domain.task.TaskType;
 import com.ucar.datalink.manager.core.web.controller.task.BaseTaskController;
 import com.ucar.datalink.manager.core.web.dto.taskDecorate.TaskDecorateDetailView;
 import com.ucar.datalink.manager.core.web.dto.taskDecorate.TaskDecorateView;
 import com.ucar.datalink.manager.core.web.util.Page;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,15 +63,16 @@ public class DecorateController extends BaseTaskController {
     private TaskDecorateDetailService taskDecorateDetailService;
 
 
+
     @RequestMapping(value = "/toList")
     public ModelAndView toList() {
         ModelAndView mav = new ModelAndView("decorate/list");
-        mav.addObject("taskList", getTaskInfo());
+        mav.addObject("taskList",getTaskInfo());
         return mav;
     }
 
 
-    private List<TaskInfo> getTaskInfo() {
+    private List<TaskInfo> getTaskInfo(){
         List<TaskInfo> taskList = taskService.getList();
         HashSet<MediaSourceType> mysqlSourceType = new HashSet<>();
         mysqlSourceType.add(MediaSourceType.MYSQL);
@@ -84,7 +87,7 @@ public class DecorateController extends BaseTaskController {
     public Page<TaskDecorateView> queryDecorate(@RequestBody Map<String, String> map) {
         String tableName = map.get("tableName");
         long taskId = -1L;
-        if (!StringUtils.isBlank(map.get("taskId"))) {
+        if(!StringUtils.isBlank(map.get("taskId"))){
             taskId = Long.valueOf(map.get("taskId"));
         }
         Page<TaskDecorateView> page = new Page<>(map);
@@ -92,7 +95,7 @@ public class DecorateController extends BaseTaskController {
 
         List<TaskDecorate> list = this.taskDecorateService.getList(taskId, tableName);
 
-        List<TaskDecorateView> taskDecorateViews = list.stream().map(i -> {
+        List<TaskDecorateView> taskDecorateViews = list.stream().map(i ->{
             TaskDecorateView view = new TaskDecorateView();
             view.setId(i.getId());
             view.setRemark(i.getRemark());
@@ -114,10 +117,11 @@ public class DecorateController extends BaseTaskController {
     }
 
 
+
     @RequestMapping(value = "/toAddDecorate")
     public ModelAndView toAddDecorate() {
         ModelAndView mav = new ModelAndView("decorate/add");
-        mav.addObject("decorateList", getTaskInfo());
+        mav.addObject("decorateList",getTaskInfo());
         return mav;
     }
 
@@ -141,17 +145,19 @@ public class DecorateController extends BaseTaskController {
     }
 
 
+
+
     @RequestMapping(value = "/findTables")
     @ResponseBody
     public Set<String> findTables(Long taskId) {
         Set<String> tables = new HashSet<>();
         try {
-            List<MediaMappingInfo> list = mediaService.mappingListsForQueryPage(null, null, taskId,
-                    null, null);
+            List<MediaMappingInfo> list = mediaService.mappingListsForQueryPage( null,null,   taskId,
+                    null,null);
 
-            if (list != null) {
-                for (MediaMappingInfo mmi : list) {
-                    if (!mmi.isValid()) {
+            if(list != null){
+                for(MediaMappingInfo mmi : list){
+                    if(!mmi.isValid()){
                         continue;
                     }
                     String name = mmi.getSourceMedia().getName();
@@ -180,7 +186,7 @@ public class DecorateController extends BaseTaskController {
     }
 
 
-    private TaskDecorate requestToTaskDecorate(HttpServletRequest request) {
+    private TaskDecorate requestToTaskDecorate(HttpServletRequest request){
         TaskDecorate taskDecorate = new TaskDecorate();
         String taskId = request.getParameter("taskId");
         String tableName = request.getParameter("tableName");
@@ -188,7 +194,7 @@ public class DecorateController extends BaseTaskController {
         String statement = request.getParameter("statement");
         String id = request.getParameter("id");
 
-        if (!StringUtils.isBlank(id)) {
+        if(!StringUtils.isBlank(id)){
             taskDecorate.setId(Integer.parseInt(id));
         }
         taskDecorate.setTaskId(Long.parseLong(taskId));
@@ -197,6 +203,11 @@ public class DecorateController extends BaseTaskController {
         taskDecorate.setStatement(statement);
         return taskDecorate;
     }
+
+
+
+
+
 
 
     @RequestMapping(value = "/toUpdateDecorate")
@@ -240,6 +251,8 @@ public class DecorateController extends BaseTaskController {
     }
 
 
+
+
     @RequestMapping(value = "/doHistory")
     @ResponseBody
     public Page<TaskDecorateDetailView> doHistory(@RequestBody Map<String, String> map) {
@@ -252,7 +265,7 @@ public class DecorateController extends BaseTaskController {
         List<TaskDecorateDetail> taskDecorateDetails = taskDecorateDetailService.listByCondition(id);
 
         List<TaskDecorateDetailView> view = new ArrayList();
-        for (TaskDecorateDetail t : taskDecorateDetails) {
+        for(TaskDecorateDetail t : taskDecorateDetails){
             TaskDecorateDetailView taskDecorateDetailView = new TaskDecorateDetailView();
             taskDecorateDetailView.fillProperty(t);
             view.add(taskDecorateDetailView);
@@ -275,6 +288,7 @@ public class DecorateController extends BaseTaskController {
         mav.addObject("decorateId", decorateId);
         return mav;
     }
+
 
 
 }

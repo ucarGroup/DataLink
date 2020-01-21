@@ -120,7 +120,7 @@ public class HRecordHandler extends AbstractHandler<HRecord> {
 
             try {
                 //准备数据
-                BatchDocVo route = new BatchDocVo(EsConfigManager.getESConfig(targetMediaSource).getClusterName());
+                BatchDocVo route = new BatchDocVo(EsConfigManager.getESConfig(targetMediaSource, taskId).getClusterName());
                 route.setBatchType("_bulk");
 
                 //发送数据

@@ -59,7 +59,7 @@ public class ManagerBootStrap {
     private static Properties buildProperties() throws IOException {
         Properties properties = new Properties();
         properties.put("port", 8898);
-        properties.put("http.port", 8080);
+        properties.put("http.port", 80);
         String conf = System.getProperty("manager.conf");
         logger.info("Manager Config File Path is :" + conf);
         if (!StringUtils.isEmpty(conf)) {

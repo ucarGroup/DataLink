@@ -10,15 +10,14 @@
                 <input type="hidden" name="id" value="${kafkaMediaSourceView.id}">
 
 
-                <div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-name">Kafka集群名称</label>
+                 <div class="form-group">
+                                    <label class="col-sm-3 control-label no-padding-right" for="form-update-name">Kafka集群名称</label>
 
-                    <div class="col-sm-9">
-                        <input type="text" style="width:350px;height:35px" name="name" class="col-xs-10 col-sm-5"
-                               value="${kafkaMediaSourceView.name}"
-                               id="form-update-name"/>
-                    </div>
-                </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" style="width:350px;height:35px" name="name" class="col-xs-10 col-sm-5" value="${kafkaMediaSourceView.name}"
+                                               id="form-update-name"/>
+                                    </div>
+                                </div>
 
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right"
@@ -39,45 +38,40 @@
 
                     <div class="col-sm-9">
                         <input type="text" style="width:350px;height:35px" id="form-update-topic"
-                               name="kafkaMediaSrcParameter.topic" value="${kafkaMediaSrcParameter.topic}"
-                               class="col-xs-10 col-sm-5"/>
+                               name="kafkaMediaSrcParameter.topic" value="${kafkaMediaSrcParameter.topic}" class="col-xs-10 col-sm-5"/>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-bootstrapServers">bootstrapServers</label>
+                                                                        <label class="col-sm-3 control-label no-padding-right" for="form-update-bootstrapServers">bootstrapServers</label>
 
-                    <div class="col-sm-9">
-                        <input type="text" id="form-update-bootstrapServers"
-                               name="kafkaMediaSrcParameter.bootstrapServers"
-                               value="${kafkaMediaSrcParameter.bootstrapServers}" class="col-xs-10 col-sm-5"
-                               style="width:350px;height:35px" maxlength="300"/>
-                    </div>
-                </div>
+                                                                        <div class="col-sm-9">
+                                                                            <input type="text" id="form-update-bootstrapServers" name="kafkaMediaSrcParameter.bootstrapServers" value="${kafkaMediaSrcParameter.bootstrapServers}"  class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="300"/>
+                                                                        </div>
+                                                                    </div>
 
 
-                <div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-paramters">参数</label>
+                                       <div class="form-group">
+                                                        <label class="col-sm-3 control-label no-padding-right" for="form-update-paramters">参数</label>
 
-                    <div class="col-sm-9">
-                        <input type="text" id="form-update-paramters" name="kafkaMediaSrcParameter.paramters"
-                               value="${kafkaMediaSrcParameter.paramters}" class="col-xs-10 col-sm-5"
-                               style="width:350px;height:35px" maxlength="500"/>
-                    </div>
-                </div>
+                                                        <div class="col-sm-9">
+                                                            <input type="text" id="form-update-paramters" name="kafkaMediaSrcParameter.paramters" value="${kafkaMediaSrcParameter.paramters}"  class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="500"/>
+                                                        </div>
+                                                    </div>
 
-                <div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-desc">描述</label>
+                   <div class="form-group">
+                                                    <label class="col-sm-3 control-label no-padding-right" for="form-update-desc">描述</label>
 
-                    <div class="col-sm-9">
-                        <input type="text" id="form-update-paramters" name="desc" value="${kafkaMediaSourceView.desc}"
-                               class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50"/>
-                    </div>
-                </div>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" id="form-update-paramters" name="desc" value="${kafkaMediaSourceView.desc}" class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50"/>
+                                                    </div>
+                                 </div>
 
 
             </form>
         </div>
+
+
 
 
         <div class="clearfix form-actions">
@@ -103,10 +97,10 @@
         var topic = $.trim($("#form-update-topic").val());
         var desc = $.trim($("#form-update-desc").val());
         var bootstrapServers = $.trim($("#form-update-bootstrapServers").val());
-        if (bootstrapServers == "") {
-            alert("bootstrapServers不能为空!");
-            return false;
-        }
+         if (bootstrapServers == "") {
+                    alert("bootstrapServers不能为空!");
+                    return false;
+                }
 
         if (name == "") {
             alert("名称不能为空!");
@@ -141,6 +135,8 @@
         $("#mainContentInner").show();
         kafkaListMyTable.ajax.reload();
     }
+
+
 
 
 </script>

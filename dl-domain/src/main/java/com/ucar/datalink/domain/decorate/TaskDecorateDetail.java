@@ -11,15 +11,16 @@ import java.util.Date;
  */
 public class TaskDecorateDetail {
 
-    private long id;
+
+    private long  id;
     private long decorateId;
     private long taskId;
     private String taskName;
     private String tableName;
-    private int status;
+    private int  status;
     private Date createTime;
     private Date updateTime;
-    private String executedLog;
+    private String  executedLog;
     private String statement;
 
 
@@ -35,13 +36,15 @@ public class TaskDecorateDetail {
         return decorateId;
     }
 
+
+    public String getStatusName(){
+        return TaskDecorateStatus.NEW_CREATED.getValueByCode(this.status);
+    }
+
     public void setDecorateId(long decorateId) {
         this.decorateId = decorateId;
     }
 
-    public String getStatusName() {
-        return TaskDecorateStatus.NEW_CREATED.getValueByCode(this.status);
-    }
 
     public String getTaskName() {
         return taskName;

@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by sqq on 2017/4/19.
@@ -40,20 +41,12 @@ public class UserController {
     @Autowired
     UserRoleService userRoleService;
 
-    private static AuditLogInfo getAuditLogInfo(UserInfo info, String menuCode, String operType) {
-        AuditLogInfo logInfo = new AuditLogInfo();
-        logInfo.setUserId(UserUtil.getUserIdFromRequest());
-        logInfo.setMenuCode(menuCode);
-        logInfo.setOperName(info.getUserName());
-        logInfo.setOperType(operType);
-        logInfo.setOperKey(info.getId());
-        logInfo.setOperRecord(info.toString());
-        return logInfo;
-    }
-
     @RequestMapping(value = "/userList")
     public ModelAndView userList() {
         ModelAndView mav = new ModelAndView("user/list");
+        List<String> emailList = userService.getList().stream().map(i -> i.getUcarEmail()).collect(Collectors.toList());
+        mav.addObject("emailList", emailList);
+        mav.addObject("roleList", roleService.getList());
         return mav;
     }
 
@@ -63,7 +56,12 @@ public class UserController {
         Page<UserInfo> page = new Page<>(map);
         PageHelper.startPage(page.getPageNum(), page.getLength());
 
-        List<UserInfo> listUser = userService.getList();
+        String ucarEmail = map.get("ucarEmail");
+        String roleId = map.get("roleId");
+        UserInfo info=new UserInfo();
+        info.setUcarEmail(ucarEmail);
+        info.setRoleIdStr(roleId);
+        List<UserInfo> listUser = userService.getListByUserInfo(info);
 
         PageInfo<UserInfo> pageInfo = new PageInfo<>(listUser);
         page.setDraw(page.getDraw());
@@ -92,6 +90,17 @@ public class UserController {
         }
     }
 
+    private static AuditLogInfo getAuditLogInfo(UserInfo info, String menuCode, String operType){
+        AuditLogInfo logInfo=new AuditLogInfo();
+        logInfo.setUserId(UserUtil.getUserIdFromRequest());
+        logInfo.setMenuCode(menuCode);
+        logInfo.setOperName(info.getUserName());
+        logInfo.setOperType(operType);
+        logInfo.setOperKey(info.getId());
+        logInfo.setOperRecord(info.toString());
+        return logInfo;
+    }
+
     @RequestMapping(value = "/toEdit")
     public ModelAndView toEdit(HttpServletRequest request) {
         String id = request.getParameter("id");
@@ -101,13 +110,13 @@ public class UserController {
             userInfo = userService.getById(Long.valueOf(id));
 
             //取出用户的角色
-            if (userInfo != null) {
+            if(userInfo != null){
                 List<UserRoleInfo> userRoleInfoList = userRoleService.findListByUserId(userInfo.getId());
                 List<String> roleIdList = new ArrayList<String>();
-                for (UserRoleInfo info : userRoleInfoList) {
+                for(UserRoleInfo info : userRoleInfoList){
                     roleIdList.add(String.valueOf(info.getRoleId()));
                 }
-                String roleIdStr = String.join(",", roleIdList);
+               String roleIdStr = String.join(",",roleIdList);
                 userInfo.setRoleIdStr(roleIdStr);
             }
         }

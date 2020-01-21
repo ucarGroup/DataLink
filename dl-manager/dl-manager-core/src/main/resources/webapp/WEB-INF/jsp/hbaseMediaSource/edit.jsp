@@ -63,6 +63,30 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label class="col-sm-3 control-label no-padding-right"
+                           for="form-update-labId">所属机房</label>
+
+                    <div class="col-sm-9">
+                        <select multiple="" id="form-update-labId" name="labId" class="labId col-xs-10 col-sm-5"
+                                data-placeholder="Click to Choose..." style="width:350px;height:35px">
+                            <c:forEach items="${labInfoList}" var="bean">
+                                <option value="${bean.id}">${bean.labName} </option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label no-padding-right"
+                                           for="form-add-peerId">peerId</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" style="width:350px;height:35px" id="form-add-peerId"
+                                               name="hbaseMediaSrcParameter.peerId" class="col-xs-10 col-sm-5"
+                                               value="${hbaseMediaSourceView.hbaseMediaSrcParameter.peerId}"/>
+                                    </div>
+                                </div>
+
             </form>
         </div>
 
@@ -84,6 +108,9 @@
 </div>
 
 <script type="text/javascript">
+
+    $('.labId').val('${labId}').select2({allowClear: false, maximumSelectionLength: 1});
+
     function doEdit() {
         var name = $.trim($("#form-add-name").val());
         var desc = $.trim($("#form-add-desc").val());
@@ -91,6 +118,8 @@
         var znodeParent = $.trim($("#form-add-znodeParent").val());
         var zkMediaSourceId = $.trim($("#form-add-zkMediaSourceId").val());
         var keyvalueMaxsize = $.trim($("#form-add-keyvalueMaxsize").val());
+        var labId = $.trim($("#form-update-labId").val());
+        var peerId = $.trim($("#form-add-peerId").val());
 
         if (name == "") {
             alert("集群名称不能为空!");
@@ -113,8 +142,14 @@
             alert("keyvalue最大长度不能为空!");
             return false;
         }
-
-
+        if (labId == "") {
+            alert("所属机房不能为空!");
+            return false;
+        }
+        if(peerId == "") {
+            alert("peerId不能为空!");
+            return false;
+        }
         $.ajax({
             type: "post",
             url: "${basePath}/hbase/doEdit",

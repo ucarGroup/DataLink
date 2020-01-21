@@ -65,6 +65,20 @@
                                class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50"/>
                     </div>
                 </div>
+
+                <div class="form-group">
+                    <label class="col-sm-3 control-label no-padding-right" for="form-add-labId">所属机房</label>
+
+                    <div class="col-sm-9">
+                        <select multiple="" id="form-add-labId" name="labId" class="labId col-xs-10 col-sm-5"
+                                data-placeholder="Click to Choose..." style="width:350px;height:35px">
+                            <c:forEach items="${labInfoList}" var="bean">
+                                <option value="${bean.id}">${bean.labName} </option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                </div>
+
             </form>
         </div>
         <div class="clearfix form-actions">
@@ -85,6 +99,9 @@
 </div>
 
 <script type="text/javascript">
+
+    $('.labId').select2({allowClear: false, maximumSelectionLength: 1});
+
     function doAdd() {
         var name = $.trim($("#form-add-name").val());
         var desc = $.trim($("#form-add-desc").val());
@@ -93,6 +110,7 @@
         var tcpPort = $.trim($("#form-add-tcpPort").val());
         var userName = $.trim($("#form-add-userName").val());
         var password = $.trim($("#form-add-password").val());
+        var labId = $.trim($("#form-add-labId").val());
 
         if (name == "") {
             alert("集群名称不能为空!");
@@ -120,6 +138,10 @@
         }
         if (password == "") {
             alert("密码不能为空!");
+            return false;
+        }
+        if (labId == "") {
+            alert("所属机房不能为空!");
             return false;
         }
 

@@ -39,6 +39,12 @@ public class TaskInfo implements Serializable, Storable,Comparable<TaskInfo>,Clo
     private boolean isDelete;
     private Long leaderTaskId;
     private boolean isLeaderTask;
+    private Long labId;
+    private String labName;
+    private String taskSyncMode;
+    private Long alarmPriorityId;
+    private Integer taskPriorityId;
+
 
     //------------------------------------------------------------------------------------------------------------------
     //------------------------------getter&setter methods for database fields-------------------------------------------
@@ -80,6 +86,22 @@ public class TaskInfo implements Serializable, Storable,Comparable<TaskInfo>,Clo
         } else {
             taskParameterObj = null;
         }
+    }
+
+    public Long getAlarmPriorityId() {
+        return alarmPriorityId;
+    }
+
+    public void setAlarmPriorityId(Long alarmPriorityId) {
+        this.alarmPriorityId = alarmPriorityId;
+    }
+
+    public Integer getTaskPriorityId() {
+        return taskPriorityId;
+    }
+
+    public void setTaskPriorityId(Integer taskPriorityId) {
+        this.taskPriorityId = taskPriorityId;
     }
 
     public Long getReaderMediaSourceId() {
@@ -229,7 +251,32 @@ public class TaskInfo implements Serializable, Storable,Comparable<TaskInfo>,Clo
         }
         return taskParameterObj;
     }
-@Override
+
+    public Long getLabId() {
+        return labId;
+    }
+
+    public void setLabId(Long labId) {
+        this.labId = labId;
+    }
+
+    public String getLabName() {
+        return labName;
+    }
+
+    public void setLabName(String labName) {
+        this.labName = labName;
+    }
+
+    public String getTaskSyncMode() {
+        return taskSyncMode;
+    }
+
+    public void setTaskSyncMode(String taskSyncMode) {
+        this.taskSyncMode = taskSyncMode;
+    }
+
+    @Override
     public int compareTo(TaskInfo o) {
         if(this.getId().longValue() > o.getId().longValue() ){
             return 1;
@@ -239,7 +286,27 @@ public class TaskInfo implements Serializable, Storable,Comparable<TaskInfo>,Clo
             return -1;
         }
     }
-	@Override
+
+    @Override
+    public String toString() {
+        return "TaskInfo{" +
+                "id=" + id +
+                ", taskName='" + taskName + '\'' +
+                ", taskDesc='" + taskDesc + '\'' +
+                ", readerMediaSourceId=" + readerMediaSourceId +
+                ", taskType=" + taskType +
+                ", groupId=" + groupId +
+                ", isDelete=" + isDelete +
+                ", leaderTaskId=" + leaderTaskId +
+                ", isLeaderTask=" + isLeaderTask +
+                ", labId=" + labId +
+                ", labName='" + labName + '\'' +
+                ", taskSyncMode='" + taskSyncMode + '\'' +
+                ", version=" + version +
+                '}';
+    }
+
+    @Override
     public TaskInfo clone() throws CloneNotSupportedException{
         return (TaskInfo) super.clone();
     }

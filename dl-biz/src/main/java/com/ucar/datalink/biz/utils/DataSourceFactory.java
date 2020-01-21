@@ -1,9 +1,13 @@
 package com.ucar.datalink.biz.utils;
 
 import com.google.common.cache.*;
+import com.ucar.datalink.biz.service.DoubleCenterService;
+import com.ucar.datalink.biz.service.LabService;
+import com.ucar.datalink.biz.service.MediaSourceRelationService;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
+import com.ucar.datalink.domain.media.MediaSourceRelationInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.parameter.MediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.rdb.BasicDataSourceConfig;
@@ -14,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -27,6 +32,7 @@ public class DataSourceFactory {
     private static final Logger logger = LoggerFactory.getLogger(DataSourceFactory.class);
 
     private static final LoadingCache<MediaSourceInfo, DataSource> dataSources;
+    private static final String defaultLab = "defaultLab";
 
     static {
         dataSources = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).removalListener(new RemovalListener<MediaSourceInfo, DataSource>() {
@@ -45,6 +51,7 @@ public class DataSourceFactory {
         }).build(new CacheLoader<MediaSourceInfo, DataSource>() {
             @Override
             public DataSource load(MediaSourceInfo sourceInfo) throws Exception {
+
                 MediaSrcParameter parameter = sourceInfo.getParameterObj();
                 RdbMediaSrcParameter rdbParameter;
                 if (parameter instanceof RdbMediaSrcParameter) {
@@ -149,23 +156,69 @@ public class DataSourceFactory {
     }
 
     public static DataSource getDataSource(MediaSourceInfo mediaSourceInfo) {
-        return dataSources.getUnchecked(mediaSourceInfo);
+        if (mediaSourceInfo.getType().equals(MediaSourceType.VIRTUAL)) {
+            DoubleCenterService doubleCenterService = DataLinkFactory.getObject(DoubleCenterService.class);
+            String labName = doubleCenterService.getCenterLab(mediaSourceInfo.getId());
+            //取中心机房对应的数据源
+            Long labId = DataLinkFactory.getObject(LabService.class).getLabByName(labName).getId();
+            List<MediaSourceInfo> list = DataLinkFactory.getObject(MediaSourceService.class).findRealListByVirtualMsId(mediaSourceInfo.getId());
+            for (MediaSourceInfo info : list) {
+                if (info.getLabId().longValue() == labId.longValue()) {
+                    mediaSourceInfo = info;
+                    break;
+                }
+            }
+            return dataSources.getUnchecked(mediaSourceInfo);
+        } else {
+            return dataSources.getUnchecked(mediaSourceInfo);
+        }
     }
 
     public static void invalidate(MediaSourceInfo mediaSourceInfo, Supplier preCloseAction) {
-        DataSource ds = dataSources.getIfPresent(mediaSourceInfo);
-        if (ds != null) {
-            dataSources.invalidate(mediaSourceInfo);
-            preCloseAction.get();
-            if (ds instanceof org.apache.tomcat.jdbc.pool.DataSource) {
-                try {
-                    ((org.apache.tomcat.jdbc.pool.DataSource) ds).close();
-                } catch (Exception e) {
-                    logger.error("Datasource close failed,MediaSource id is " + mediaSourceInfo.getId(), e);
+        if (mediaSourceInfo.getType().equals(MediaSourceType.VIRTUAL)) {
+            //清理虚拟数据源对应的真实数据源的DataSource缓存
+            List<MediaSourceInfo> list = DataLinkFactory.getObject(MediaSourceService.class).findRealListByVirtualMsId(mediaSourceInfo.getId());
+            for (MediaSourceInfo info : list) {
+                DataSource ds = dataSources.getIfPresent(info);
+                if (ds != null) {
+                    dataSources.invalidate(info);
+                    preCloseAction.get();
+                    if (ds instanceof org.apache.tomcat.jdbc.pool.DataSource) {
+                        try {
+                            ((org.apache.tomcat.jdbc.pool.DataSource) ds).close();
+                        } catch (Exception e) {
+                            logger.error("Datasource close failed,MediaSource id is " + info.getId(), e);
+                        }
+                    }
+                    logger.info("Datasource invalidate successfully with mediaSoruceId = " + mediaSourceInfo.getId() + " and labName = " + mediaSourceInfo.getLabName());
                 }
             }
-            logger.info("Datasource invalidate successfully");
+
+            //清理虚拟数据源对应的真实数据源的MediaSourceInfo缓存
+            DataLinkFactory.getObject(MediaSourceService.class).clearRealMediaSourceListCache(mediaSourceInfo.getId());
+            logger.info("Datasource realListCache invalidate successfully with virtualMediaSoruceId = " + mediaSourceInfo.getId());
+        } else {
+            DataSource ds = dataSources.getIfPresent(mediaSourceInfo);
+            if (ds != null) {
+                dataSources.invalidate(mediaSourceInfo);
+                preCloseAction.get();
+                if (ds instanceof org.apache.tomcat.jdbc.pool.DataSource) {
+                    try {
+                        ((org.apache.tomcat.jdbc.pool.DataSource) ds).close();
+                    } catch (Exception e) {
+                        logger.error("Datasource close failed,MediaSource id is " + mediaSourceInfo.getId(), e);
+                    }
+                }
+                logger.info("Datasource invalidate successfully with mediaSoruceId = " + mediaSourceInfo.getId() + " and labName = " + mediaSourceInfo.getLabName());
+            }
+            //如果有对应的虚拟数据源，则清理虚拟数据源对应的真实数据源的MediaSourceInfo缓存
+            MediaSourceRelationInfo relationInfo = DataLinkFactory.getObject(MediaSourceRelationService.class).getOneByRealMsId(mediaSourceInfo.getId());
+            if (relationInfo != null) {
+                DataLinkFactory.getObject(MediaSourceService.class).clearRealMediaSourceListCache(relationInfo.getVirtualMsId());
+                logger.info("Datasource realListCache invalidate successfully with virtualMediaSoruceId = " + relationInfo.getVirtualMsId());
+            }
         }
-        logger.info("No Datasource to be invalidated");
+
     }
+
 }

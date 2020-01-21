@@ -1,6 +1,7 @@
 package com.ucar.datalink.biz.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -8,32 +9,43 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.ucar.datalink.biz.dal.MediaDAO;
 import com.ucar.datalink.biz.dal.MediaSourceDAO;
+import com.ucar.datalink.biz.dal.MediaSourceRelationDAO;
 import com.ucar.datalink.biz.dal.SysPropertiesDAO;
+import com.ucar.datalink.biz.service.MediaService;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.biz.service.SyncRelationService;
+import com.ucar.datalink.biz.service.TaskConfigService;
 import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.biz.utils.DataSourceFactory;
-import com.ucar.datalink.biz.utils.ddl.DdlSqlUtils;
 import com.ucar.datalink.biz.utils.ddl.DdlUtils;
+import com.ucar.datalink.biz.utils.ddl.DdlSqlUtils;
 import com.ucar.datalink.biz.utils.ddl.SQLStatementHolder;
 import com.ucar.datalink.common.errors.DatalinkException;
+import com.ucar.datalink.common.errors.ErrorException;
+import com.ucar.datalink.common.utils.CodeContext;
+import com.ucar.datalink.common.utils.HttpUtils;
 import com.ucar.datalink.domain.media.*;
 import com.ucar.datalink.domain.media.parameter.MediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.rdb.RdbMediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
+import com.ucar.datalink.domain.media.parameter.virtual.VirtualMediaSrcParameter;
 import com.ucar.datalink.domain.relationship.*;
 import com.ucar.datalink.domain.sysProperties.SysPropertiesInfo;
+import com.ucar.datalink.domain.task.TaskInfo;
+import com.ucar.datalink.domain.vo.TaskMediaNameVo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ddlutils.model.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 import java.util.*;
+
 import java.util.stream.Collectors;
 
 /**
@@ -41,14 +53,30 @@ import java.util.stream.Collectors;
  */
 @Service
 public class SyncRelationServiceImpl implements SyncRelationService {
-    private static final Logger logger = LoggerFactory.getLogger(SyncRelationServiceImpl.class);
 
     private static final String ALL_MAPPING = "ALL_MAPPING";
 
+    private static final String MEDIASOURCE_NAME_LUCKY = "hdfs_lucky";
+
+    private static final String JSON_KEY_STATUS = "status";
+
     private static final String columnRenameOrDrop = "columnRenameOrDrop";
 
+    private static final String interceptorIdList4SyncRelation = "interceptorIdList4SyncRelation";
+
+    private static final Logger logger = LoggerFactory.getLogger(SyncRelationServiceImpl.class);
+
+    @Value("${biz.lucky.hive.url}")
+    private String lucky_hive_url;
+
+    @Value("${biz.ucar.hive.url}")
+    private String ucar_hive_url;
+
     @Autowired
-    SysPropertiesDAO sysPropertiesDAO;
+    private MediaSourceService mediaSourceService;
+
+    @Autowired
+    private MediaService mediaService;
 
     private LoadingCache<String, List<MediaMappingInfo>> mediaMappingCache = CacheBuilder.newBuilder().build(
             new CacheLoader<String, List<MediaMappingInfo>>() {
@@ -86,35 +114,77 @@ public class SyncRelationServiceImpl implements SyncRelationService {
         treesCache.invalidateAll();
     }
 
+
     @Autowired
     MediaDAO mediaDAO;
 
     @Autowired
     MediaSourceDAO mediaSourceDAO;
 
+    @Autowired
+    MediaSourceRelationDAO mediaSourceRelationDAO;
+
+    @Autowired
+    SysPropertiesDAO sysPropertiesDAO;
+
+    @Autowired
+    private TaskConfigService taskConfigService;
+
     @Override
     public List<SyncNode> getSyncRelationTrees(Long mediaSourceId, String mediaName) {
-        Long sddlMediaSourceId = isSDDLSubDB(mediaSourceId);
-        Long realMediaSourceId;
-        if (sddlMediaSourceId != null) {
-            realMediaSourceId = sddlMediaSourceId;
-        } else {
-            realMediaSourceId = mediaSourceId;
+        Long maxMediaSourceId = getMaxMediaSourceId(mediaSourceId);
+
+        //处理表名中包含的特殊字符`
+        if(mediaName.contains("`")){
+            mediaName = mediaName.replaceAll("`","");
         }
+        final String mediaNameTemp = mediaName;
+
+        long currentTime = System.currentTimeMillis();
         List<SyncNode> list = treesCache.getUnchecked(mediaName);
-        return list.stream().filter(i -> isDbInNodeTree(realMediaSourceId, mediaName, i, true)).collect(Collectors.toList());
+        logger.info("检测出的同步关系树是：{},共花费{}秒。",JSON.toJSONString(list),(System.currentTimeMillis() - currentTime) / 1000);
+
+        List<SyncNode> tempList = list.stream().filter(i -> isDbInNodeTree(maxMediaSourceId, mediaNameTemp, i, true)).collect(Collectors.toList());;
+        logger.info("检测出的同步关系树，经过过滤后的树是：{}",JSON.toJSONString(tempList));
+
+        return tempList;
+    }
+
+    /**
+     * 改方法暂时用不到
+     *
+     * 在目标端修改表结构不应该把源端检测出来
+     *
+     * @param syncNode
+     * @param mediaSourceId
+     * @return
+     */
+    public SyncNode retainAfter(SyncNode syncNode,Long mediaSourceId){
+        if (syncNode.getMediaSource().getId().equals(mediaSourceId)){
+            return syncNode;
+        }
+        if (syncNode.getChildren() != null && !syncNode.getChildren().isEmpty()) {
+            for (SyncNode node : syncNode.getChildren()) {
+                return retainAfter(node,mediaSourceId);
+            }
+        }
+        return null;
     }
 
     @Override
     public List<SqlCheckResult> checkSqls(Long mediaSourceId, String sqls) {
-        Long sddlMediaSourceId = isSDDLSubDB(mediaSourceId);
-        if (sddlMediaSourceId != null) {
-            mediaSourceId = sddlMediaSourceId;
+
+        mediaSourceId = getMaxMediaSourceId(mediaSourceId);
+        MediaSourceInfo mediaSourceInfo = mediaSourceDAO.getById(mediaSourceId);
+        MediaSourceType mediaSourceType;
+
+        if (mediaSourceInfo.getType() == MediaSourceType.VIRTUAL) {
+            mediaSourceType = mediaSourceInfo.getSimulateMsType();
+        } else {
+            mediaSourceType = mediaSourceInfo.getType();
         }
 
-        MediaSourceInfo mediaSourceInfo = mediaSourceDAO.getById(mediaSourceId);
-
-        List<SQLStatementHolder> holders = DdlSqlUtils.buildSQLStatement(mediaSourceInfo.getType(), sqls);
+        List<SQLStatementHolder> holders = DdlSqlUtils.buildSQLStatement(mediaSourceType, sqls);
 
         List<SqlCheckResult> list = new ArrayList<>();
         if (!holders.isEmpty()) {
@@ -126,6 +196,16 @@ public class SyncRelationServiceImpl implements SyncRelationService {
             }
         }
         return list;
+
+
+    }
+
+    private Long isVirtualDB(Long mediaSourceId) {
+        MediaSourceRelationInfo info = mediaSourceRelationDAO.getOneByRealMsId(mediaSourceId);
+        if (info != null) {
+            return info.getVirtualMsId();
+        }
+        return null;
     }
 
     private SqlCheckResult checkOneSql(final MediaSourceInfo mediaSourceInfo, final SQLStatementHolder holder) {
@@ -136,9 +216,9 @@ public class SyncRelationServiceImpl implements SyncRelationService {
         //是否允许Column-Rename、Column-Drop，测试环境支持，其他环境不支持
         SysPropertiesInfo propertiesInfo = sysPropertiesDAO.getSysPropertiesByKey(columnRenameOrDrop);
         boolean ifColumnRenameOrDropTemp = false;
-        if (propertiesInfo != null) {
+        if(propertiesInfo != null){
             String value = propertiesInfo.getPropertiesValue();
-            if (StringUtils.equals(value, "true")) {
+            if(StringUtils.equals(value,"true")){
                 ifColumnRenameOrDropTemp = true;
             }
         }
@@ -170,6 +250,14 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                                             SqlCheckNote.NoteLevel.WARN));
                                 }
 
+                                //虚拟数据源给提示信息
+                                if (mediaSourceInfo.getType().equals(MediaSourceType.VIRTUAL)) {
+                                    t.getSqlCheckNotes().add(new SqlCheckNote(
+                                            "检测到有虚拟数据源，请在其对应A、B中心的真实数据源执行操作",
+                                            SqlCheckNote.RoleType.DBA,
+                                            SqlCheckNote.NoteLevel.INFO));
+                                }
+
                                 t.getSqlCheckNotes().addAll(buildSqlCheckNotes(mediaSourceInfo, i, t.getRootNode(), true));
                             });
                         }
@@ -189,7 +277,7 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                                 }
 
                                 if (i.isContainsColumnRename()) {
-                                    if (!ifColumnRenameOrDrop) {
+                                    if(!ifColumnRenameOrDrop){
                                         t.getSqlCheckNotes().add(new SqlCheckNote(
                                                 "参与数据同步的表，不支持[Column-Rename]操作",
                                                 SqlCheckNote.RoleType.ALL,
@@ -198,7 +286,7 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                                 }
 
                                 if (i.isContainsColumnDrop()) {
-                                    if (!ifColumnRenameOrDrop) {
+                                    if(!ifColumnRenameOrDrop){
                                         t.getSqlCheckNotes().add(new SqlCheckNote(
                                                 "参与数据同步的表，不支持[Column-Drop]操作.",
                                                 SqlCheckNote.RoleType.ALL,
@@ -229,9 +317,17 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                                         t.getSqlCheckNotes().add(new SqlCheckNote(
                                                 "请确认都需要在哪些分库执行索引添加操作.",
                                                 SqlCheckNote.RoleType.DBA,
-                                                SqlCheckNote.NoteLevel.WARN
+                                                SqlCheckNote.NoteLevel.INFO
                                         ));
                                     }
+                                }
+
+                                //虚拟数据源给提示信息
+                                if (mediaSourceInfo.getType().equals(MediaSourceType.VIRTUAL)) {
+                                    t.getSqlCheckNotes().add(new SqlCheckNote(
+                                            "检测到有虚拟数据源，请在其对应A、B中心的真实数据源执行操作",
+                                            SqlCheckNote.RoleType.DBA,
+                                            SqlCheckNote.NoteLevel.INFO));
                                 }
 
                                 if (i.getUniqueKeysDropInfo() != null && i.getUniqueKeysDropInfo().size() > 0) {
@@ -259,9 +355,9 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                             sqlCheckResult.getSqlCheckTrees().addAll(trees);
                             trees.forEach(t -> {
                                 t.getSqlCheckNotes().add(new SqlCheckNote(
-                                        String.format("待删除的表[%s]涉及数据同步，请确认风险.", i.getTableName()),
+                                        String.format("表[%s]有同步关系，请先解除关系再执行删除.", i.getTableName()),
                                         SqlCheckNote.RoleType.DLA,
-                                        SqlCheckNote.NoteLevel.WARN));
+                                        SqlCheckNote.NoteLevel.ERROR));
 
                                 t.setSqlExeDirection(SqlExeDirection.Positive);
                                 t.getSqlCheckNotes().add(new SqlCheckNote(
@@ -272,6 +368,13 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                                 if (containsSddlDataSource(t.getRootNode())) {
                                     t.getSqlCheckNotes().add(new SqlCheckNote(
                                             "SDDL数据源内部先执行0号库，再执行其它库.",
+                                            SqlCheckNote.RoleType.DBA,
+                                            SqlCheckNote.NoteLevel.INFO));
+                                }
+                                //虚拟数据源给提示信息
+                                if (mediaSourceInfo.getType().equals(MediaSourceType.VIRTUAL)) {
+                                    t.getSqlCheckNotes().add(new SqlCheckNote(
+                                            "检测到有虚拟数据源，请在其对应A、B中心的真实数据源执行操作",
                                             SqlCheckNote.RoleType.DBA,
                                             SqlCheckNote.NoteLevel.INFO));
                                 }
@@ -325,10 +428,18 @@ public class SyncRelationServiceImpl implements SyncRelationService {
         List<SyncNode> list = getSyncRelationTrees(mediaSourceInfo.getId(),
                 sqlCheckItem.getSqlType().equals(SqlType.CreateTable) ? "(.*)" : sqlCheckItem.getTableName());
 
+
+        //如果当前数据源没有同步关系且是虚拟数据源，那么手动设置一个同步关系
+        if (CollectionUtils.isEmpty(list) && mediaSourceInfo.getType().equals(MediaSourceType.VIRTUAL)) {
+            list = new ArrayList<SyncNode>();
+            SyncNode syncNode = new SyncNode(mediaSourceInfo, null);
+            list.add(syncNode);
+        }
+
         List<SqlCheckTree> result = new ArrayList<>();
         for (SyncNode root : list) {
             SyncNode newNode = copyNode(mediaSourceInfo, root, sqlCheckItem, true);
-            if (newNode != null && (CollectionUtils.isNotEmpty(newNode.getChildren()) || mediaSourceInfo.getType() == MediaSourceType.SDDL)) {
+            if (newNode != null && (CollectionUtils.isNotEmpty(newNode.getChildren()) || mediaSourceInfo.getType() == MediaSourceType.SDDL || mediaSourceInfo.getType() == MediaSourceType.VIRTUAL)) {
                 result.add(new SqlCheckTree(newNode, sqlCheckItem.getTableName()));
             }
         }
@@ -340,19 +451,24 @@ public class SyncRelationServiceImpl implements SyncRelationService {
 
         //如果包含禁止的Sql操作，不进行任何节点过滤，防止过滤完之后是一颗空树，这样的话会提示用户不影响数据同步
         if (!sqlCheckItem.containsForbidden()) {
+            if (mediaSourceType == MediaSourceType.FLEXIBLEQ || mediaSourceType == MediaSourceType.KAFKA || mediaSourceType == MediaSourceType.DOVE) {
+                return null;//不管SqlType是什么类型，FQ类型的数据源直接忽略
+            }
 
             if (SqlType.AlterTable.equals(sqlCheckItem.getSqlType())) {
                 //白名单验证
                 if (!isRootNode && ColumnMappingMode.INCLUDE.equals(syncNode.getMappingInfo().getColumnMappingMode())) {
                     if (!sqlCheckItem.isContainsColumnModify() && !sqlCheckItem.isContainsUniqueKeysDrop()
-                            && (mediaSourceType.isRdbms() || mediaSourceType == MediaSourceType.SDDL)) {
+                            && (mediaSourceType.isRdbms() || mediaSourceType == MediaSourceType.SDDL || (mediaSourceType == MediaSourceType.VIRTUAL && syncNode.getMediaSource().getSimulateMsType().isRdbms()))) {
                         return null;//对于关系型数据库，如果配置了白名单，并且不包含【列修改操作】和【唯一性约束的Drop操作】，则直接忽略
                     }
                     if (!sqlCheckItem.isContainsColumnModify() &&
                             (mediaSourceType == MediaSourceType.HBASE ||
                                     mediaSourceType == MediaSourceType.HDFS ||
                                     mediaSourceType == MediaSourceType.KUDU ||
-                                    mediaSourceType == MediaSourceType.ELASTICSEARCH)
+                                    mediaSourceType == MediaSourceType.ELASTICSEARCH ||
+                                    (mediaSourceType == MediaSourceType.VIRTUAL && syncNode.getMediaSource().getSimulateMsType() != MediaSourceType.MYSQL)
+                            )
                             ) {
                         return null;//对于非关系型数据库，如果配置了白名单，并且不包含【列修改操作】，则直接忽略
                     }
@@ -373,14 +489,26 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                 //添加索引验证
                 if (isRootNode && !sqlCheckItem.isAlterAffectColumn() && !sqlCheckItem.isContainsUniqueKeysDrop()
                         && sqlCheckItem.isContainsIndexesAdd()) {
-                    if (mediaSource4Check.getType() != MediaSourceType.SDDL) {
-                        // 对于index-add操作，如果不是在sddl类型的数据源上操作，直接忽略即可
+                    if (mediaSource4Check.getType() != MediaSourceType.SDDL && mediaSource4Check.getType() != MediaSourceType.VIRTUAL) {
+                        // 对于index-add操作，如果不是在sddl类型和虚拟类型的数据源上操作，直接忽略即可
                         return null;
                     } else {
                         SyncNode sddlNode = findSyncNode(syncNode, mediaSource4Check);
                         if (sddlNode != null) {
                             SyncNode newNode = new SyncNode(sddlNode.getMediaSource(), sddlNode.getMappingInfo());
                             newNode.setTableNameAlias(sddlNode.getTableNameAlias());
+
+                            //解决：sddl数据源全库往外的同步（到总库/TIDB），加字段能检测出来，加索引没有检测出来
+                            if (CollectionUtils.isNotEmpty(sddlNode.getChildren())) {
+                                newNode.setChildren(new ArrayList<>());
+                                for (SyncNode n : sddlNode.getChildren()) {
+                                    SyncNode sn = copyNode(mediaSource4Check, n, sqlCheckItem, false);
+                                    if (sn != null) {
+                                        newNode.getChildren().add(sn);
+                                    }
+                                }
+                            }
+
                             return newNode;
                         }
                     }
@@ -438,13 +566,13 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                 ));
             }
 
-            if (sqlCheckItem.isContainsColumnRename() || sqlCheckItem.isContainsColumnDrop() || sqlCheckItem.isContainsColumnAdd() || sqlCheckItem.isContainsColumnModify()) {
+            if(sqlCheckItem.isContainsColumnRename() || sqlCheckItem.isContainsColumnDrop() || sqlCheckItem.isContainsColumnAdd() || sqlCheckItem.isContainsColumnModify()){
                 isCreateOrAlter = true;
             }
         }
 
         //根节点才能执行表创建、列增加、列修改、列删除、列重命名
-        if (isCreateOrAlter) {
+        if(isCreateOrAlter){
             if (isRootNode && !mediaSourceForCheck.equals(syncNode.getMediaSource())) {
                 result.add(new SqlCheckNote(
                         String.format("数据源[%s]在同步关系中不是根节点，不能执行脚本.", mediaSourceForCheck.getName()),
@@ -452,7 +580,7 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                         SqlCheckNote.NoteLevel.ERROR
                 ));
             }
-        } else {
+        }else{
             if (isRootNode && !mediaSourceForCheck.equals(syncNode.getMediaSource())) {
                 result.add(new SqlCheckNote(
                         String.format("数据源[%s]在同步关系中并不是根节点，请确认都需要在哪些库执行脚本.", mediaSourceForCheck.getName()),
@@ -461,6 +589,7 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                 ));
             }
         }
+
         if (!isRootNode && syncNode.getMappingInfo().getTargetMediaSource().getType().equals(MediaSourceType.ELASTICSEARCH)) {
             result.add(new SqlCheckNote(
                     "请参照Sql脚本和同步关系在ElasticSearch中做相应变更.",
@@ -563,8 +692,27 @@ public class SyncRelationServiceImpl implements SyncRelationService {
     private List<SyncNode> generateTrees(String mediaName) {
         Map<SyncNode, Set<SyncNode>> nodeMap = new HashMap<>();
         List<MediaMappingInfo> mappingList = mediaMappingCache.getUnchecked(ALL_MAPPING);
+
+        //拦截器列表
+        SysPropertiesInfo sysPropertiesInfo = sysPropertiesDAO.getSysPropertiesByKey(interceptorIdList4SyncRelation);
+        List<String> interceptorIdList = new ArrayList<String>();
+        if(sysPropertiesInfo != null){
+            String value = sysPropertiesInfo.getPropertiesValue();
+            if(StringUtils.isNotBlank(value)){
+                String[] arr = value.split(",");
+                interceptorIdList = Arrays.asList(arr);
+            }
+        }
+
         for (MediaMappingInfo mappingInfo : mappingList) {
-            if (isMatch(mediaName, mappingInfo)) {
+
+            //如果映射中有拦截器，且该拦截器在系统参数中，则不同步表结构
+            Boolean isContain = false;
+            if(mappingInfo.getInterceptorId() != null && CollectionUtils.isNotEmpty(interceptorIdList)){
+                isContain = interceptorIdList.contains(String.valueOf(mappingInfo.getInterceptorId()));
+            }
+
+            if (isMatch(mediaName, mappingInfo) && (!isContain)) {
                 SyncNode parentNode = buildParentNode(mappingInfo);
                 SyncNode childNode = buildChildNode(mappingInfo);
                 if (!parentNode.equals(childNode)) {
@@ -614,13 +762,13 @@ public class SyncRelationServiceImpl implements SyncRelationService {
             }
         }
 
-        logger.info("缓存中的同步关系树是：{}", JSON.toJSONString(rootNodeList));
+        logger.info("缓存中的同步关系树是：{}",JSON.toJSONString(rootNodeList));
 
         //针对一对多情况，对构建的树手动增加节点
         ListIterator<SyncNode> iterator = rootNodeList.listIterator();
         while (iterator.hasNext()) {
             SyncNode rootNode = iterator.next();
-            autoAddChildNode(rootNode, mediaName);
+            autoAddChildNode(rootNode,mediaName,interceptorIdList);
         }
 
         return rootNodeList;
@@ -629,12 +777,12 @@ public class SyncRelationServiceImpl implements SyncRelationService {
     /**
      * 针对一对多情况，对构建的树手动增加节点
      */
-    public void autoAddChildNode(SyncNode rootNode, String mediaName) {
+    public void autoAddChildNode(SyncNode rootNode,String mediaName,List<String> interceptorIdList){
 
-        if (CollectionUtils.isNotEmpty(rootNode.getChildren())) {
+        if(CollectionUtils.isNotEmpty(rootNode.getChildren())){
             List<SyncNode> childNodeList = rootNode.getChildren();
             ListIterator<SyncNode> childIterator = childNodeList.listIterator();
-            while (childIterator.hasNext()) {
+            while (childIterator.hasNext()){
                 SyncNode childNode = childIterator.next();
                 String childNodeTableName = StringUtils.isNotBlank(childNode.getTableNameAlias()) ? childNode.getTableNameAlias() : mediaName;
                 MediaMappingInfo mappingInfo = new MediaMappingInfo();
@@ -644,16 +792,24 @@ public class SyncRelationServiceImpl implements SyncRelationService {
                 mappingInfo.setSourceMedia(sourceMedia);
                 mappingInfo.setTargetMediaSourceId(childNode.getMediaSource().getId());
                 List<MediaMappingInfo> tempList = mediaDAO.findMappingListByCondition(mappingInfo);
-                if (CollectionUtils.isNotEmpty(tempList) && tempList.size() > 1) {
-                    tempList = tempList.stream().filter(item -> !StringUtils.equals(item.getTargetMediaName(), childNodeTableName)).collect(Collectors.toList());
-                    for (MediaMappingInfo tempMapping : tempList) {
-                        SyncNode tempNode = new SyncNode(childNode.getMediaSource(), tempMapping);
-                        childIterator.add(tempNode);
+                if(CollectionUtils.isNotEmpty(tempList) && tempList.size() > 1){
+                    tempList = tempList.stream().filter(item -> !StringUtils.equals(item.getTargetMediaName(),childNodeTableName)).collect(Collectors.toList());
+                    for (MediaMappingInfo tempMapping : tempList){
+
+                        //如果映射中有拦截器，且该拦截器在系统参数中，则不同步表结构
+                        Boolean isContain = false;
+                        if(tempMapping.getInterceptorId() != null && CollectionUtils.isNotEmpty(interceptorIdList)){
+                            isContain = interceptorIdList.contains(String.valueOf(tempMapping.getInterceptorId()));
+                        }
+                        if(!isContain){
+                            SyncNode tempNode = new SyncNode(childNode.getMediaSource(),tempMapping);
+                            childIterator.add(tempNode);
+                        }
                     }
                 }
 
-                if (CollectionUtils.isNotEmpty(childNode.getChildren())) {
-                    autoAddChildNode(childNode, childNodeTableName);
+                if(CollectionUtils.isNotEmpty(childNode.getChildren())){
+                    autoAddChildNode(childNode,childNodeTableName,interceptorIdList);
                 }
             }
         }
@@ -662,13 +818,14 @@ public class SyncRelationServiceImpl implements SyncRelationService {
     private boolean isMatch(String mediaName, MediaMappingInfo mappingInfo) {
         MediaInfo mediaInfo = mappingInfo.getSourceMedia();
         if (mediaInfo.getNameMode().getMode().isSingle()) {
+
             //解决如下场景，前面同步有表别名，前面又往外同步
             //A t1 -> B t2
             //B t2 -> C t2
             boolean result = mediaInfo.getName().equalsIgnoreCase(mediaName);
-            if (!result) {
+            if(!result){
                 MediaMappingInfo info = mediaDAO.getMediaMappingOfSpecial(mediaName, mediaInfo.getMediaSourceId());
-                if (info != null) {
+                if(info != null){
                     result = info.getTargetMediaName().equalsIgnoreCase(mediaInfo.getName());
                 }
             }
@@ -680,8 +837,19 @@ public class SyncRelationServiceImpl implements SyncRelationService {
             if ("(.*)".equals(mediaName)) {
                 return true;
             } else {
+
+                //解决如下场景，检测不到C库的情况。拿t1和B去查询映射，找出t2后，用t2去findTable
+                //A t1 -> B t2
+                //B * -> C *
+                boolean result = findTable(mediaName, mediaInfo.getMediaSource()) != null;
+                if(!result){
+                    MediaMappingInfo info = mediaDAO.getMediaMappingOfSpecial(mediaName, mediaInfo.getMediaSourceId());
+                    if(info != null){
+                        result = findTable(info.getTargetMediaName(), mediaInfo.getMediaSource()) != null;
+                    }
+                }
                 return ModeUtils.isWildCardMatch(mediaInfo.getName(), mediaName)
-                        && (findTable(mediaName, mediaInfo.getMediaSource()) != null)
+                        && result
                         && !existOverride(mediaName, mappingInfo);
             }
         } else if (mediaInfo.getNameMode().getMode().isYearly()) {
@@ -719,8 +887,17 @@ public class SyncRelationServiceImpl implements SyncRelationService {
         } else if (parameter instanceof SddlMediaSrcParameter) {
             Long proxyDbId = ((SddlMediaSrcParameter) parameter).getProxyDbId();
             rdbParameter = DataLinkFactory.getObject(MediaSourceService.class).getById(proxyDbId).getParameterObj();
+        } else if ((parameter instanceof VirtualMediaSrcParameter) && mediaSourceInfo.getSimulateMsType().isRdbms()) {
+            Long realDbId = ((VirtualMediaSrcParameter) parameter).getRealDbsId().get(0);
+            rdbParameter = DataLinkFactory.getObject(MediaSourceService.class).getById(realDbId).getParameterObj();
+        }else if ((parameter instanceof VirtualMediaSrcParameter) && mediaSourceInfo.getSimulateMsType() == MediaSourceType.SDDL) {
+            Long realDbId = ((VirtualMediaSrcParameter) parameter).getRealDbsId().get(0);
+            MediaSourceInfo mediaSourceInfoTemp = DataLinkFactory.getObject(MediaSourceService.class).getById(realDbId);
+            MediaSrcParameter parameterTemp = mediaSourceInfoTemp.getParameterObj();
+            Long proxyDbId = ((SddlMediaSrcParameter) parameterTemp).getProxyDbId();
+            rdbParameter = DataLinkFactory.getObject(MediaSourceService.class).getById(proxyDbId).getParameterObj();
         } else {
-            throw new DatalinkException("Unknown MediaSrcParameter Type.");
+            throw new DatalinkException("Unknown MediaSrcParameter Type , " + parameter);
         }
 
         try {
@@ -732,21 +909,143 @@ public class SyncRelationServiceImpl implements SyncRelationService {
 
     private SyncNode buildParentNode(MediaMappingInfo mappingInfo) {
         MediaSourceInfo srcMediaSourceInfo = mappingInfo.getSourceMedia().getMediaSource();
-        Long sddlMediaSourceId = isSDDLSubDB(srcMediaSourceInfo.getId());
-        if (sddlMediaSourceId != null) {
-            MediaSourceInfo sddlMediaSourceInfo = mediaSourceDAO.getById(sddlMediaSourceId);
-            return new SyncNode(sddlMediaSourceInfo, mappingInfo);
+
+        Long maxMediaSourceId = getMaxMediaSourceId(srcMediaSourceInfo.getId());
+        MediaSourceInfo maxMediaSourceInfo = mediaSourceDAO.getById(maxMediaSourceId);
+        return new SyncNode(maxMediaSourceInfo, mappingInfo);
+    }
+
+    /**
+     *
+     * 获取范围最大的数据源id
+     * virtual sddl > sddl > 子库
+     * virtual > 真实
+     * @param mediaSourceId
+     * @return
+     */
+    public Long getMaxMediaSourceId(Long mediaSourceId){
+
+        Long virtualMediaSourceId = null;
+        Long realMediaSourceId;
+        MediaSourceInfo virtalMediaSourceInfoTemp = mediaSourceDAO.getById(mediaSourceId);
+        if(virtalMediaSourceInfoTemp.getType() == MediaSourceType.VIRTUAL){
+            //真实数据源
+            MediaSourceInfo realMediaSourceInfoTemp = mediaService.getRealDataSource(virtalMediaSourceInfoTemp);
+            realMediaSourceId = realMediaSourceInfoTemp.getId();
+            virtualMediaSourceId = mediaSourceId;
+        }else{
+            realMediaSourceId = mediaSourceId;
+            MediaSourceRelationInfo relationInfo = mediaSourceRelationDAO.getOneByRealMsId(mediaSourceId);
+            if(relationInfo != null){
+                virtualMediaSourceId = relationInfo.getVirtualMsId();
+            }
         }
-        return new SyncNode(srcMediaSourceInfo, mappingInfo);
+
+        //查找sddl数据源id
+        Long sddlMediaSourceId = null;
+        List<MediaSourceInfo> sddlMediaSources = mediaSourceDAO.getListByType(Sets.newHashSet(MediaSourceType.SDDL));
+        for (MediaSourceInfo msInfo : sddlMediaSources) {
+            SddlMediaSrcParameter sddlParam = msInfo.getParameterObj();
+
+            List<Long> primaryDbsId = sddlParam.getPrimaryDbsId();
+            for (Long dbId : primaryDbsId) {
+                if (Objects.equals(realMediaSourceId, dbId)) {
+                    sddlMediaSourceId = msInfo.getId();
+                    break;
+                }
+            }
+
+            if (sddlMediaSourceId == null) {
+                List<Long> secondaryDbsId = sddlParam.getSecondaryDbsId();
+                if (secondaryDbsId != null) {
+                    for (Long dbId : secondaryDbsId) {
+                        if (Objects.equals(realMediaSourceId, dbId)) {
+                            sddlMediaSourceId = msInfo.getId();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (sddlMediaSourceId != null) {
+                break;
+            }
+        }
+
+        //sddl虚拟或者sddl
+        if(sddlMediaSourceId != null){
+            MediaSourceRelationInfo relationInfo = mediaSourceRelationDAO.getOneByRealMsId(sddlMediaSourceId);
+            if(relationInfo != null){
+                return relationInfo.getVirtualMsId();
+            }else{
+                return sddlMediaSourceId;
+            }
+        }
+
+        //虚拟
+        if(virtualMediaSourceId != null){
+            return virtualMediaSourceId;
+        }
+
+        //真实
+        return mediaSourceId;
     }
 
     private SyncNode buildChildNode(MediaMappingInfo mappingInfo) {
         MediaSourceInfo targetMediaSourceInfo = mappingInfo.getTargetMediaSource();
-        Long sddlMediaSourceId = isSDDLSubDB(targetMediaSourceInfo.getId());
-        if (sddlMediaSourceId != null) {
-            MediaSourceInfo sddlMediaSourceInfo = mediaSourceDAO.getById(sddlMediaSourceId);
-            return new SyncNode(sddlMediaSourceInfo, mappingInfo);
+
+        Long maxMediaSourceId = getMaxMediaSourceId(targetMediaSourceInfo.getId());
+        MediaSourceInfo maxMediaSourceInfo = mediaSourceDAO.getById(maxMediaSourceId);
+        return new SyncNode(maxMediaSourceInfo, mappingInfo);
+    }
+
+    @Override
+    public void syncColumnToHive(Long mappingId, Long mediaSourceId, String sql, String jobNum, String dbName) throws ErrorException {
+        MediaMappingInfo mediaMappingInfo = mediaService.findMediaMappingsById(mappingId);
+        MediaSourceInfo mediaSourceInfo = mediaSourceService.getById(mediaMappingInfo.getTaskInfo().getReaderMediaSourceId());
+        MediaSourceInfo realMediaSourceInfo = mediaService.getRealDataSource(mediaSourceInfo);
+        MediaSourceInfo targetMediaSourceInfo = mediaService.getRealDataSource(mediaService.getMediaSourceById(mediaSourceId));
+        if(targetMediaSourceInfo == null){
+            throw new ErrorException(CodeContext.MEDIA_TYPE_ERROR_CODE,CodeContext.getErrorDesc(CodeContext.MEDIA_TYPE_ERROR_CODE));
         }
-        return new SyncNode(targetMediaSourceInfo, mappingInfo);
+        if(targetMediaSourceInfo.getType() != MediaSourceType.HDFS){
+            throw new ErrorException(CodeContext.MEDIA_TYPE_ERROR_CODE,CodeContext.getErrorDesc(CodeContext.MEDIA_TYPE_ERROR_CODE));
+        }
+
+        //解析sql , 除了加字段其他操作直接返回成功。
+        List<SQLStatementHolder> holders = DdlSqlUtils.buildSQLStatement(realMediaSourceInfo.getType(), sql);
+        for (SQLStatementHolder holder : holders) {
+            holder.check();
+            if(holder.getSqlType() == SqlType.AlterTable) {
+                //如果是lucky hadoop集群，则调用lucky的接口
+                if(targetMediaSourceInfo.getName().equalsIgnoreCase(MEDIASOURCE_NAME_LUCKY)){
+                    JSONObject params = new JSONObject();
+                    params.put("sql",holder.getSqlString());
+                    params.put("jobNum",jobNum);
+                    params.put("dbName",dbName);
+                    logger.info("请求hive地址:"+lucky_hive_url+",参数为:"+params.toString());
+                    String result = HttpUtils.doPost(lucky_hive_url, params.toString());
+                    logger.info("请求hive地址返回结果:"+result);
+                    if(StringUtils.isEmpty(result)){
+                        throw new ErrorException(CodeContext.HIVE_MODIFY_ERROR_CODE,CodeContext.getErrorDesc(CodeContext.HIVE_MODIFY_ERROR_CODE));
+                    }
+                    JSONObject jsonObject = JSONObject.parseObject(result);
+                    if(jsonObject.getInteger(JSON_KEY_STATUS)!=0){
+                        logger.info("hive返回结果"+jsonObject.toJSONString());
+                        throw new ErrorException(CodeContext.HIVE_MODIFY_ERROR_CODE,CodeContext.getErrorDesc(CodeContext.HIVE_MODIFY_ERROR_CODE));
+                    }
+                }else {
+                    Map<String,Object> parameterMap = new HashMap<>(8);
+                    parameterMap.put("sql",holder.getSqlString());
+                    parameterMap.put("dbName",dbName);
+                    parameterMap.put("dbType",realMediaSourceInfo.getType().name().toLowerCase());
+                    String result = HttpUtils.doPost(ucar_hive_url,parameterMap);
+                    if(StringUtils.isEmpty(result) || !"0".equals(JSON.parseObject(result).getString("status"))){
+                        logger.info("hive返回结果"+result);
+                        throw new ErrorException(CodeContext.HIVE_MODIFY_ERROR_CODE,CodeContext.getErrorDesc(CodeContext.HIVE_MODIFY_ERROR_CODE));
+                    }
+                }
+            }
+        }
     }
 }

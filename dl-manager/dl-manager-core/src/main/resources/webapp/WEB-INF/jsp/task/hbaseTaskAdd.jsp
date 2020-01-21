@@ -60,6 +60,9 @@
 </div>
 
 <script type="text/javascript">
+
+    $(".taskSyncMode").val("SingleLab").select2({allowClear: false, maximumSelectionLength: 1});
+
     function back2Main() {
         $("#hbaseTaskAdd").empty();
         $("#main-container").show();
@@ -68,6 +71,7 @@
     function add() {
         var obj = {};
         obj.taskBasicInfo = getBasicObj();
+
         obj.hbaseReaderParameter = getHbaseReaderObj();
         obj.writerParameterMap = getWritersObj();
 
@@ -75,6 +79,11 @@
         if (mediaSourceId == null || mediaSourceId == "" || mediaSourceId == '-1') {
             alert('HBase数据源不能为空');
             return;
+        }
+
+        if(obj.taskBasicInfo.alarmPriorityId == null || obj.taskBasicInfo.alarmPriorityId == '') {
+            alert("请选择报警方式!");
+            return ;
         }
 
         $.ajax({

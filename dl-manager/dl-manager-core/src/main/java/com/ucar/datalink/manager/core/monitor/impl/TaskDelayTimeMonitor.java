@@ -1,14 +1,18 @@
 package com.ucar.datalink.manager.core.monitor.impl;
 
 import com.ucar.datalink.biz.service.AlarmService;
+import com.ucar.datalink.biz.service.AlarmStrategyService;
 import com.ucar.datalink.biz.service.TaskDelayTimeService;
 import com.ucar.datalink.biz.service.MonitorService;
+import com.ucar.datalink.domain.alarm.AlarmStrategyInfo;
+import com.ucar.datalink.domain.alarm.StrategyConfig;
 import com.ucar.datalink.domain.task.TaskDelayTimeInfo;
 import com.ucar.datalink.domain.monitor.MonitorInfo;
 import com.ucar.datalink.domain.monitor.MonitorType;
 import com.ucar.datalink.manager.core.monitor.Monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +36,9 @@ public class TaskDelayTimeMonitor extends Monitor {
     @Autowired
     AlarmService alarmService;
 
+    @Autowired
+    private AlarmStrategyService alarmStrategyService;
+
     @Override
     public void doMonitor() {
         List<TaskDelayTimeInfo> list = taskDelayTimeService.getList();
@@ -40,8 +47,14 @@ public class TaskDelayTimeMonitor extends Monitor {
         }
         for (TaskDelayTimeInfo delayTime : list) {
             MonitorInfo monitorInfo = monitorService.getByResourceAndType(delayTime.getTaskId(), MonitorType.TASK_DELAY_MONITOR);
-			if(monitorInfo == null) {
+            if(monitorInfo == null) {
                 continue;
+            }
+            monitorService.initMonitor(monitorInfo);
+            AlarmStrategyInfo alarmStrategyInfo = alarmStrategyService.getByTaskIdAndType(monitorInfo.getResourceId(),monitorInfo.getMonitorType());
+            if(alarmStrategyInfo != null) {
+                StrategyConfig config = alarmStrategyService.getStrategyConfig(alarmStrategyInfo.getStrategys());
+                monitorService.copyStrategy(config,monitorInfo);
             }
             if (!isMoreThan3min(delayTime.getCreateTime()) && isAlarm(delayTime.getTaskId(), delayTime.getDelayTime(), monitorInfo)) {
                 alarmService.alarmDelay(monitorInfo, delayTime.getDelayTime());

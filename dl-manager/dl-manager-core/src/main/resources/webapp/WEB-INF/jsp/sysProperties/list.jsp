@@ -16,7 +16,7 @@
                 </div>
 
                 <div class="row">
-                    <table id="sysTable" class="table table-striped table-bordered table-hover"
+                    <table id="userTable" class="table table-striped table-bordered table-hover"
                            style="text-align: left;width:100%">
                         <thead>
                         <tr>
@@ -47,7 +47,7 @@
         '</div>'
     }], $("#OperPanel"));
 
-    msgAlarmListMyTable = $('#sysTable').DataTable({
+    msgAlarmListMyTable = $('#userTable').DataTable({
         "bAutoWidth": true,
         serverSide: true,//开启服务器模式:启用服务器分页
         paging: true,//是否分页

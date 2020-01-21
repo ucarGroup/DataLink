@@ -12,13 +12,84 @@
 <div class="main-container" id="mainContentInner">
     <div class="page-content">
         <div class="row">
+
+            <div id="addColumn-wizard" class="modal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div id="queue-wizard-container">
+                            <div class="modal-header">
+                                <div class="modal-header no-padding">
+                                    <div class="table-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                            <span class="white">&times;</span>
+                                        </button>
+                                        手动增加字段
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-body">
+                                <form id="addColumnForm" class="form-horizontal" role="form">
+                                    <input type="hidden" name="queue_form_start_jobId" id="queue_form_start_jobId"/>
+
+
+                                    <div class="form-group">
+                                        <label class="col-sm-3 control-label no-padding-right"
+                                               for="queue_form-start"> 映射id </label>
+
+                                        <div class="col-sm-9" id="queue_form-start" style="margin-bottom: 5px;">
+                                            <input type="text" id="mappingIdText" name="mappingId" class="col-sm-8" />
+                                        </div>
+
+
+                                        <label class="col-sm-3 control-label no-padding-right"
+                                               for="queue_form-start"> 要添加的字段名 </label>
+
+                                        <div class="col-sm-9" id="queue_form-start1" style="margin-top: 5px;">
+                                            <input type="text" id="columnNameText" name="columnName" class="col-sm-8" />
+                                        </div>
+                                    </div>
+
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer wizard-actions">
+                            <button class="btn btn-success" type="button" onclick="doAddColumn()">
+                                <i class="ace-icon fa fa-save"></i>
+                                确定
+                            </button>
+                            <button class="btn btn-danger" type="button" data-dismiss="modal">
+                                取消
+                                <i class="ace-icon fa fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="col-xs-12">
 
                 <div class="row">
                     <form class="form-horizontal">
-		    <div class="row">   
-                        <div class="form-group col-xs-3">
-                            <label class="col-sm-3 control-label">源端数据源</label>
+
+                        <div class="row">
+                            <div class="form-group col-xs-3">
+                                <label class="col-sm-3 control-label">同步模式</label>
+
+                                <div class="col-sm-8">
+                                    <select class="width-100 chosen-select" id="basic-taskSyncMode"
+                                            style="width:100%">
+                                        <option value="-1">全部</option>
+                                        <c:forEach items="${taskSyncModeList}" var="bean">
+                                            <option value="${bean.code}">${bean.name}</option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group col-xs-3">
+                                <label class="col-sm-3 control-label">源端数据源</label>
 
                                 <div class="col-sm-8">
                                     <select class="mediaSourceId width-100 chosen-select" id="mediaSourceId"
@@ -31,7 +102,7 @@
                                 </div>
                             </div>
                             <div class="form-group col-xs-3">
-                                <label class="col-sm-3 control-label">目标数据源</label>
+                                <label class="col-sm-3 control-label">目标端数据源</label>
 
                                 <div class="col-sm-8">
                                     <select class="width-100 chosen-select" id="targetMediaSourceId" style="width:100%">
@@ -69,7 +140,7 @@
                             </div>
 
                             <div class="form-group col-xs-3">
-                                <label class="col-sm-3 control-label">目标表名</label>
+                                <label class="col-sm-3 control-label">目标端表名</label>
 
                                 <div class="col-sm-8">
                                     <input id="targetMediaName" type="text" style="width:100%;">
@@ -78,6 +149,10 @@
 
                             <div class="form-group col-xs-3">
                                 <button type="button" id="search" class="btn btn-sm btn-purple">查询</button>
+                            </div>
+
+                            <div class="form-group col-xs-3" id="addColumnPanel">
+
                             </div>
 
                         </div>
@@ -98,8 +173,8 @@
                             <td>任务名称</td>
                             <td>源端数据源</td>
                             <td>源端表名</td>
-                            <td>目标数据源</td>
-                            <td>目标表名</td>
+                            <td>目标端数据源</td>
+                            <td>目标端表名</td>
                             <td>优先级</td>
                             <td>是否有效</td>
                             <td>创建时间</td>
@@ -240,6 +315,12 @@
         '</div>'
     }],$("#OperPanel"));
 
+    getButtons([{
+        code:"004020900",
+        html:'<input style="border:0px;"></input>'+
+        '<button type="button" id="addColumn" class="btn btn-sm btn-purple">添加字段</button>'
+    }],$("#addColumnPanel"));
+
     msgAlarmListMyTable = $('#mediaMappingTable').DataTable({
         processing: true,
         filter: true,
@@ -371,6 +452,69 @@
         }]
     });
 
+    $("#addColumn").click(function () {
+        debugger;
+        $('#addColumn-wizard').modal('show');
+    })
+
+    function doAddColumn() {
+
+        if(!$('#mappingIdText').val()){
+            alert("映射id不能为空");
+            return;
+        }
+        if(!$('#columnNameText').val()){
+            alert("字段名不能为空");
+            return;
+        }
+
+        debugger;
+        $.ajax({
+            type: "post",
+            url: "${basePath}/sync/relation/generateAddColumnSql",
+            data: $("#addColumnForm").serialize(),
+            dataType: "json",
+            async: false,
+            error: function (xhr, status, err) {
+                alert(err);
+            },
+            success: function (data) {
+                if (data.success == "true") {
+                    var data = {
+                        sql:data.sql,
+                        "mediaSourceId":data.mediaSourceId,
+                        "mappingId":data.mappingId
+                    };
+                    $.ajax({
+                        type: "post",
+                        url: "${basePath}/sync/relation/sync_to_es",
+                        data: data,
+                        dataType: "json",
+                        async: false,
+                        error: function (xhr, status, err) {
+                            alert(err);
+                        },
+                        success: function (data) {
+                            debugger;
+                            var json = JSON.parse(data);
+                            if (json.code == 200) {
+                                alert("添加成功");
+                                $('#addColumn-wizard').modal('hide');
+                                $('#mappingIdText').val("");
+                                $('#columnNameText').val("");
+                            } else {
+                                alert(json.message);
+                            }
+                        }
+                    });
+
+                } else {
+                    alert(data);
+                }
+            }
+        });
+    }
+
     $("#mediaSourceId").change(function () {
         msgAlarmListMyTable.ajax.reload();
     })
@@ -472,5 +616,34 @@
             }
         });
     }
+
+    $('#basic-taskSyncMode').change(function () {
+        debugger;
+        $("#mediaSourceId").val(-1);
+
+        var taskSyncMode = $('#basic-taskSyncMode').val();
+        var data = "&taskSyncMode=" + taskSyncMode;
+        $.ajax({
+            type: "post",
+            url: "${basePath}/mediaMapping/findMediaSourcesBySyncMode",
+            async: true,
+            dataType: "json",
+            data: data,
+            success: function (result) {
+                if (result != null && result != '') {
+                    if (result.mediaSourceList != null && result.mediaSourceList.length > 0) {
+                        document.getElementById("mediaSourceId").innerHTML = "";
+                        $("<option value=\"-1\">全部</option>").appendTo(".mediaSourceId");
+                        for (var i = 0; i < result.mediaSourceList.length; i++) {
+                            $("#mediaSourceId").append("<option value=" + "'" + result.mediaSourceList[i].id + "'" + ">" + result.mediaSourceList[i].name + "</option>");
+                        }
+                        $("#mediaSourceId").trigger("chosen:updated");
+                    }
+                }
+            }
+        });
+
+    });
+
 
 </script>

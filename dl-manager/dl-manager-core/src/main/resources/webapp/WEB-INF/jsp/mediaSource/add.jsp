@@ -3,6 +3,10 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="basePath" value="${pageContext.servletContext.contextPath }"/>
 
+<div id="chooseDatabase" class="modal">
+
+</div>
+
 <div class="page-content">
     <div class="row">
         <form id="add_form" class="form-horizontal" role="form">
@@ -33,9 +37,25 @@
 
                                 <div class="col-sm-7">
                                     <input type="text" name="rdbMediaSrcParameter.namespace" class="col-sm-12"
-                                           id="form-add-namespace"/>
+                                           id="form-add-namespace" />
                                 </div>
                             </div>
+
+                            <div class="col-sm-4 form-group">
+                                <label class="col-sm-3 control-label no-padding-right"
+                                       for="form-add-labId">所属机房</label>
+
+                                <div class="col-sm-7">
+                                    <select multiple="" id="form-add-labId" name="labId"
+                                            class="labId col-xs-10 col-sm-12"
+                                            data-placeholder="Click to Choose...">
+                                        <c:forEach items="${labInfoList}" var="bean">
+                                            <option value="${bean.id}">${bean.labName} </option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
+                            </div>
+
                         </div>
                         <div class="col-sm-12">
                             <div class="col-sm-4 form-group">
@@ -167,6 +187,18 @@
                         <div class="col-sm-12">
                             <div class="col-sm-4 form-group">
                                 <label class="col-sm-3 control-label no-padding-right"
+                                       for="form-add-isTIDB">是否TIDB</label>
+
+                                <div class="col-sm-7">
+                                    <select name="rdbMediaSrcParameter.isTIDB" id="form-add-isTIDB"
+                                            class="chosen-select col-sm-12">
+                                        <option value="false" selected="selected">否</option>
+                                        <option value="true">是</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-sm-4 form-group">
+                                <label class="col-sm-3 control-label no-padding-right"
                                        for="form-add-desc">描述</label>
 
                                 <div class="col-sm-7">
@@ -175,8 +207,8 @@
                                               style="margin: 0px;height: 106px;width: 100%;"></textarea>
                                 </div>
                             </div>
-
                         </div>
+
                     </div>
                     <div id="specialId" class="tab-pane">
                         <div class="col-sm-12">
@@ -325,13 +357,18 @@
 <!-- /.page-content -->
 
 <script type="text/javascript">
+
+    var databaseInfo = null;
+
+    $('.labId').select2({allowClear: false, maximumSelectionLength: 1});
+
     function buildReadDataSource() {
         var e = $("#copyReadSourceBase>div").clone(true);
         $('#copyBaseSourceDivId').append(e);
 
     }
     function deleteReadDataSource(e) {
-        $(e).parent().parent().parent().remove();
+        $(e).parent().parent().parent().parent().remove();
     }
 
     $("#form-add-mediaSourceType").change(function () {
@@ -349,6 +386,7 @@
         if (mediaSourceType == "SQLSERVER") {
             $("#form-add-writerUserName").val("ucar_dep_w");
             $("#form-add-readerUserName").val("ucar_dep_r");
+            debugger;
             $("#form-add-writerPassWord").val(sqlserverWritePsw);
             $("#form-add-readerPassWord").val(sqlserverReadPsw);
         }
@@ -411,6 +449,10 @@
         }
         if ($.trim($('#form-add-namespace').val()) == '') {
             alert('schema不能为空');
+            return false;
+        }
+        if ($.trim($('#form-add-labId').val()) == '') {
+            alert('所属机房不能为空');
             return false;
         }
         if ($.trim($('#form-add-encoding').val()) == '') {

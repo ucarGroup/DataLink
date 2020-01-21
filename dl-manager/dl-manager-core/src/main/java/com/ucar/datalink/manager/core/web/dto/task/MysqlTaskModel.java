@@ -2,17 +2,18 @@ package com.ucar.datalink.manager.core.web.dto.task;
 
 import com.ucar.datalink.contract.log.rdbms.EventType;
 import com.ucar.datalink.domain.group.GroupInfo;
+import com.ucar.datalink.domain.lab.LabInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.plugin.PluginWriterParameter;
 import com.ucar.datalink.domain.plugin.reader.mysql.GroupSinkMode;
 import com.ucar.datalink.domain.plugin.reader.mysql.MysqlReaderParameter;
-import com.ucar.datalink.domain.plugin.writer.kafka.PartitionMode;
-import com.ucar.datalink.domain.plugin.writer.kafka.SerializeMode;
+import com.ucar.datalink.domain.plugin.writer.fq.PartitionMode;
+import com.ucar.datalink.domain.plugin.writer.fq.SerializeMode;
 import com.ucar.datalink.domain.plugin.writer.hdfs.CommitMode;
 import com.ucar.datalink.domain.plugin.writer.rdbms.RdbmsWriterParameter;
 import com.ucar.datalink.domain.task.TargetState;
 import com.ucar.datalink.domain.task.TaskParameter;
-
+import com.ucar.datalink.domain.task.TaskSyncModeEnum;
 
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,7 @@ public class MysqlTaskModel extends TaskModel {
     private List<GroupSinkMode> groupSinkModeList;
     private MysqlReaderParameter mysqlReaderParameter;
     private TaskParameter taskParameter;
-
+    private Boolean isMultiCopy;
 
     public MysqlTaskModel() {
 
@@ -44,8 +45,10 @@ public class MysqlTaskModel extends TaskModel {
                           List<SerializeMode> serializeModeList,
                           List<PartitionMode> partitionModeList,
                           MysqlReaderParameter mysqlReaderParameter,
+                          List<LabInfo> labInfoList,
+                          List<TaskSyncModeEnum> taskSyncModes,
                           TaskParameter taskParameter) {
-        super(taskBasicInfo, writerParameterMap, groupList, targetStateList, mediaSourceList, retryModeList, rdbSyncModeList, commitModeList, serializeModeList,partitionModeList);
+        super(taskBasicInfo, writerParameterMap, groupList, targetStateList, mediaSourceList, retryModeList, rdbSyncModeList, commitModeList, serializeModeList,partitionModeList,labInfoList,taskSyncModes);
         this.filterEventTypeList = filterEventTypeList;
         this.groupSinkModeList = groupSinkModeList;
         this.mysqlReaderParameter = mysqlReaderParameter;
@@ -83,6 +86,14 @@ public class MysqlTaskModel extends TaskModel {
 
     public void setTaskParameter(TaskParameter taskParameter) {
         this.taskParameter = taskParameter;
+    }
+
+    public Boolean getIsMultiCopy() {
+        return isMultiCopy;
+    }
+
+    public void setIsMultiCopy(Boolean isMultiCopy) {
+        this.isMultiCopy = isMultiCopy;
     }
 
 }

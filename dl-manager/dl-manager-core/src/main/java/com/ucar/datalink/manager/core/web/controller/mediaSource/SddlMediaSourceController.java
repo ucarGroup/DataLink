@@ -1,19 +1,23 @@
 package com.ucar.datalink.manager.core.web.controller.mediaSource;
 
 import com.google.common.collect.Sets;
+import com.ucar.datalink.biz.service.LabService;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.biz.utils.AuditLogOperType;
 import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.biz.utils.DataSourceFactory;
 import com.ucar.datalink.common.errors.ValidationException;
+import com.ucar.datalink.domain.lab.LabInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
 import com.ucar.datalink.manager.core.coordinator.ClusterState;
 import com.ucar.datalink.manager.core.coordinator.GroupMetadataManager;
+import com.ucar.datalink.manager.core.server.ManagerConfig;
 import com.ucar.datalink.manager.core.server.ServerContainer;
 import com.ucar.datalink.manager.core.web.dto.mediaSource.SddlMediaSourceView;
 import com.ucar.datalink.manager.core.web.util.AuditLogInfoUtil;
+import com.ucar.datalink.manager.core.web.util.CFCenterSddladminEnum;
 import com.ucar.datalink.manager.core.web.util.Page;
 import org.apache.commons.lang.StringUtils;
 import org.apache.oro.text.regex.*;
@@ -45,6 +49,8 @@ public class SddlMediaSourceController {
 
     @Autowired
     private MediaSourceService mediaSourceService;
+    @Autowired
+    LabService labService;
 
     @RequestMapping(value = "/sddlList")
     public ModelAndView sddlList() {
@@ -64,6 +70,10 @@ public class SddlMediaSourceController {
             view.setId(i.getId());
             view.setSddlName(i.getName());
             view.setCreateTime(i.getCreateTime());
+
+            view.setLabId(i.getLabId());
+            view.setLabName(StringUtils.isNotBlank(i.getLabName()) ? i.getLabName() : "");
+
             return view;
         }).collect(Collectors.toList());
         return new Page<>(sddlViews);
@@ -77,6 +87,10 @@ public class SddlMediaSourceController {
         List<MediaSourceInfo> mediaSourceInfoList = mediaSourceService.getListByType(mediaSourceType);
         ModelAndView mav = new ModelAndView("sddlMediaSource/add");
         mav.addObject("mediaSourceInfoList", mediaSourceInfoList);
+
+        List<LabInfo> labInfoList = labService.findLabList();
+        mav.addObject("labInfoList", labInfoList);
+
         return mav;
     }
 
@@ -107,10 +121,18 @@ public class SddlMediaSourceController {
                                 .collect(Collectors.toList()));
             }
 
+            // version 1.0 24/11/17 by yw.chen02
+            sddlMediaSrcParameter.setBusinessName(sddlMediaSourceView.getBusinessLine());
+            sddlMediaSrcParameter.setProjectName(sddlMediaSourceView.getProjectName());
+            List<String> sddladminCfConf = getSddladminCf(sddlMediaSourceView.getBusinessLine());
+            sddlMediaSrcParameter.setCfKey(sddladminCfConf.get(1));
+            sddlMediaSrcParameter.setServerDomain(sddladminCfConf.get(2));
+
             mediaSourceInfo.setName(sddlMediaSourceView.getSddlName());
             mediaSourceInfo.setParameter(sddlMediaSrcParameter.toJsonString());
             mediaSourceInfo.setDesc(sddlMediaSourceView.getSddlDesc());
             mediaSourceInfo.setType(MediaSourceType.SDDL);
+            mediaSourceInfo.setLabId(sddlMediaSourceView.getLabId());
             Boolean isSuccess = mediaSourceService.insert(mediaSourceInfo);
             if (isSuccess) {
                 AuditLogUtils.saveAuditLog(AuditLogInfoUtil.getAuditLogInfoFromMediaSourceInfo(mediaSourceInfo
@@ -123,6 +145,13 @@ public class SddlMediaSourceController {
         }
         return "fail";
     }
+
+    private List<String> getSddladminCf(String businessLine) {
+        String currentEnv = ManagerConfig.current().getCurrentEnv();
+
+        return CFCenterSddladminEnum.getSddladminCfConf(businessLine, currentEnv);
+    }
+
 
     @ResponseBody
     @RequestMapping(value = "/doDelete")
@@ -163,9 +192,19 @@ public class SddlMediaSourceController {
         sddlMediaSourceView.setProxyDbId(sddlMediaSrcParameter.getProxyDbId().toString());
         sddlMediaSourceView.setSecondaryRdbId(StringUtils.join(sddlMediaSrcParameter.getSecondaryDbsId().toArray(), ","));
 
+        // version 1.0 24/11/17 by yw.chen02
+        sddlMediaSourceView.setBusinessLine(sddlMediaSrcParameter.getBusinessName());
+        sddlMediaSourceView.setProjectName(sddlMediaSrcParameter.getProjectName());
+
+        sddlMediaSourceView.setLabId(mediaSourceInfo.getLabId());
+
         List<MediaSourceInfo> mediaSourceInfoList = mediaSourceService.getListByType(Sets.newHashSet(MediaSourceType.MYSQL));
         mav.addObject("mediaSourceInfoList", mediaSourceInfoList);
         mav.addObject("sddlMediaSourceView", sddlMediaSourceView);
+
+        List<LabInfo> labInfoList = labService.findLabList();
+        mav.addObject("labInfoList", labInfoList);
+
         return mav;
     }
 
@@ -198,11 +237,21 @@ public class SddlMediaSourceController {
                         .collect(Collectors.toList()));
             }
 
+            // version 1.0 24/11/17 by yw.chen02
+            sddlMediaSrcParameter.setBusinessName(sddlMediaSourceView.getBusinessLine());
+            sddlMediaSrcParameter.setProjectName(sddlMediaSourceView.getProjectName());
+            List<String> sddladminCfConf = getSddladminCf(sddlMediaSourceView.getBusinessLine());
+            sddlMediaSrcParameter.setCfKey(sddladminCfConf.get(1));
+            sddlMediaSrcParameter.setServerDomain(sddladminCfConf.get(2));
+
             mediaSourceInfo.setId(sddlMediaSourceId);
             mediaSourceInfo.setName(sddlMediaSourceView.getSddlName());
             mediaSourceInfo.setParameter(sddlMediaSrcParameter.toJsonString());
             mediaSourceInfo.setDesc(sddlMediaSourceView.getSddlDesc());
             mediaSourceInfo.setType(MediaSourceType.SDDL);
+
+            mediaSourceInfo.setLabId(sddlMediaSourceView.getLabId());
+
             Boolean isSuccess = mediaSourceService.update(mediaSourceInfo);
             toReloadDB(sddlMediaSourceId.toString());
             if (isSuccess) {
@@ -212,7 +261,7 @@ public class SddlMediaSourceController {
             }
         } catch (Throwable e) {
             logger.error("sddl介质更新报错，", e);
-            return "sddl介质更新报错，" + e.getMessage();
+            return "sddl介质更新报错，"+e.getMessage();
         }
         return "fail";
     }

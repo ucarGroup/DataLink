@@ -26,6 +26,7 @@
                             <td>所属ZK集群</td>
                             <td>znode路径</td>
                             <td>keyvalue最大长度</td>
+                            <td>所属机房</td>
                             <td>创建时间</td>
                             <td>操作</td>
                         </tr>
@@ -71,6 +72,7 @@
             {"data": "zkMediaSourceName"},
             {"data": "hbaseMediaSrcParameter.znodeParent"},
             {"data": "hbaseMediaSrcParameter.keyvalueMaxsize"},
+            {"data": "labName"},
             {
                 "data": "createTime",
                 "bSortable": false,

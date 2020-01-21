@@ -1,9 +1,8 @@
 package com.ucar.datalink.manager.core.monitor.impl;
 
-import com.ucar.datalink.biz.service.AlarmService;
-import com.ucar.datalink.biz.service.MonitorService;
-import com.ucar.datalink.biz.service.TaskConfigService;
-import com.ucar.datalink.biz.service.TaskSyncStatusService;
+import com.ucar.datalink.biz.service.*;
+import com.ucar.datalink.domain.alarm.AlarmStrategyInfo;
+import com.ucar.datalink.domain.alarm.StrategyConfig;
 import com.ucar.datalink.domain.monitor.MonitorInfo;
 import com.ucar.datalink.domain.monitor.MonitorType;
 import com.ucar.datalink.domain.task.TargetState;
@@ -12,6 +11,7 @@ import com.ucar.datalink.domain.task.TaskSyncStatus;
 import com.ucar.datalink.manager.core.monitor.Monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +39,9 @@ public class TaskSyncStatusMonitor extends Monitor {
     @Autowired
     AlarmService alarmService;
 
+    @Autowired
+    private AlarmStrategyService alarmStrategyService;
+
     private Map<String, Long> taskLastUpdateTime = new ConcurrentHashMap<>();
 
     @Override
@@ -60,7 +63,11 @@ public class TaskSyncStatusMonitor extends Monitor {
                         Long currentTime = System.currentTimeMillis();
                         Long busyTime = currentTime - currentUpdateTime;
                         MonitorInfo monitorInfo = monitorService.getByResourceAndType(Long.valueOf(syncStatus.getId()), MonitorType.TASK_SYNC_STATUS_MONITOR);
-
+                        AlarmStrategyInfo alarmStrategyInfo = alarmStrategyService.getByTaskIdAndType(monitorInfo.getResourceId(),monitorInfo.getMonitorType());
+                        if(alarmStrategyInfo != null) {
+                            StrategyConfig config = alarmStrategyService.getStrategyConfig(alarmStrategyInfo.getStrategys());
+                            monitorService.copyStrategy(config,monitorInfo);
+                        }
                         if (isAlarm(taskId, busyTime, monitorInfo)) {
                             alarmService.alarmTaskSyncStatus(monitorInfo, busyTime);
                         }

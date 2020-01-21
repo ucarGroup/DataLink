@@ -14,6 +14,8 @@ public class EsMediaSourceView {
     private Date createTime;
     private Date modifyTime;
     private EsMediaSrcParameter esMediaSrcParameter = new EsMediaSrcParameter();
+    private Long labId;
+    private String labName;
 
     public Long getId() {
         return id;
@@ -61,5 +63,21 @@ public class EsMediaSourceView {
 
     public void setEsMediaSrcParameter(EsMediaSrcParameter esMediaSrcParameter) {
         this.esMediaSrcParameter = esMediaSrcParameter;
+    }
+
+    public Long getLabId() {
+        return labId;
+    }
+
+    public void setLabId(Long labId) {
+        this.labId = labId;
+    }
+
+    public String getLabName() {
+        return labName;
+    }
+
+    public void setLabName(String labName) {
+        this.labName = labName;
     }
 }

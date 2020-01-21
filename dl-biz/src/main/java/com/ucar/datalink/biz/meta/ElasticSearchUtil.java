@@ -1,15 +1,22 @@
 package com.ucar.datalink.biz.meta;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.google.common.collect.Lists;
 import com.ucar.datalink.biz.utils.URLConnectionUtil;
+import com.ucar.datalink.common.errors.DatalinkException;
+import com.ucar.datalink.common.utils.HttpUtils;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.parameter.MediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.es.EsMediaSrcParameter;
 import com.ucar.datalink.domain.meta.ColumnMeta;
 import com.ucar.datalink.domain.meta.MediaMeta;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,10 +26,10 @@ import java.util.stream.Collectors;
  * 获取ES相关的元信息工具类，ES获取的元信息直接用HTTP方式请求服务端就可以获取了，但是返回的JSON格式不好用对象去匹配，只能一点一点的解析
  */
 public class ElasticSearchUtil {
+private static final Logger logger = LoggerFactory.getLogger(ElasticSearchUtil.class);
 
     /**
      * 根据传入的MediaSourceInfo 获取所有表的元信息
-     *
      * @param info
      * @return
      */
@@ -35,7 +42,6 @@ public class ElasticSearchUtil {
 
     /**
      * 根据传入的MediaSourceInfo和表名，获取这个表下的所有列的元信息
-     *
      * @param info
      * @param tableName
      * @return
@@ -43,12 +49,12 @@ public class ElasticSearchUtil {
     public static List<ColumnMeta> getColumns(MediaSourceInfo info, String tableName) {
         checkElasticSearch(info);
         String[] names = tableName.split("\\.");
-        if (names == null || names.length < 2) {
+        if(names==null || names.length<2) {
             throw new RuntimeException("elastic search table error");
         }
         String index_name = names[0];
         String type_name = names[1];
-        String json = executeGetColumns(info.getParameterObj(), index_name, type_name);
+        String json = executeGetColumns(info.getParameterObj(),index_name,type_name);
         return parseFieldInfo(json);
     }
 
@@ -58,45 +64,45 @@ public class ElasticSearchUtil {
      * 这个函数和 parseFieldInfo 需要解析的结构都是很类似的，所以就以这个函数为列来说明
      * 之所以要搞这么复杂的循环里面再套循环的解析，是因为每次拿到的JSON格式很多字段都是动态变化的，不好对应到一个具体的java对象，
      * 只能一点点的嵌套解析
-     * 下面这个json中  fcar_asset_car_300是index的名字，这个值可能每次都不一样，将这个index的名字作为Map.Entry的key，那么value就是剩下的那么一大堆
-     * 部分了，然后再做一个循环再解析 ,第二层解析的时候只解析fcar_asset_car_300里面的内容，解析出的依旧是key-value的形式
-     * 第二层循环解析的key就是 mappings 这个字符串，这个值是固定的，value就是mappings里面嵌套的那一堆内容了，
-     * 所以第二层循环解析的是第一层的value部分，将第一层的value部分再解析成key-value的形式，
-     * 第三层解析的是第二层的value部分，将第二层的value部分再解析成key-value的形式，一直解析到最里面的 "type" : "long"
-     * <p>
-     * 之后再做地三层循环解析，Map.Entry的key就是 t_asset_car_brand，value就是t_asset_car_brand里面嵌套的部分，而这个t_asset_car_brand
-     * 就是type的名字，所以到这里就可以确定一个表的名字了，就是index_name.type_name 也就是fcar_asset_car_300.t_asset_car_brand
-     * 继续第四层循环 key就是properties 这个key是固定的，value就是里面嵌套的部分，properties里面就是types的字段，也就是表的字段了
-     * 第五层循环中需要解析的就是字段的名字，注意有些字段可能是复杂类型，比如name_suggest里面又嵌套了一层properties，这种复杂类型就忽略
-     * 解析，而 t_asset_car_brand|id 这个值就是一个字段的名字
-     * 第六层循环就是解析像 t_asset_car_brand|id里面的内容，这个key可能是type，也可能是其他类型，我们只需要字段类型所以其他类型忽略，
-     * 只要key是 type这个字符串就可以了，对应的value就是type的类型比如long，string等
-     * 整个多层循环结束后，List<MediaMeta>就可以解析出来了
-     * <p>
-     * {
-     * "fcar_asset_car_300":{
-     * "mappings":{
-     * "t_asset_car_brand":{
-     * "properties":{
-     * "name_suggest":{
-     * "properties":{
-     * "input":{
-     * "type":"string"
-     * }
-     * }
-     * },
-     * "t_asset_car_brand|id":{
-     * "type":"long"
-     * },
-     * "t_asset_car_brand|initial":{
-     * "type":"string",
-     * "index":"not_analyzed"
-     * },
-     * }
-     * }
-     * }
-     * }
-     * }
+     *  下面这个json中  fcar_asset_car_300是index的名字，这个值可能每次都不一样，将这个index的名字作为Map.Entry的key，那么value就是剩下的那么一大堆
+     *  部分了，然后再做一个循环再解析 ,第二层解析的时候只解析fcar_asset_car_300里面的内容，解析出的依旧是key-value的形式
+     *  第二层循环解析的key就是 mappings 这个字符串，这个值是固定的，value就是mappings里面嵌套的那一堆内容了，
+     *  所以第二层循环解析的是第一层的value部分，将第一层的value部分再解析成key-value的形式，
+     *  第三层解析的是第二层的value部分，将第二层的value部分再解析成key-value的形式，一直解析到最里面的 "type" : "long"
+     *
+     *  之后再做地三层循环解析，Map.Entry的key就是 t_asset_car_brand，value就是t_asset_car_brand里面嵌套的部分，而这个t_asset_car_brand
+     *  就是type的名字，所以到这里就可以确定一个表的名字了，就是index_name.type_name 也就是fcar_asset_car_300.t_asset_car_brand
+     *  继续第四层循环 key就是properties 这个key是固定的，value就是里面嵌套的部分，properties里面就是types的字段，也就是表的字段了
+     *  第五层循环中需要解析的就是字段的名字，注意有些字段可能是复杂类型，比如name_suggest里面又嵌套了一层properties，这种复杂类型就忽略
+     *  解析，而 t_asset_car_brand|id 这个值就是一个字段的名字
+     *  第六层循环就是解析像 t_asset_car_brand|id里面的内容，这个key可能是type，也可能是其他类型，我们只需要字段类型所以其他类型忽略，
+     *  只要key是 type这个字符串就可以了，对应的value就是type的类型比如long，string等
+     *  整个多层循环结束后，List<MediaMeta>就可以解析出来了
+
+     {
+        "fcar_asset_car_300":{
+            "mappings":{
+                "t_asset_car_brand":{
+                    "properties":{
+                        "name_suggest":{
+                            "properties":{
+                                "input":{
+                                    "type":"string"
+                                }
+                            }
+                        },
+                        "t_asset_car_brand|id":{
+                            "type":"long"
+                        },
+                        "t_asset_car_brand|initial":{
+                            "type":"string",
+                            "index":"not_analyzed"
+                        },
+                    }
+                }
+            }
+        }
+     }
      *
      * @param json
      */
@@ -121,7 +127,7 @@ public class ElasticSearchUtil {
                     //ES情况特殊，一个表的名字是 indez名字和type的名字组合  index_name.type_name
                     MediaMeta tm = new MediaMeta();
                     tm.setNameSpace(index.getKey());
-                    tm.setName(type_content.getKey());
+                    tm.setName( type_content.getKey() );
                     tm.setDbType(MediaSourceType.ELASTICSEARCH);
                     List<ColumnMeta> columns = new ArrayList<>();
 
@@ -130,7 +136,7 @@ public class ElasticSearchUtil {
                     for (Map.Entry<String, String> prop : properties.entrySet()) {
                         //这里的getKey()就是 properties，遍历value获取  {"author":{"type":"string"},"title":{"type":"string"},"content":{"type":"string"}}
                         //这里可能会包含 dynamic 类型，忽略即可
-                        if (!prop.getKey().equals("properties")) {
+                        if( !prop.getKey().equals("properties") ) {
                             continue;
                         }
                         LinkedHashMap<String, String> fields_info = JSON.parseObject(prop.getValue(), new TypeReference<LinkedHashMap<String, String>>() {
@@ -157,7 +163,7 @@ public class ElasticSearchUtil {
                                 }
                             }
                             //如果是复杂列或者不认识的列，则type内容为空，这时忽略这个字段，不加入到List<Column>中
-                            if (cm.getType() != null) {
+                            if(cm.getType()!=null) {
                                 columns.add(cm);
                             }
                         }
@@ -168,12 +174,12 @@ public class ElasticSearchUtil {
             }
         }//完成json遍历
         return tables;
+
     }
 
 
     /**
      * 根据传入的json，解析出 List<MediaMeta>
-     *
      * @param json
      */
     public static List<ColumnMeta> parseFieldInfo(String json) {
@@ -199,7 +205,7 @@ public class ElasticSearchUtil {
                     for (Map.Entry<String, String> prop : properties.entrySet()) {
                         //这里的getKey()就是 properties，遍历value获取  {"author":{"type":"string"},"title":{"type":"string"},"content":{"type":"string"}}
                         //如果不是 properties字段则忽略
-                        if (!prop.getKey().equals("properties")) {
+                        if( !prop.getKey().equals("properties") ) {
                             continue;
                         }
                         LinkedHashMap<String, String> fields_info = JSON.parseObject(prop.getValue(), new TypeReference<LinkedHashMap<String, String>>() {
@@ -226,7 +232,7 @@ public class ElasticSearchUtil {
                                 }
                             }
                             //如果是复杂列或者不认识的列，则type内容为空，这时忽略这个字段，不加入到List<Column>中
-                            if (cm.getType() != null) {
+                            if(cm.getType()!=null) {
                                 columns.add(cm);
                             }
                         }
@@ -238,19 +244,22 @@ public class ElasticSearchUtil {
     }
 
 
+
+
+
+
     /**
      * 执行一个HTTP请求获取元数据信息
-     *
      * @param parameter
      * @return
      */
     private static String executeGetTables(EsMediaSrcParameter parameter) {
         String[] arr = parameter.getClusterHosts().split(",");
-        for (String ip : arr) {
-            String url = "http://" + ip + ":" + parameter.getHttpPort() + "/_mapping?pretty";
+        for(String ip : arr) {
+            String url = "http://"+ ip +":"+ parameter.getHttpPort()  +"/_mapping?pretty";
             String name = parameter.getUserName();
             String password = parameter.getPassword();
-            String result = URLConnectionUtil.retryGETWithAuth(url, name, password);
+            String result = URLConnectionUtil.retryGETWithAuth(url,name,password);
             return result;
         }
         return "";
@@ -259,17 +268,16 @@ public class ElasticSearchUtil {
 
     /**
      * 执行一个HTTP请求获取元数据信息，获取某个表下的所有列信息
-     *
      * @param parameter
      * @return
      */
     private static String executeGetColumns(EsMediaSrcParameter parameter, String index_name, String type_name) {
         String[] arr = parameter.getClusterHosts().split(",");
-        for (String ip : arr) {
-            String url = "http://" + ip + ":" + parameter.getHttpPort() + "/" + index_name + "/" + type_name + "/_mapping?pretty";
+        for(String ip : arr) {
+            String url = "http://"+ip +":"+ parameter.getHttpPort() +"/"+index_name+"/"+ type_name +"/_mapping?pretty";
             String name = parameter.getUserName();
             String password = parameter.getPassword();
-            String result = URLConnectionUtil.retryGETWithAuth(url, name, password);
+            String result = URLConnectionUtil.retryGETWithAuth(url,name,password);
             return result;
         }
         return "";
@@ -278,33 +286,81 @@ public class ElasticSearchUtil {
 
     /**
      * 检查当前的MediaSourceInfo所包含的类似是否是ElasticSearch的
-     *
      * @param info
      */
     private static void checkElasticSearch(MediaSourceInfo info) {
         MediaSrcParameter parameter = info.getParameterObj();
-        if (!(parameter instanceof EsMediaSrcParameter)) {
-            throw new RuntimeException("当前的MediaSrcParameter类型错误 " + parameter);
+        if( !(parameter instanceof EsMediaSrcParameter) ) {
+            throw new RuntimeException("当前的MediaSrcParameter类型错误 "+parameter);
         }
     }
+
 
     public static List<String> checkTargetIndexes(MediaSourceInfo realTargetMediaSourceInfo, Set<String> indexSet) {
         List<String> returnList = Lists.newArrayList();
         List<MediaMeta> mediaMetaList = getTables(realTargetMediaSourceInfo);
-        List<String> indexList = mediaMetaList.stream().map(m -> {
-            return m.getNameSpace();
-        }).collect(Collectors.toList());
-        Iterator<String> it = indexSet.iterator();
-        while (it.hasNext()) {
+        List<String> indexList = mediaMetaList.stream().map(m->{ return m.getNameSpace();}).collect(Collectors.toList());
+        Iterator<String> it = indexSet .iterator();
+        while (it.hasNext()){
             String targetIndex = it.next();
             int index = targetIndex.indexOf(".");
-            if (index > 0) {
+            if(index>0){
                 targetIndex = targetIndex.split("\\.")[0];
             }
-            if (!indexList.contains(targetIndex)) {
+            if(!indexList.contains(targetIndex)){
                 returnList.add(targetIndex);
             }
         }
         return returnList;
     }
+
+
+    /**
+     * 获取es routing信息
+     *
+     * @return
+     */
+    public static Map<String,String> getEsRoutingInfo(String ip, String indexName, String esRoutingUrl){
+        Map<String,String> parameterMap = new HashMap<String,String>();
+        parameterMap.put("ip",ip);
+        parameterMap.put("indexName",indexName);
+        logger.info("调用es接口，获取routing信息，请求的参数是：{}",JSON.toJSONString(parameterMap));
+        String resultJson = HttpUtils.doPost(esRoutingUrl, JSON.toJSONString(parameterMap));
+        logger.info("调用es接口，获取routing信息，接口返回的结果是：{}",resultJson);
+        if(StringUtils.isBlank(resultJson)){
+            throw new DatalinkException("getRouting接口返回的是空结果");
+        }
+
+        //请求处理是否成功
+        Map map = JSON.parseObject(resultJson,Map.class);
+        Boolean success = false;
+        if(map.get("success") != null){
+            success = (Boolean)map.get("success");
+        }
+        if(!success){
+            throw new DatalinkException("获取routing信息失败，" + map.get("message"));
+        }
+
+        if(map.get("data") == null){
+            throw new DatalinkException("没有获取到es data字段值");
+        }
+        JSONObject dataMap = (JSONObject)map.get("data");
+        if(dataMap.get("routing") == null){
+            throw new DatalinkException("没有获取到es routing字段值");
+        }
+        Boolean routing = (Boolean)dataMap.get("routing");
+        Map<String,String> resultMap = new HashMap<String,String>();
+        if(routing){
+            if(StringUtils.isBlank((String)dataMap.get("routingField"))){
+                throw new DatalinkException("没有获取到es routingField字段值");
+            }
+            if(dataMap.get("ignore") == null){
+                throw new DatalinkException("没有获取到es ignore字段值");
+            }
+            resultMap.put("esRouting",String.valueOf(dataMap.get("routingField")));
+            resultMap.put("esRoutingIgnore",String.valueOf(dataMap.get("ignore")));
+        }
+        return resultMap;
+    }
+
 }

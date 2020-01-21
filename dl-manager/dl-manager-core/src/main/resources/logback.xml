@@ -33,6 +33,11 @@
         <appender-ref ref="FILE"/>
     </logger>
 
+    <logger name="com.ucar.gaeaclient" additivity="false">
+        <level value="fatal"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
     <root level="WARN">
         <appender-ref ref="FILE"/>
     </root>

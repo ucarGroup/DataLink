@@ -100,6 +100,7 @@
                             <td>ip地址</td>
                             <td>Rest端口号</td>
                             <td>所属组</td>
+                            <td>所属机房</td>
                             <td>启动时间</td>
                             <td>创建时间</td>
                             <td>操作</td>
@@ -146,6 +147,7 @@
             {"data": "workerAddress"},
             {"data": "restPort"},
             {"data": "groupName"},
+            {"data": "labName"},
             {"data": "startTime"},
             {
                 "data": "createTime",

@@ -23,6 +23,12 @@ public class SddlMediaSourceView {
 
     private Date modifyTime;
 
+    // version 1.0 24/11/17 by yw.chen02
+    private String businessLine;
+    private String projectName;
+
+    private Long labId;
+    private String labName;
 
     public Long getId() {
         return id;
@@ -88,4 +94,35 @@ public class SddlMediaSourceView {
         this.sddlName = sddlName;
     }
 
+    public String getBusinessLine() {
+        return businessLine;
+    }
+
+    public void setBusinessLine(String businessLine) {
+        this.businessLine = businessLine;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    public Long getLabId() {
+        return labId;
+    }
+
+    public void setLabId(Long labId) {
+        this.labId = labId;
+    }
+
+    public String getLabName() {
+        return labName;
+    }
+
+    public void setLabName(String labName) {
+        this.labName = labName;
+    }
 }

@@ -72,7 +72,26 @@
         w.worker_name AS resourceName,
         w.group_id AS groupId
         FROM t_dl_monitor m left join t_dl_worker w on m.resource_id = w.id
-        WHERE monitor_cat = 2) total
+        WHERE monitor_cat = 2
+
+        UNION ALL
+        SELECT
+        m.id,
+        m.monitor_type,
+        m.monitor_cat,
+        m.receive_people,
+        m.is_effective,
+        m.resource_id,
+        m.threshold,
+        m.interval_time,
+        m.create_time,
+        m.modify_time,
+        m.monitor_range,
+        j.job_name AS resourceName,
+        j.job_src_media_source_id AS srcId
+        FROM t_datax_job_config j LEFT JOIN t_dl_monitor m ON m.resource_id = j.id
+        WHERE monitor_cat=3
+        ) total
         WHERE 1=1
         <if test="groupId != null">
             AND total.groupId = #{groupId}
@@ -125,7 +144,26 @@
         m.monitor_range,
         w.worker_name AS resourceName
         FROM t_dl_monitor m left join t_dl_worker w on m.resource_id = w.id
-        WHERE monitor_cat = 2) total
+        WHERE monitor_cat = 2
+
+        UNION ALL
+        SELECT
+        m.id,
+        m.monitor_type,
+        m.monitor_cat,
+        m.receive_people,
+        m.is_effective,
+        m.resource_id,
+        m.threshold,
+        m.interval_time,
+        m.create_time,
+        m.modify_time,
+        m.monitor_range,
+        j.job_name AS resourceName
+        FROM t_datax_job_config j LEFT JOIN t_dl_monitor m ON m.resource_id = j.id
+        WHERE monitor_cat=3
+
+        ) total
         WHERE total.id=#{id}
     </select>
 
@@ -146,6 +184,7 @@
         t.task_name AS resourceName
         FROM t_dl_monitor m left join t_dl_task t on m.resource_id = t.id
         WHERE monitor_cat = 1
+
         UNION ALL
         SELECT
         m.id,
@@ -161,7 +200,26 @@
         m.monitor_range,
         w.worker_name AS resourceName
         FROM t_dl_monitor m left join t_dl_worker w on m.resource_id = w.id
-        WHERE monitor_cat = 2) total
+        WHERE monitor_cat = 2
+
+        UNION ALL
+        SELECT
+        m.id,
+        m.monitor_type,
+        m.monitor_cat,
+        m.receive_people,
+        m.is_effective,
+        m.resource_id,
+        m.threshold,
+        m.interval_time,
+        m.create_time,
+        m.modify_time,
+        m.monitor_range,
+        j.job_name AS resourceName
+        FROM t_datax_job_config j LEFT JOIN t_dl_monitor m ON m.resource_id = j.id
+        WHERE monitor_cat=3
+
+        ) total
         WHERE total.resource_id = #{resourceId} AND total.monitor_cat = #{monitorCat}
     </select>
 

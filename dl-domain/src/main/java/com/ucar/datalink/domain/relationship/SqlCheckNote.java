@@ -101,6 +101,7 @@ public class SqlCheckNote implements Comparable<SqlCheckNote> {
             typeMappings.put(MediaSourceType.POSTGRESQL, DBA);
             typeMappings.put(MediaSourceType.ORACLE, DBA);
             typeMappings.put(MediaSourceType.SDDL, DBA);
+            typeMappings.put(MediaSourceType.VIRTUAL, DBA);
             typeMappings.put(MediaSourceType.HBASE, HBASEA);
             typeMappings.put(MediaSourceType.KUDU, SPARKA);
         }

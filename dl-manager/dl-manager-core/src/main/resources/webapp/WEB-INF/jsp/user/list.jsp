@@ -13,7 +13,20 @@
             <div class="col-xs-12">
                 <div class="row">
                     <form class="form-horizontal">
-               
+
+                        <div class="form-group col-xs-3">
+                            <label class="col-sm-4 control-label">集团邮箱</label>
+
+                            <div class="col-sm-8">
+                                <select class="width-100 chosen-select" id="ucarEmail"
+                                        style="width:100%">
+                                    <option value="">全部</option>
+                                    <c:forEach items="${emailList}" var="email">
+                                        <option value="${email}">${email}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                        </div>
                         <div class="form-group col-xs-3">
                             <label class="col-sm-4 control-label">角色</label>
 
@@ -39,11 +52,13 @@
                            style="text-align: left;width:100%">
                         <thead>
                         <tr>
-                            <td>用户名</td>
-                            <td>邮箱</td>
+                            <td>用户名称</td>
+                            <td>集团邮箱</td>
+                            <td>类型</td>
                             <td>手机号</td>
                             <td>角色</td>
                             <td>是否接收报警</td>
+                            <td>创建job配置后接受邮件</td>
                             <td>创建时间</td>
                             <td>操作</td>
                         </tr>
@@ -74,7 +89,11 @@
         paging: true,//是否分页
         "ajax": {
             "url": "${basePath}/user/initUser",
-            "data": function (d) {},
+            "data": function (d) {
+                d.ucarEmail = $("#ucarEmail").val();
+                d.roleId = $("#roleId").val();
+                return JSON.stringify(d);
+            },
             "dataType": 'json',
             "contentType": 'application/json',
             "type": 'POST'
@@ -83,12 +102,26 @@
 
             {"data": "userName"},
             {"data": "ucarEmail"},
+            {
+                            "data": "userType",
+                            "bSortable": false,
+                            "sWidth": "20%",
+                            "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+                                var userType = oData.userType;
+                                if (userType == 0) {
+                                    $(nTd).html("神州优车");
+                                } else {
+                                    $(nTd).html("咖啡");
+                                }
+                            }
+             },
             {"data": "phone"},
             {
                 "data": "roleInfoList",
                 "bSortable": false,
                 "sWidth": "20%",
                 "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+
                     var x1 = sData;
                     var role = '';
                     $.each(sData,function(index,value){
@@ -107,6 +140,19 @@
                 "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
                     var isAlarm = oData.isAlarm;
                     if (isAlarm == 1) {
+                        $(nTd).html("是");
+                    } else {
+                        $(nTd).html("否");
+                    }
+                }
+            },
+            {
+                "data": "createTime",
+                "bSortable": false,
+                "sWidth": "20%",
+                "fnCreatedCell": function (nTd, sData, oData, iRow, iCol) {
+                    var isMail = oData.isReceiveDataxMail;
+                    if (isMail == 1) {
                         $(nTd).html("是");
                     } else {
                         $(nTd).html("否");

@@ -3,8 +3,8 @@
 	<parent>
 		<groupId>com.ucar.datalink</groupId>
 		<artifactId>datalink</artifactId>
-		<version>1.0.0-beta</version>
-		<relativePath>../pom.xml</relativePath>
+		<version>0.0.1</version><relativePath>../pom.xml</relativePath>
+
 	</parent>
 
 	<artifactId>dl-worker</artifactId>
@@ -18,11 +18,15 @@
 		<module>dl-worker-writer-rdbms</module>
 		<module>dl-worker-reader-dummy</module>
 		<module>dl-worker-api</module>
+		<module>dl-worker-writer-fq</module>
+        <module>dl-worker-reader-fq</module>
 		<module>dl-worker-writer-es</module>
 		<module>dl-worker-reader-hbase</module>
 		<module>dl-worker-writer-hdfs</module>
+		<module>dl-worker-writer-sddl</module>
 		<module>dl-worker-writer-hbase</module>
 		<module>dl-worker-writer-kudu</module>
-		<module>dl-worker-writer-kafka</module>
+        <module>dl-worker-writer-kafka</module>
+		<module>dl-worker-writer-dove</module>
     </modules>
 </project>
