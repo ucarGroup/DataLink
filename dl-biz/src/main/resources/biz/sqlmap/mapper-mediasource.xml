@@ -12,45 +12,36 @@
         <result property="parameter" column="ms_parameter"/>
         <result property="createTime" column="create_time"/>
         <result property="modifyTime" column="modify_time"/>
-        <result property="labId" column="lab_id"/>
-        <result property="labName" column="lab_name"/>
-        <result property="simulateMsType" column="simulate_ms_type"/>
     </resultMap>
 
     <!-- all columns -->
-    <sql id="allMediaSourceColumns">id,ms_name,ms_type,ms_desc,ms_parameter,create_time,modify_time,lab_id,simulate_ms_type</sql>
+    <sql id="allMediaSourceColumns">id,ms_name,ms_type,ms_desc,ms_parameter,create_time,modify_time</sql>
 
     <select id="getList" resultMap="mediaSourceResult">
         select
-          s.id,
-          s.ms_name,
-          s.ms_type,
-          s.ms_desc,
-          s.ms_parameter,
-          s.create_time,
-          s.modify_time,
-          s.lab_id,
-          s.simulate_ms_type,
-          l.lab_name
-        from t_dl_media_source s left join t_dl_lab l on s.lab_id = l.id
+          id,
+          ms_name,
+          ms_type,
+          ms_desc,
+          ms_parameter,
+          create_time,
+          modify_time
+        from t_dl_media_source
     </select>
 
     <select id="getListByType" resultMap="mediaSourceResult">
         select
-        s.id,
-        s.ms_name,
-        s.ms_type,
-        s.ms_desc,
-        s.ms_parameter,
-        s.create_time,
-        s.modify_time,
-        s.lab_id,
-        s.simulate_ms_type,
-        l.lab_name
-        from t_dl_media_source s left join t_dl_lab l on s.lab_id = l.id
+        id,
+        ms_name,
+        ms_type,
+        ms_desc,
+        ms_parameter,
+        create_time,
+        modify_time
+        from t_dl_media_source
         where 1=1
         <if test="mediaSourceType != null">
-            and s.ms_type in
+            and ms_type in
             <foreach collection="mediaSourceType" close=")" open="(" separator="," item="i">
                 #{i}
             </foreach>
@@ -59,52 +50,40 @@
 
     <select id="getListForQueryPage" resultMap="mediaSourceResult" >
         select
-        s.id,
-        s.ms_name,
-        s.ms_type,
-        s.ms_desc,
-        s.ms_parameter,
-        s.create_time,
-        s.modify_time,
-        s.lab_id,
-        s.simulate_ms_type,
-        l.lab_name
-        from t_dl_media_source s left join t_dl_lab l on s.lab_id = l.id
+        id,
+        ms_name,
+        ms_type,
+        ms_desc,
+        ms_parameter,
+        create_time,
+        modify_time
+        from t_dl_media_source
         where 1=1
         <if test="mediaSourceType != null">
-            and s.ms_type in
+            and ms_type in
             <foreach collection="mediaSourceType" close=")" open="(" separator="," item="i">
                 #{i}
             </foreach>
         </if>
         <if test="mediaSourceName != null">
-            and s.ms_name LIKE concat(concat('%',#{mediaSourceName}),'%')
+            and ms_name LIKE concat(concat('%',#{mediaSourceName}),'%')
         </if>
         <if test="mediaSourceIp != null">
-            and s.ms_parameter LIKE concat(concat('%',#{mediaSourceIp}),'%')
+            and ms_parameter LIKE concat(concat('%',#{mediaSourceIp}),'%')
         </if>
     </select>
 
     <select id="getById" resultMap="mediaSourceResult">
         select
-        s.id,
-        s.ms_name,
-        s.ms_type,
-        s.ms_desc,
-        s.ms_parameter,
-        s.create_time,
-        s.modify_time,
-        s.lab_id,
-        s.simulate_ms_type,
-        l.lab_name
-        from t_dl_media_source s left join t_dl_lab l on s.lab_id = l.id where s.id=#{id}
+        <include refid="allMediaSourceColumns"/>
+        from t_dl_media_source where id=#{id}
     </select>
 
     <insert id="insert" parameterType="com.ucar.datalink.domain.media.MediaSourceInfo" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO t_dl_media_source
-        (ms_name,ms_type,ms_desc,ms_parameter,create_time,modify_time,lab_id,simulate_ms_type)
+        (ms_name,ms_type,ms_desc,ms_parameter,create_time,modify_time)
         VALUES
-        (#{name}, #{type}, #{desc},#{parameter}, now(), now(),#{labId},#{simulateMsType})
+        (#{name}, #{type}, #{desc},#{parameter}, now(), now())
     </insert>
 
     <delete id="delete" parameterType="long">
@@ -118,9 +97,7 @@
         ms_type=#{type},
         ms_desc=#{desc},
         ms_parameter=#{parameter},
-        modify_time = now(),
-        lab_id=#{labId},
-        simulate_ms_type=#{simulateMsType}
+        modify_time = now()
         where id = #{id}
     </update>
 
@@ -137,45 +114,12 @@
         FROM t_dl_media_source
         GROUP BY ms_type
     </select>
-
-    <select id="findRealListByVirtualMsId" resultMap="mediaSourceResult" parameterType="Long">
-        select
-        s.id,
-        s.ms_name,
-        s.ms_type,
-        s.ms_desc,
-        s.ms_parameter,
-        s.create_time,
-        s.modify_time,
-        s.lab_id
-        from t_dl_media_source s left join t_dl_mediasource_relation r on s.id = r.real_ms_id where  r.virtual_ms_id = #{virtualMsId}
-
-    </select>
-
-    <select id="getOneByName" resultMap="mediaSourceResult">
+<select id="getOneByName" resultMap="mediaSourceResult">
         select
         <include refid="allMediaSourceColumns"/>
         from t_dl_media_source where ms_name=#{msName}
     </select>
-
-    <select id="findRealSignleByMsIdAndLab" resultMap="mediaSourceResult" parameterType="Long">
-        select
-        s.id,
-        s.ms_name,
-        s.ms_type,
-        s.ms_desc,
-        s.ms_parameter,
-        s.create_time,
-        s.modify_time,
-        s.lab_id
-        from t_dl_media_source s
-        left join t_dl_mediasource_relation r on s.id = r.real_ms_id
-        left join t_dl_lab l on l.id = s.lab_id
-        where  r.virtual_ms_id = #{virtualMsId}
-        and l.lab_name = #{labName}
-    </select>
-
-    <select id="getListByNameList" resultMap="mediaSourceResult">
+<select id="getListByNameList" resultMap="mediaSourceResult">
         select
         id,
         ms_name,

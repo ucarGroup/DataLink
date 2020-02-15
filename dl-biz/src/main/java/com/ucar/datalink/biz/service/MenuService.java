@@ -1,7 +1,6 @@
 package com.ucar.datalink.biz.service;
 
 import com.ucar.datalink.domain.menu.MenuInfo;
-import com.ucar.datalink.domain.user.RoleInfo;
 
 import java.util.List;
 

@@ -6,7 +6,6 @@ import com.ucar.datalink.domain.meta.MetaMappingInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,7 +25,7 @@ public class SddlMapping extends AbstractMapping {
     /**
      * 将关系型数据库的一个列转换成ES
      */
-    private static final Map<String,String> toES = new ConcurrentHashMap<>();
+    private static final Map<String, String> toES = new ConcurrentHashMap<>();
 
 
     static {
@@ -54,14 +53,14 @@ public class SddlMapping extends AbstractMapping {
         toHDFS.put("tinyint unsigned", "smallint");
         toHDFS.put("tinytext", "string");
         toHDFS.put("timestamp", "timestamp");
-        toHDFS.put("bit","smallint");
-        toHDFS.put("int unsigned","int");
-        toHDFS.put("mediumint","bigint");
-        toHDFS.put("time","timestamp");
-        toHDFS.put("mediumtext","string");
-        toHDFS.put("integer","int");
-        toHDFS.put("longvarchar","string");
-        toHDFS.put("int4","int");
+        toHDFS.put("bit", "smallint");
+        toHDFS.put("int unsigned", "int");
+        toHDFS.put("mediumint", "bigint");
+        toHDFS.put("time", "timestamp");
+        toHDFS.put("mediumtext", "string");
+        toHDFS.put("integer", "int");
+        toHDFS.put("longvarchar", "string");
+        toHDFS.put("int4", "int");
 
         /**
          * toES是一个映射关系表，key是关系型数据库中的列类型，value是ElasticSearch中的列类型
@@ -69,40 +68,40 @@ public class SddlMapping extends AbstractMapping {
         toES.put("tinyint", "integer");
         toES.put("smallint", "integer");
         toES.put("int", "integer");
-        toES.put("bigint","long");
-        toES.put("tinyint","integer");
-        toES.put("smallint","integer");
-        toES.put("int","integer");
+        toES.put("bigint", "long");
+        toES.put("tinyint", "integer");
+        toES.put("smallint", "integer");
+        toES.put("int", "integer");
         toES.put("bigint identity", "long");
         toES.put("bigint unsigned", "long");
         toES.put("int identity", "integer");
-        toES.put("varchar","string");
-        toES.put("char","string");
-        toES.put("text","string");
+        toES.put("varchar", "string");
+        toES.put("char", "string");
+        toES.put("text", "string");
         toES.put("clob", "string");
         toES.put("blob", "string");
-        toES.put("decimal","double");
+        toES.put("decimal", "double");
         toES.put("float", "double");
-        toES.put("double","double");
-        toES.put("datetime","date");
-        toES.put("timestamp","date");
+        toES.put("double", "double");
+        toES.put("datetime", "date");
+        toES.put("timestamp", "date");
         toES.put("date", "date");
-        toES.put("mediumtext","string");
+        toES.put("mediumtext", "string");
         toES.put("integer", "integer");
-        toES.put("decimal","string");
-        toES.put("longvarchar","string");
-        toES.put("datetime2","date");
-        toES.put("nvarchar","string");
-        toES.put("int4","long");
+        toES.put("decimal", "string");
+        toES.put("longvarchar", "string");
+        toES.put("datetime2", "date");
+        toES.put("nvarchar", "string");
+        toES.put("int4", "long");
     }
 
 
     @Override
     public void processMetaMapping(MetaMappingInfo info) {
-        if(MediaSourceType.HDFS.name().toUpperCase().equals(info.getTargetMediaSourceType())) {
+        if (MediaSourceType.HDFS.name().toUpperCase().equals(info.getTargetMediaSourceType())) {
             toHDFS.put(info.getSrcMappingType(), info.getTargetMappingType());
-        }
-        else if(MediaSourceType.ELASTICSEARCH.name().toUpperCase().equals(info.getTargetMediaSourceType())) {
+		} 
+		else if (MediaSourceType.ELASTICSEARCH.name().toUpperCase().equals(info.getTargetMediaSourceType())) {
             toES.put(info.getSrcMappingType(), info.getTargetMappingType());
         }
     }
@@ -119,8 +118,8 @@ public class SddlMapping extends AbstractMapping {
         check(meta);
         String name = meta.getType().toLowerCase();
         String type = toES.get(name);
-        if(type == null) {
-            LOGGER.error("unsupport transform "+name+" (to ES)");
+        if (type == null) {
+            LOGGER.error("unsupport transform " + name + " (to ES)");
             return createEmtpyColumnMeta(meta.getName());
         }
         ColumnMeta target = new ColumnMeta();
@@ -142,8 +141,8 @@ public class SddlMapping extends AbstractMapping {
         check(meta);
         String name = meta.getType().toLowerCase();
         String type = toHDFS.get(name);
-        if(type == null) {
-            LOGGER.error("unsupport transform "+name+" (to HDFS)");
+        if (type == null) {
+            LOGGER.error("unsupport transform " + name + " (to HDFS)");
             return createEmtpyColumnMeta(meta.getName());
         }
         ColumnMeta target = new ColumnMeta();

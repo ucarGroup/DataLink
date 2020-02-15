@@ -17,8 +17,6 @@ public class WorkerInfo {
     private Date modifyTime;
 
     private String javaopts;
-    private Long labId;
-    private String labName;
 
     public String getGroupName() {
         return groupName;
@@ -100,38 +98,4 @@ public class WorkerInfo {
         this.javaopts = javaopts;
     }
 
-    public Long getLabId() {
-        return labId;
-    }
-
-    public void setLabId(Long labId) {
-        this.labId = labId;
-    }
-
-    public String getLabName() {
-        return labName;
-    }
-
-    public void setLabName(String labName) {
-        this.labName = labName;
-    }
-
-    @Override
-    public String toString() {
-        final StringBuffer sb = new StringBuffer("WorkerInfo{");
-        sb.append("id=").append(id);
-        sb.append(", workerName='").append(workerName).append('\'');
-        sb.append(", workerDesc='").append(workerDesc).append('\'');
-        sb.append(", workerAddress='").append(workerAddress).append('\'');
-        sb.append(", groupId=").append(groupId);
-        sb.append(", groupName='").append(groupName).append('\'');
-        sb.append(", restPort=").append(restPort);
-        sb.append(", createTime=").append(createTime);
-        sb.append(", modifyTime=").append(modifyTime);
-        sb.append(", javaopts='").append(javaopts).append('\'');
-        sb.append(", labId=").append(labId);
-        sb.append(", labName='").append(labName).append('\'');
-        sb.append('}');
-        return sb.toString();
-    }
 }

@@ -39,15 +39,6 @@ public class DLinkZkPathDef {
 
     public static final String ServiceMailNode;
 
-    public static final String centerLab;
-
-    public static final String labInfoList;
-
-    //切机房批次存储
-    public static final String switchLabVersion;
-
-    public static final String labSwitchProcessing;
-
     static {
         Root = DLinkZkUtils.get().zkRoot();
 
@@ -68,12 +59,6 @@ public class DLinkZkPathDef {
         ServiceRoot = Root + "/service";
         ServiceMailRoot = ServiceRoot + "/mail";
         ServiceMailNode = ServiceMailRoot + "/{0}";
-
-        centerLab = Root + "/doublecenter/centerLabNew";
-        labInfoList = Root + "/doublecenter/labInfoList";
-        switchLabVersion = Root + "/doublecenter/switchLabVersion";
-        labSwitchProcessing = Root + "/doublecenter/labSwitchProcessing";
-
     }
 
     public static String getManagerClusterNode(String node) {

@@ -152,10 +152,6 @@ public class UserServiceImpl implements UserService {
         userMap.clear();
     }
 
-    public List<UserInfo> getUserInfoByReceiveMail() {
-        return userDAO.getUserInfoByReceiveMail();
-    }
-
     @Override
     public List<UserInfo> getUserInfoByRoleType(RoleType roleType) {
         return userDAO.getUserInfoByRoleType(roleType);
@@ -174,35 +170,6 @@ public class UserServiceImpl implements UserService {
     public Boolean isSuper(UserInfo user) {
         for (RoleInfo roleInfo : user.getRoleInfoList()){
             if (Objects.equals(RoleType.SUPER.toString(), roleInfo.getCode())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * //是否AutoKeeper
-     *
-     * @return
-     */
-    public Boolean isAutoKeeper(UserInfo user) {
-        for (RoleInfo roleInfo : user.getRoleInfoList()){
-            if (Objects.equals(RoleType.AUTOKEEPER.toString(), roleInfo.getCode())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    /**
-     * //是否Approver
-     *
-     * @return
-     */
-    public Boolean isApprover(UserInfo user) {
-        for (RoleInfo roleInfo : user.getRoleInfoList()){
-            if (Objects.equals(RoleType.APPROVER.toString(), roleInfo.getCode())) {
                 return true;
             }
         }

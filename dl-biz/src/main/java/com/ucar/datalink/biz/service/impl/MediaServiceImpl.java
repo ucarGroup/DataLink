@@ -5,29 +5,20 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
-import com.ucar.datalink.biz.dal.LabDAO;
 import com.ucar.datalink.biz.dal.MediaDAO;
 import com.ucar.datalink.biz.dal.MediaSourceDAO;
 import com.ucar.datalink.biz.dal.TaskDAO;
 import com.ucar.datalink.biz.meta.MetaManager;
-import com.ucar.datalink.biz.service.DoubleCenterService;
-import com.ucar.datalink.biz.service.LabService;
 import com.ucar.datalink.biz.service.MediaService;
-import com.ucar.datalink.biz.service.MediaSourceService;
-import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.common.event.EventBusFactory;
 import com.ucar.datalink.common.utils.FutureCallback;
 import com.ucar.datalink.domain.event.MediaMappingChangeEvent;
-import com.ucar.datalink.domain.lab.LabInfo;
 import com.ucar.datalink.domain.media.*;
-import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
-import com.ucar.datalink.domain.media.parameter.zk.ZkMediaSrcParameter;
 import com.ucar.datalink.domain.meta.ColumnMeta;
 import com.ucar.datalink.domain.statis.StatisDetail;
 import com.ucar.datalink.domain.task.TaskInfo;
-import com.ucar.datalink.domain.vo.TaskMediaNameVo;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ddlutils.model.Index;
 import org.apache.ddlutils.model.IndexColumn;
@@ -40,7 +31,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -55,8 +45,6 @@ public class MediaServiceImpl implements MediaService {
 
     private LoadingCache<TaskMediaKey, List<MediaMappingInfo>> taskMediaMappingsCache;
 
-    private LoadingCache<LoadingKey, MediaSourceInfo> mediaSourceInfoCache;
-
     @Autowired
     MediaDAO mediaDAO;
 
@@ -65,12 +53,6 @@ public class MediaServiceImpl implements MediaService {
 
     @Autowired
     TaskDAO taskDAO;
-
-    @Autowired
-    LabDAO labDAO;
-
-    @Autowired
-    DoubleCenterService doubleCenterService;
 
     public MediaServiceImpl() {
         mediaMappingsCache = CacheBuilder.newBuilder().build(new CacheLoader<Long, List<MediaMappingInfo>>() {
@@ -127,31 +109,12 @@ public class MediaServiceImpl implements MediaService {
                         .collect(Collectors.toList());
             }
         });
-
-        mediaSourceInfoCache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build(new CacheLoader<LoadingKey, MediaSourceInfo>() {
-            @Override
-            public MediaSourceInfo load(LoadingKey loadingKey) throws Exception {
-                return doGetRealDataSourceSpecial(loadingKey.taskId, loadingKey.mediaSourceInfo);
-            }
-        });
-
     }
 
     @Override
     @Transactional
     public List<Long> insert(List<MediaInfo> mediaList, List<MediaMappingInfo> mediaMappingList, List<MediaColumnMappingInfo> mediaColumnMappingList) throws Exception {
         checkConsistency(mediaList, mediaMappingList);
-
-        //如果目标端是ES虚拟数据源，需验证该Task是leader-task
-        MediaMappingInfo mediaMappingInfo = mediaMappingList.get(0);
-        MediaSourceInfo mediaSourceInfo = mediaSourceDAO.getById(mediaMappingInfo.getTargetMediaSourceId());
-        if (mediaSourceInfo.getType().equals(MediaSourceType.VIRTUAL) && mediaSourceInfo.getSimulateMsType().equals(MediaSourceType.ELASTICSEARCH)) {
-            TaskInfo taskInfo = taskDAO.findById(mediaMappingInfo.getTaskId());
-            if (!taskInfo.isLeaderTask()) {
-                throw new RuntimeException("目标端是ES虚拟数据源，Task必须是leader-task");
-            }
-        }
-
         Long mediaId = null;
         List<Long> mappingIdList = new ArrayList<Long>();
         Map<String, Object> map = new HashMap<>();
@@ -174,7 +137,7 @@ public class MediaServiceImpl implements MediaService {
 
             //判断映射是否已经存在
             MediaMappingInfo mediaMappingInfoExists = mediaDAO.findMediaMappingByJoinIndex(mediaMappingInfoAdd);
-            if(mediaMappingInfoExists != null) {
+            if (mediaMappingInfoExists != null) {
                 throw new DatalinkException("该映射已经存在");
             }
 
@@ -202,6 +165,12 @@ public class MediaServiceImpl implements MediaService {
     public void delete(long id) {
         mediaDAO.deleteMediaMappingById(id);
         mediaDAO.deleteMediaMappingColumnByMappingId(id);
+    }
+
+    @Override
+    public List<MediaMappingInfo> getMappingByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam) {
+        List<MediaMappingInfo> mediaMappingList = mediaDAO.findMediaMappingsByTaskIdAndTargetMediaSourceId(mapParam);
+        return mediaMappingList;
     }
 
     @Override
@@ -306,41 +275,6 @@ public class MediaServiceImpl implements MediaService {
         return mediaDAO.findMediaSourcesByTypes(types);
     }
 
-    /**
-     * 查找单机房数据源
-     *
-     * @param types 数据源类型
-     * @return
-     */
-    @Override
-    public List<MediaSourceInfo> findMediaSourcesForSingleLab(List<MediaSourceType> types) {
-        return mediaDAO.findMediaSourcesForSingleLab(types);
-    }
-
-    /**
-     * 查找跨机房数据源
-     *
-     * @param types 数据源类型
-     * @return
-     */
-    public List<MediaSourceInfo> findMediaSourcesForAcrossLab(Long labId, List<MediaSourceType> types) {
-        List<MediaSourceInfo> mediaSourceInfoList = mediaDAO.findMediaSourcesForAcrossLab(labId, types);
-        return mediaSourceInfoList;
-    }
-
-    /**
-     * 查找跨机房数据源，根据传入的MediaSourceType，返回管理的所有虚拟数据源
-     *
-     * @param types 数据源类型
-     * @return
-     */
-    @Override
-    public List<MediaSourceInfo> findMediaSourcesForAllAcrossLab(List<MediaSourceType> types) {
-        List<MediaSourceInfo> mediaSourceInfoList = mediaDAO.findMediaSourcesForAllAcrossLab(types);
-        return mediaSourceInfoList;
-    }
-
-
     @Override
     public List<MediaMappingInfo> findMediaMappingsByTask(Long taskId) {
         return mediaMappingsCache.getUnchecked(taskId);
@@ -361,18 +295,8 @@ public class MediaServiceImpl implements MediaService {
         return taskMediaMappingsCache.getUnchecked(new TaskMediaKey(taskId, namespace, mediaName))
                 .stream()
                 .filter(m ->
-                        {
-                            if (m.getTargetMediaSource().getType().equals(MediaSourceType.VIRTUAL)) {
-                                Boolean flag = targetSourceTypes.contains(m.getTargetMediaSource().getSimulateMsType())
-                                        && (!justValid || m.isValid());
-                                return flag;
-                            } else {
-                                Boolean flag = targetSourceTypes.contains(m.getTargetMediaSource().getType())
-                                        && (!justValid || m.isValid());
-                                return flag;
-                            }
-                        }
-                )
+                        targetSourceTypes.contains(m.getTargetMediaSource().getType())
+                                && (!justValid || m.isValid()))
                 .collect(Collectors.toList());
     }
 
@@ -485,6 +409,16 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
+    public List<String> getMappingTableNameByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam) {
+        List<MediaMappingInfo> mediaMappingList = mediaDAO.findMediaMappingsByTaskIdAndTargetMediaSourceId(mapParam);
+        List<String> tableList = new ArrayList<>();
+        for (MediaMappingInfo media : mediaMappingList) {
+            tableList.add(media.getSourceMedia().getName());
+        }
+        return tableList;
+    }
+
+    @Override
     public Integer mappingCount() {
         return mediaDAO.mappingCount();
     }
@@ -520,15 +454,9 @@ public class MediaServiceImpl implements MediaService {
             ColumnMappingMode columnMappingMode = mediaMappingList.get(i).getColumnMappingMode();
             Long interceptorId = mediaMappingList.get(i).getInterceptorId();
             if (!sourceMediaName.equals("(.*)")) {
-                if ((srcMediaSourceType.isRdbms() || (srcMediaSourceType == MediaSourceType.VIRTUAL && srcMediaSourceInfo.getSimulateMsType() == MediaSourceType.MYSQL))
-                        && (targetMediaSourceType.isRdbms() || (targetMediaSourceType == MediaSourceType.VIRTUAL && targetMediaSourceInfo.getSimulateMsType() == MediaSourceType.MYSQL))
+                if ((srcMediaSourceType == MediaSourceType.MYSQL || srcMediaSourceType == MediaSourceType.SQLSERVER)
+                        && (targetMediaSourceType == MediaSourceType.MYSQL || targetMediaSourceType == MediaSourceType.SQLSERVER || targetMediaSourceType == MediaSourceType.POSTGRESQL)
                         && columnMappingMode == ColumnMappingMode.NONE && interceptorId == null) {
-                    if (srcMediaSourceType == MediaSourceType.VIRTUAL) {
-                        srcMediaSourceInfo = getRealDataSource(srcMediaSourceInfo);
-                    }
-                    if (targetMediaSourceType == MediaSourceType.VIRTUAL) {
-                        targetMediaSourceInfo = getRealDataSource(targetMediaSourceInfo);
-                    }
                     List<ColumnMeta> sourceMediaColumns = MetaManager.getColumns(srcMediaSourceInfo, sourceMediaName);
                     List<ColumnMeta> targetMediaColumns = MetaManager.getColumns(targetMediaSourceInfo, targetMediaName);
                     int count = 0;
@@ -552,157 +480,14 @@ public class MediaServiceImpl implements MediaService {
         }
     }
 
-    /**
-     * 获取真实数据源
-     * <p>
-     * 优先取Task所属机房对应的数据源，没有的话再取中心机房的数据源
-     *
-     * @return
-     */
-    /*private MediaSourceInfo doGetRealDataSource(String labName, MediaSourceInfo sourceInfo) {
-
-        if (!MediaSourceType.VIRTUAL.equals(sourceInfo.getType())) {
-            return sourceInfo;
-        }
-
-        //取中心机房的数据源
-        LabInfo labInfo = labDAO.getLabByName(labName);
-        Long labId = labInfo.getId();
-        List<MediaSourceInfo> list = mediaSourceDAO.findRealListByVirtualMsId(sourceInfo.getId());
-        MediaSourceInfo mediaSourceInfo = null;
-        for (MediaSourceInfo info : list) {
-            if (info.getLabId() == labId) {
-                mediaSourceInfo = info;
-                break;
-            }
-        }
-        return mediaSourceInfo;
-    }*/
-
-    /**
-     * 获取真实数据源
-     * <p>
-     * 优先取Task所属机房对应的数据源，没有的话再取中心机房的数据源
-     *
-     * @param taskId
-     * @return
-     */
-    private MediaSourceInfo doGetRealDataSourceSpecial(Long taskId, MediaSourceInfo sourceInfo) {
-
-        if (!MediaSourceType.VIRTUAL.equals(sourceInfo.getType())) {
-            return sourceInfo;
-        }
-
-        TaskInfo taskInfo = taskDAO.findById(taskId);
-        Long labId = 0L;
-        if (taskInfo.getLabId() != null) {
-            labId = taskInfo.getLabId();
-        }
-        //取中心机房的数据源
-        else {
-            String labName = doubleCenterService.getCenterLab(sourceInfo.getId());
-            LabInfo labInfo = labDAO.getLabByName(labName);
-            labId = labInfo.getId();
-        }
-        List<MediaSourceInfo> list = mediaSourceDAO.findRealListByVirtualMsId(sourceInfo.getId());
-        MediaSourceInfo mediaSourceInfo = null;
-        for (MediaSourceInfo info : list) {
-            if (info.getLabId().equals(labId)) {
-                mediaSourceInfo = info;
-                break;
-            }
-        }
-        return mediaSourceInfo;
-    }
-
-    /**
-     *查询虚拟数据源对应的真实数据源
-     *
-     * @param mediaSourceInfo
-     * @return
-     */
-    @Override
-    public MediaSourceInfo getRealDataSource(MediaSourceInfo mediaSourceInfo) {
-
-        if (!MediaSourceType.VIRTUAL.equals(mediaSourceInfo.getType())) {
-            return mediaSourceInfo;
-        }
-
-        DoubleCenterService doubleCenterService = DataLinkFactory.getObject(DoubleCenterService.class);
-        String labName = doubleCenterService.getCenterLab(mediaSourceInfo.getId());
-
-        //取中心机房对应的数据源
-        Long labId = DataLinkFactory.getObject(LabService.class).getLabByName(labName).getId();
-        List<MediaSourceInfo> list = DataLinkFactory.getObject(MediaSourceService.class).findRealListByVirtualMsId(mediaSourceInfo.getId());
-        for (MediaSourceInfo info : list) {
-            if (info.getLabId().longValue() == labId.longValue()) {
-                return info;
-            }
-        }
-        return null;
-    }
-
-    /**
-     *查询虚拟数据源对应的真实数据源(专门为es任务提供)
-     *
-     * @return
-     */
-    public MediaSourceInfo getRealDataSourceSpecial(Long taskId, MediaSourceInfo sourceInfo) {
-        return mediaSourceInfoCache.getUnchecked(new LoadingKey(sourceInfo, taskId));
-    }
-
-    @Override
-    public List<MediaSourceInfo> listRealMediaSourceInfos(MediaSourceInfo mediaSourceInfo) {
-        List<MediaSourceInfo> mediaSourceInfoList = Lists.newArrayList();
-        MediaSourceService mediaSourceService = DataLinkFactory.getObject(MediaSourceService.class);
-        if (mediaSourceInfo.getType().equals(MediaSourceType.VIRTUAL)) {
-            //sqlserver需要取中心机房的ip,因为双机房只有其中一个能连通。
-            if(mediaSourceInfo.getSimulateMsType().equals(MediaSourceType.SQLSERVER)){
-                mediaSourceInfoList.add(getRealDataSource(mediaSourceInfo));
-            }else {
-                mediaSourceInfoList = mediaSourceService.findRealListByVirtualMsId(mediaSourceInfo.getId());
-            }
-        }else if(mediaSourceInfo.getType().equals(MediaSourceType.SDDL)){
-            SddlMediaSrcParameter sddlParameter = mediaSourceInfo.getParameterObj();
-            mediaSourceInfoList.add(mediaSourceService.getById(sddlParameter.getProxyDbId()));
-        }else {
-            mediaSourceInfoList.add(mediaSourceInfo);
-        }
-        return mediaSourceInfoList;
-    }
-
-
-    @Override
-    public List<MediaSourceInfo> buildZkMediaSources(String zkServer) {
-        List<MediaSourceInfo> list = getMediaSourcesByTypes(MediaSourceType.ZOOKEEPER);
-        return list == null ?
-                Lists.newArrayList() :
-                list.stream().
-                        filter(i -> ((ZkMediaSrcParameter) i.getParameterObj()).getServers().equals(zkServer))
-                        .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<TaskMediaNameVo> getMediaNamesByTaskId(List<Long> taskIdList) {
-        if(taskIdList.size() >0 ) {
-            return mediaDAO.getTaskMediaNamesByTaskId(taskIdList);
-        }
-        return new ArrayList<>();
-    }
-
-    @Override
-    public TaskMediaNameVo findSourceTableInfoByMappingId(Long mappingId) {
-        return mediaDAO.findSourceTableInfoByMappingId(mappingId);
-    }
-
     @Override
     public List<MediaMappingInfo> getMappingsByTargetMediaNameAndNamespace(Long targetMediaSourceId, String targetNamespace, String targetTableName) {
-        return mediaDAO.getMappingsByTargetMediaNameAndNamespace(targetMediaSourceId,targetNamespace,targetTableName);
+        return mediaDAO.getMappingsByTargetMediaNameAndNamespace(targetMediaSourceId, targetNamespace, targetTableName);
     }
 
     @Override
     public List<MediaMappingInfo> getMappingsByMediaSourceIdAndTargetTable(Long srcMediaSourceId, Long targetMediaSourceId, String targetTableName) {
-        return mediaDAO.getMappingsByMediaSourceIdAndTargetTable(srcMediaSourceId,targetMediaSourceId,targetTableName);
+        return mediaDAO.getMappingsByMediaSourceIdAndTargetTable(srcMediaSourceId, targetMediaSourceId, targetTableName);
     }
 
     @Override
@@ -710,36 +495,8 @@ public class MediaServiceImpl implements MediaService {
         return mediaDAO.findMediaMappingsByTaskId(taskId);
     }
 
-    private static class LoadingKey {
-        private MediaSourceInfo mediaSourceInfo;
-        private Long taskId;
-
-        public LoadingKey(MediaSourceInfo mediaSourceInfo, Long taskId) {
-            this.mediaSourceInfo = mediaSourceInfo;
-            this.taskId = taskId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof LoadingKey)) return false;
-
-            LoadingKey that = (LoadingKey) o;
-
-            return mediaSourceInfo.equals(that.mediaSourceInfo) && taskId.equals(that.taskId);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = mediaSourceInfo.hashCode();
-            result = 31 * result + taskId.hashCode();
-            return result;
-        }
-
-    }
-
     @Override
-    public List<Long> findTaskIdListByMediaSourceList(List<Long> mediaSourceIdList){
+    public List<Long> findTaskIdListByMediaSourceList(List<Long> mediaSourceIdList) {
         return mediaDAO.findTaskIdListByMediaSourceList(mediaSourceIdList);
     }
 

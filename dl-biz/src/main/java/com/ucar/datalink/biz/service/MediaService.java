@@ -2,7 +2,6 @@ package com.ucar.datalink.biz.service;
 
 import com.ucar.datalink.domain.media.*;
 import com.ucar.datalink.domain.statis.StatisDetail;
-import com.ucar.datalink.domain.vo.TaskMediaNameVo;
 import org.apache.ddlutils.model.Table;
 
 import java.util.List;
@@ -48,33 +47,8 @@ public interface MediaService {
     List<MediaSourceInfo> getMediaSourcesByTypes(MediaSourceType... types);
 
     /**
-     * 查找单机房数据源
-     *
-     * @param types 数据源类型
-     * @return
-     */
-    List<MediaSourceInfo> findMediaSourcesForSingleLab(List<MediaSourceType> types);
-
-    /**
-     * 查找跨机房数据源
-     *
-     * @param types 数据源类型
-     * @return
-     */
-    List<MediaSourceInfo> findMediaSourcesForAcrossLab(Long sourceLabId, List<MediaSourceType> types);
-
-    /**
-     * 查找跨机房数据源，根据传入的MediaSourceType，返回管理的所有虚拟数据源
-     *
-     * @param types 数据源类型
-     * @return
-     */
-    public List<MediaSourceInfo> findMediaSourcesForAllAcrossLab(List<MediaSourceType> types);
-
-
-    /**
+     * /**
      * 获取某个Task下所有的Mapping配置
-     *
      */
     List<MediaMappingInfo> findMediaMappingsByTask(Long taskId);
 
@@ -101,6 +75,10 @@ public interface MediaService {
 
     List<MediaMappingInfo> mappingListsForQueryPage(Long mediaSourceId, Long targetMediaSourceId, Long taskId, String tableName, String targetMediaName);
 
+    List<String> getMappingTableNameByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam);
+
+    List<MediaMappingInfo> getMappingByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam);
+
     Integer mappingCount();
 
     List<StatisDetail> getCountByType();
@@ -110,65 +88,18 @@ public interface MediaService {
     void cleanTableMapping(Long taskId) throws Exception;
 
     /**
-     * 获取真实数据源
-     *
-     * 取中心机房的数据源
-     *
-     * @return
-     */
-    MediaSourceInfo getRealDataSource(MediaSourceInfo sourceInfo);
-
-    /**
-     * 获取真实数据源
-     *
-     * 优先取Task所属机房对应的数据源，没有的话再取中心机房的数据源
-     *
-     * @param taskId
-     * @return
-     */
-    MediaSourceInfo getRealDataSourceSpecial(Long taskId,MediaSourceInfo sourceInfo);
-
-    /**
-     *  获取真实数据源列表
-     *  获取虚拟数据源下的所有真实数据源，并返回数据源列表
-     *
-     * @param sourceInfo
-     * @return
-     */
-    List<MediaSourceInfo> listRealMediaSourceInfos(MediaSourceInfo sourceInfo);
-
-    /**
-     *  传入批量数据源
-     *  获取DB关联的任务id
+     * 传入批量数据源
+     * 获取DB关联的任务id
      *
      * @param mediaSourceIdList
      * @return
      */
-    public List<Long> findTaskIdListByMediaSourceList(List<Long> mediaSourceIdList);
+    List<Long> findTaskIdListByMediaSourceList(List<Long> mediaSourceIdList);
 
-    /**
-     * 获取zk集群
-     * 在配置hbase task时，需要获取datalink配置的zk集群
-     * @return
-     */
-    List<MediaSourceInfo> buildZkMediaSources(String zkServer);
-
-    /**
-     * 获取task下边所有同步的表
-     * @param taskIdList
-     * @return
-     */
-    List<TaskMediaNameVo> getMediaNamesByTaskId(List<Long> taskIdList);
-
-    /**
-     * 获取源端表名
-     * @param mappingId
-     * @return
-     */
-    TaskMediaNameVo findSourceTableInfoByMappingId(Long mappingId);
 
     /**
      * 根据目标端库和表获取mapping
+     *
      * @param targetMediaSourceId
      * @param targetNamespace
      * @param targetTableName
@@ -178,6 +109,7 @@ public interface MediaService {
 
     /**
      * 根据目标端库和表获取mapping
+     *
      * @param srcMediaSourceId
      * @param targetMediaSourceId
      * @param targetTableName

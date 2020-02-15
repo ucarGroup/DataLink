@@ -24,9 +24,5 @@ public interface AlarmService {
 
     void alarmTaskStatusMismatch(MonitorInfo monitorInfo, TaskStatusMismatchLogInfo taskStatusMismatchLogInfo);
 
-    void alarmDataxError(MonitorInfo monitorInfo, String errorMsg);
-
     void alarmTaskSyncStatus(MonitorInfo monitorInfo, Long busyTime);
-
-    void alarm(String content,String subject,boolean isSendMobile);
 }

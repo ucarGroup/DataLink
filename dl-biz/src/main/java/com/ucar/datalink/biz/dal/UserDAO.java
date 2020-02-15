@@ -11,6 +11,7 @@ import java.util.List;
 public interface UserDAO {
 
     List<UserInfo> getList();
+
     List<UserInfo> getListByUserInfo(UserInfo userInfo);
 
     Integer insert(UserInfo userInfo);
@@ -22,8 +23,6 @@ public interface UserDAO {
     UserInfo getById(Long id);
 
     UserInfo getByUserInfo(UserInfo userInfo);
-
-    List<UserInfo> getUserInfoByReceiveMail();
 
     List<UserInfo> getUserInfoByRoleType(RoleType roleType);
 

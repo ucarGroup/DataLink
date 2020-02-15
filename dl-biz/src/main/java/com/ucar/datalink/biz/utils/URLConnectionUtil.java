@@ -52,7 +52,7 @@ public class URLConnectionUtil {
             try {
                 return post(serverUrl,data);
             } catch (Exception e) {
-                logger.info("请求异常",e);
+                logger.error("请求异常",e);
                 //ignore
             }
         }

@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.ucar.datalink</groupId>
         <artifactId>datalink</artifactId>
-        <version>0.0.1</version>
+        <version>1.0.0-beta</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -16,7 +16,7 @@
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-contract</artifactId>
-            <version>0.0.1</version>
+            <version>1.0.0-beta</version>
         </dependency>
         <!-- rdbms -->
         <dependency>
@@ -52,7 +52,7 @@
         <!-- zookeeper -->
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper_ucar</artifactId>
+            <artifactId>zookeeper</artifactId>
             <exclusions>
                 <exclusion>
                     <artifactId>netty</artifactId>

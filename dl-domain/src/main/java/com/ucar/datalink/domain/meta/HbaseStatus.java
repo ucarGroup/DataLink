@@ -1,7 +1,6 @@
 package com.ucar.datalink.domain.meta;
 
 import java.util.List;
-import java.util.Map;
 
 public class HbaseStatus {
 

@@ -1,6 +1,5 @@
 package com.ucar.datalink.biz.service;
 
-import com.ucar.datalink.domain.alarm.StrategyConfig;
 import com.ucar.datalink.domain.monitor.MonitorCat;
 import com.ucar.datalink.domain.monitor.MonitorInfo;
 import com.ucar.datalink.domain.monitor.MonitorType;
@@ -32,13 +31,4 @@ public interface MonitorService {
     MonitorInfo getByResourceAndType(Long resourceId, MonitorType monitorType);
 
     void clearCache();
-
-    void copyStrategy(StrategyConfig config, MonitorInfo monitorInfo);
-
-    void initMonitor(MonitorInfo monitorInfo);
-
-    /**
-     * 演示ClassLoader机制用
-     */
-    //LoadingCache<Long, List<MonitorInfo>> getMonitorCahce();
 }

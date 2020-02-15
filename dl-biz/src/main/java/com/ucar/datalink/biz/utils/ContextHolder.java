@@ -3,7 +3,6 @@ package com.ucar.datalink.biz.utils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 /**

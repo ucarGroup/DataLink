@@ -2,7 +2,7 @@ package com.ucar.datalink.common.errors;
 
 import com.ucar.datalink.common.utils.CodeContext;
 
-public class ErrorException extends Exception{
+public class ErrorException extends RuntimeException {
     private Integer code;
     private String message;
 
@@ -12,7 +12,7 @@ public class ErrorException extends Exception{
         this.message = CodeContext.getErrorDesc(code);
     }
 
-    public ErrorException(Integer code,String message) {
+    public ErrorException(Integer code, String message) {
         super(message);
         this.code = code;
         this.message = message;

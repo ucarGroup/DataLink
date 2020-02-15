@@ -21,7 +21,6 @@ public class AuditLogInfo implements Serializable, Storable {
     private Long operKey;
     private String operName;
     private String operRecord;
-
     private String userName;
     private String menuName;
 
@@ -78,11 +77,16 @@ public class AuditLogInfo implements Serializable, Storable {
     }
 
     public void setOperName(String operName) {
-        this.operName = operName==null?"":operName;
+        this.operName = operName == null ? "" : operName;
     }
 
     public String getOperRecord() {
         return operRecord;
+    }
+
+    public void setOperRecord(String operRecord) {
+//        this.operRecord=operRecord.length()>=998?operRecord.substring(0,998):operRecord;
+        this.operRecord = operRecord;
     }
 
     public String getUserName() {
@@ -99,11 +103,6 @@ public class AuditLogInfo implements Serializable, Storable {
 
     public void setMenuName(String menuName) {
         this.menuName = menuName;
-    }
-
-    public void setOperRecord(String operRecord) {
-//        this.operRecord=operRecord.length()>=998?operRecord.substring(0,998):operRecord;
-        this.operRecord=operRecord;
     }
 
     public String getOperTimeStr() {

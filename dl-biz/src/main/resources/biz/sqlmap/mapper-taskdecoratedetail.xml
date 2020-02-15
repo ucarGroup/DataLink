@@ -17,9 +17,8 @@
         <result property="statement" column="statement"/>
     </resultMap>
 
-
-
-    <select id="listByCondition" resultMap="taskDecorateDetail" parameterType="com.ucar.datalink.domain.decorate.TaskDecorateDetail">
+    <select id="listByCondition" resultMap="taskDecorateDetail"
+            parameterType="com.ucar.datalink.domain.decorate.TaskDecorateDetail">
         SELECT
         t.id,
         t.decorate_id,
@@ -36,8 +35,8 @@
         order by t.id desc
     </select>
 
-
-    <select id="queryBytaskIdAndStatus" resultMap="taskDecorateDetail" parameterType="com.ucar.datalink.domain.decorate.TaskDecorateDetail">
+    <select id="queryBytaskIdAndStatus" resultMap="taskDecorateDetail"
+            parameterType="com.ucar.datalink.domain.decorate.TaskDecorateDetail">
         SELECT
         t.id,
         t.decorate_id,
@@ -52,21 +51,18 @@
         where l.task_id = #{taskId} and t.status = #{status}
     </select>
 
-
-
     <select id="findById" parameterType="long" resultMap="taskDecorateDetail">
         SELECT
         id,decorate_id,status,create_time,update_time,executed_log
         FROM t_dl_task_decorate_detail where id=#{id}
     </select>
 
-
-    <insert id="insert" parameterType="com.ucar.datalink.domain.decorate.TaskDecorateDetail" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="com.ucar.datalink.domain.decorate.TaskDecorateDetail" useGeneratedKeys="true"
+            keyProperty="id">
         INSERT INTO t_dl_task_decorate_detail
         (decorate_id,status,create_time,update_time,executed_log) VALUES
         (#{decorateId},#{status},now(),now(),#{executedLog})
     </insert>
-
 
     <update id="update" parameterType="com.ucar.datalink.domain.decorate.TaskDecorateDetail">
         UPDATE t_dl_task_decorate_detail
@@ -82,18 +78,9 @@
         where id = #{id}
     </update>
 
-
     <select id="recordCount" resultType="Integer" parameterType="long">
         SELECT
         COUNT(1)
         FROM t_dl_task_decorate_detail  where t.decorate_id = #{decorateId}
     </select>
-
-
-
-
-
-
-
-    
 </mapper>

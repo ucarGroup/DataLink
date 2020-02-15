@@ -1,15 +1,11 @@
 package com.ucar.datalink.biz.mapping;
 
 import com.ucar.datalink.domain.meta.ColumnMeta;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Created by user on 2017/6/26.
  */
 public class HBaseMapping extends AbstractMapping {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseMapping.class);
 
     public ColumnMeta toRDBMS(ColumnMeta meta) {
         check(meta);

@@ -8,9 +8,9 @@
           http://www.springframework.org/schema/tx/spring-tx.xsd">
 
 
-	<bean id="dataSourceLogicA" class="org.apache.tomcat.jdbc.pool.DataSource" destroy-method="close">
+	<bean id="dataSource" class="org.apache.tomcat.jdbc.pool.DataSource" destroy-method="close">
         <property name="driverClassName" value="${datasource.driverClassName}" />
-        <property name="url" value="${datasource.url.logicA}" />
+        <property name="url" value="${datasource.url}" />
 		<property name="username" value="${datasource.username}" />
 		<property name="password" value="${datasource.password}" />
         <property name="maxActive"><value>20</value></property>
@@ -22,7 +22,7 @@
         <property name="removeAbandonedTimeout"><value>180</value></property>
         <property name="timeBetweenEvictionRunsMillis"><value>60000</value></property>
         <property name="minEvictableIdleTimeMillis"><value>180000</value></property>
-        <property name="connectionProperties"><value>useUnicode=true;characterEncoding=utf-8;useSSL=false;serverTimezone=Hongkong;zeroDateTimeBehavior=CONVERT_TO_NULL</value></property>
+        <property name="connectionProperties"><value>useUnicode=true;characterEncoding=utf-8</value></property>
         <!-- sql检查配置,在idle空闲线程检查时,检查链接有效性，丢弃无效的链接,实现自动重连-->
         <property name="testWhileIdle"><value>true</value></property>
         <property name="testOnBorrow"><value>false</value></property>
@@ -31,43 +31,7 @@
         <property name="validationInterval"><value>3000</value></property>
         <property name="numTestsPerEvictionRun"><value>-1</value></property>
 	</bean>
-
-    <bean id="dataSourceLogicB" class="org.apache.tomcat.jdbc.pool.DataSource" destroy-method="close">
-        <property name="driverClassName" value="${datasource.driverClassName}" />
-        <property name="url" value="${datasource.url.logicB}" />
-        <property name="username" value="${datasource.username}" />
-        <property name="password" value="${datasource.password}" />
-        <property name="maxActive"><value>20</value></property>
-        <property name="initialSize"><value>1</value></property>
-        <property name="maxWait"><value>60000</value></property>
-        <property name="maxIdle"><value>20</value></property> <!-- 可以和maxActive保持一致 -->
-        <property name="minIdle"><value>1</value></property>  <!-- 可以和initialSize保持一致 -->
-        <property name="removeAbandoned"><value>true</value></property>
-        <property name="removeAbandonedTimeout"><value>180</value></property>
-        <property name="timeBetweenEvictionRunsMillis"><value>60000</value></property>
-        <property name="minEvictableIdleTimeMillis"><value>180000</value></property>
-        <property name="connectionProperties"><value>useUnicode=true;characterEncoding=utf-8;useSSL=false;serverTimezone=Hongkong;zeroDateTimeBehavior=CONVERT_TO_NULL</value></property>
-        <!-- sql检查配置,在idle空闲线程检查时,检查链接有效性，丢弃无效的链接,实现自动重连-->
-        <property name="testWhileIdle"><value>true</value></property>
-        <property name="testOnBorrow"><value>false</value></property>
-        <property name="testOnReturn"><value>false</value></property>
-        <property name="validationQuery"><value>SELECT @@version</value></property>
-        <property name="validationInterval"><value>3000</value></property>
-        <property name="numTestsPerEvictionRun"><value>-1</value></property>
-    </bean>
-
-    <!-- 配置多数据源映射关系 -->
-    <bean id="dataSource" class="com.ucar.datalink.biz.datasource.DynamicDataSource">
-        <property name="targetDataSources">
-            <map key-type="java.lang.String">
-                <entry key="dataSourceLogicA" value-ref="dataSourceLogicA"></entry>
-                <entry key="dataSourceLogicB" value-ref="dataSourceLogicB"></entry>
-            </map>
-        </property>
-        <!-- 默认目标数据源为你主库数据源 -->
-        <property name="defaultTargetDataSource" ref="dataSourceLogicA"/>
-    </bean>
-
+	
 	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
         <property name="dataSource" ref="dataSource"/>
 	</bean>

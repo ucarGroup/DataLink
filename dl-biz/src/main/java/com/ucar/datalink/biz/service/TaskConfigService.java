@@ -1,10 +1,10 @@
 package com.ucar.datalink.biz.service;
 
-import com.ucar.datalink.domain.media.MediaSourceInfo;
-import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.monitor.TaskMonitorInfo;
 import com.ucar.datalink.domain.statis.StatisDetail;
-import com.ucar.datalink.domain.task.*;
+import com.ucar.datalink.domain.task.ActiveTasks;
+import com.ucar.datalink.domain.task.TaskInfo;
+import com.ucar.datalink.domain.task.TaskType;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.Date;
@@ -59,7 +59,7 @@ public interface TaskConfigService {
      *
      * @return
      */
-    List<TaskInfo> listTasksForQueryPage(MediaSourceType srcType, Long readerMediaSourceId, Long groupId, Long id, TaskType taskType);
+    List<TaskInfo> listTasksForQueryPage(Long readerMediaSourceId, Long groupId, Long id, TaskType taskType);
 
     /**
      * 通过Id获取TaskInfo
@@ -81,7 +81,7 @@ public interface TaskConfigService {
      *
      * @param taskInfo
      */
-    public TaskInfo addMySqlTask(TaskInfo taskInfo, Boolean isMulticopy);
+    TaskInfo addMySqlTask(TaskInfo taskInfo);
 
     /**
      * 更新Task配置内容
@@ -154,69 +154,18 @@ public interface TaskConfigService {
 
     /**
      * 获取某分组的Task列表
+     *
      * @param groupId
      * @return
      */
     List<TaskInfo> getTaskListByGroupId(Long groupId);
 
     /**
-     * 通过同步模式获取任务列表
-     *
-     * @param taskSyncModeEnum
-     * @return
-     */
-    List<TaskInfo> findListBySyncMode(TaskSyncModeEnum taskSyncModeEnum, Long start, Long pageSize);
-
-    /**
-     * 通过同步模式统计任务数
-     *
-     * @param taskSyncModeEnum
-     * @return
-     */
-    Long countTasksBySyncMode(TaskSyncModeEnum taskSyncModeEnum);
-
-    /**
-     * 批量更新任务状态
-     *
-     * @param taskIdList
-     * @param targetState
-     * @return
-     */
-    List<TaskInfo> batchUpdateTaskStatus(List taskIdList,TargetState targetState);
-
-    List<TaskInfo> findAcrossLabList();
-
-    /**
      * 修改hbase主task时，支持从task同步修改
+     *
      * @param taskInfo
-     * @param taskReaderParameterSource
-     * @param taskWriterParameterSource
      * @param sync
      */
     void updateTask(TaskInfo taskInfo, String sync);
-
-    List<TaskInfo> findAcrossLabTaskListByMsList(List<Long> mediaSourceIdList);
-
-    /**
-     * 批量查询任务信息
-     */
-    public List<TaskInfo> findTaskInfoByBatchId(List<Long> taskIdList);
-
-
-    /**
-     * 自动创建task,hdfs接口使用
-     * @param srcMediaSourceInfo
-     * @param targetMediaSourceInfo
-     */
-    TaskInfo createTask(MediaSourceInfo srcMediaSourceInfo, MediaSourceInfo targetMediaSourceInfo,Long groupId,String zkServer,String currentEnv) throws CloneNotSupportedException;
-
-    /**
-     * 配置task的writer
-     * @param findTask
-     * @param targetMediaSourceType
-     */
-    void configTaskWriter(TaskInfo findTask, MediaSourceType targetMediaSourceType);
-
-    List<TaskInfo> findTaskListNoPage(TaskInfo taskInfo);
 
 }

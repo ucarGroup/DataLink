@@ -3,17 +3,11 @@ package com.ucar.datalink.domain.task;
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.domain.Storable;
-import com.ucar.datalink.domain.media.GeoPositionMapping;
-import com.ucar.datalink.domain.media.MediaColumnMappingInfo;
-import com.ucar.datalink.domain.media.MediaInfo;
-import com.ucar.datalink.domain.media.MediaSourceInfo;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.type.Alias;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 /**
  * Created by lubiao on 2019/8/5.

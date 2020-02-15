@@ -28,8 +28,6 @@ public class HBaseMediaSrcParameter extends MediaSrcParameter {
      */
     private Integer keyvalueMaxsize;
 
-    private String peerId;
-
 
     public String getNameServices() {
         return nameServices;
@@ -63,11 +61,5 @@ public class HBaseMediaSrcParameter extends MediaSrcParameter {
         this.keyvalueMaxsize = keyvalueMaxsize;
     }
 
-    public String getPeerId() {
-        return peerId;
-    }
 
-    public void setPeerId(String peerId) {
-        this.peerId = peerId;
-    }
 }

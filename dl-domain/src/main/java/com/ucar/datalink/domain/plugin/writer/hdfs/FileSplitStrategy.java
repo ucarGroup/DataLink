@@ -2,9 +2,7 @@ package com.ucar.datalink.domain.plugin.writer.hdfs;
 
 import com.alibaba.fastjson.annotation.JSONField;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 /**
  * Created by sqq on 2017/7/18.

@@ -1,7 +1,5 @@
 package com.ucar.datalink.biz.service;
 
-import com.alibaba.fastjson.JSONObject;
-import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
 import com.ucar.datalink.domain.media.parameter.rdb.RdbMediaSrcParameter;
@@ -9,7 +7,6 @@ import com.ucar.datalink.domain.statis.StatisDetail;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -21,7 +18,7 @@ public interface MediaSourceService {
 
     List<MediaSourceInfo> getListByType(Set<MediaSourceType> mediaSourceType);
 
-    List<MediaSourceInfo> getListForQueryPage(@Param("mediaSourceType")Set<MediaSourceType> mediaSourceType, @Param("mediaSourceName")String mediaSourceName,@Param("mediaSourceIp") String mediaSourceIp);
+    List<MediaSourceInfo> getListForQueryPage(@Param("mediaSourceType") Set<MediaSourceType> mediaSourceType, @Param("mediaSourceName") String mediaSourceName, @Param("mediaSourceIp") String mediaSourceIp);
 
     Boolean insert(MediaSourceInfo mediaSourceInfo);
 
@@ -31,11 +28,9 @@ public interface MediaSourceService {
 
     MediaSourceInfo getById(Long id);
 
-    List<String> getRdbTableName(MediaSourceInfo info) throws Exception;
+    List<String> getRdbTableNames(MediaSourceInfo info);
 
-    List<String> getRdbColumnName(MediaSourceInfo info,String tableName) throws Exception;
-
-    void checkIpBelongLab(RdbMediaSrcParameter rdbMediaSrcParameter,Long labId) throws Exception;
+    List<String> getRdbColumnNames(MediaSourceInfo info, String tableName);
 
     void checkDbConnection(RdbMediaSrcParameter rdbMediaSrcParameter) throws Exception;
 
@@ -43,38 +38,15 @@ public interface MediaSourceService {
 
     List<StatisDetail> getCountByType();
 
-    List<String> getHbaseTableName(MediaSourceInfo hbaseMediaSourceInfo);
+    List<String> getHbaseTableNames(MediaSourceInfo hbaseMediaSourceInfo);
 
-    List<String> getMappingTableNameByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam);
-
-    List<MediaSourceInfo> findRealListByVirtualMsId(Long id);
-
-    void clearRealMediaSourceListCache(Long id);
-
-    Boolean insertVirtual(MediaSourceInfo mediaSourceInfo,String realDbIds);
-
-    Boolean updateVirtual(MediaSourceInfo mediaSourceInfo,String realDbId);
-
-    MediaSourceInfo getOneByName(String msName);
-
-    /**
-     * 根据虚拟数据源id和所属机房获取数据源
-     * @param virtualMsId
-     * @param labName
-     * @return
-     */
-    MediaSourceInfo findRealSignleByMsIdAndLab(Long virtualMsId, String labName);
-
-    List<MediaMappingInfo> getMappingByTaskIdAndTargetMediaSourceId(Map<String, Object> mapParam);
-
-    JSONObject getDbInfo(String dbName, String dbType, String env);
+    List<String> getHbaseColumnNames(MediaSourceInfo info, String tableName);
 
     List<MediaSourceInfo> getListByNameList(List<String> mediaSourceNameList);
 
-    boolean insertDoubleMediaSource(List<MediaSourceInfo> mediaSourceInfoList, List<String> existsMediaSourceList);
-
     /**
      * 根据schema查询数据源
+     *
      * @param targetNamespace
      * @return
      */

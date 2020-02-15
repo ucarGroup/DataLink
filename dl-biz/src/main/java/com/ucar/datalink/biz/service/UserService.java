@@ -12,6 +12,7 @@ import java.util.Map;
 public interface UserService {
 
     List<UserInfo> getList();
+
     List<UserInfo> getListByUserInfo(UserInfo userInfo);
 
     Boolean insert(UserInfo userInfo);
@@ -27,32 +28,14 @@ public interface UserService {
     Map<Long, UserInfo> getUserWidthLocalCache();
 
     void clearUserLocalCache();
-
-    List<UserInfo> getUserInfoByReceiveMail();
-
+    
     List<UserInfo> getUserInfoByRoleType(RoleType roleType);
 
     List<UserInfo> getUserInfoByRoleTypeAndIsAlarm(RoleType roleType);
 
     /**
-     * //是否超级管理员
-     *
-     * @return
+     * 是否超级管理员
      */
-    public Boolean isSuper(UserInfo user);
-
-    /**
-     * //是否AutoKeeper
-     *
-     * @return
-     */
-    public Boolean isAutoKeeper(UserInfo user);
-
-    /**
-     * //是否Approver
-     *
-     * @return
-     */
-    public Boolean isApprover(UserInfo user);
+    Boolean isSuper(UserInfo user);
 
 }

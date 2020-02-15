@@ -27,9 +27,6 @@ public class MediaSourceInfo implements Serializable, Storable {
     private String parameter;
     private Date createTime;
     private Date modifyTime;
-    private Long labId;
-    private String labName;
-    private MediaSourceType simulateMsType;
 
     //------------------------------------------------------------------------------------------------------------------
     //------------------------------------getter&setter methods for database fields-------------------------------------
@@ -128,47 +125,5 @@ public class MediaSourceInfo implements Serializable, Storable {
             throw new DatalinkException("MediaSrcParameter can not be null.");
         }
         return (T) parameterObj;
-    }
-
-    public Long getLabId() {
-        return labId;
-    }
-
-    public void setLabId(Long labId) {
-        this.labId = labId;
-    }
-
-    public String getLabName() {
-        return labName;
-    }
-
-    public void setLabName(String labName) {
-        this.labName = labName;
-    }
-
-    public MediaSourceType getSimulateMsType() {
-        return simulateMsType;
-    }
-
-    public void setSimulateMsType(MediaSourceType simulateMsType) {
-        this.simulateMsType = simulateMsType;
-    }
-
-
-    @Override
-    public String toString() {
-        final StringBuffer sb = new StringBuffer("MediaSourceInfo{");
-        sb.append("id=").append(id);
-        sb.append(", name='").append(name).append('\'');
-        sb.append(", type=").append(type);
-        sb.append(", desc='").append(desc).append('\'');
-        sb.append(", parameter='").append(parameter).append('\'');
-        sb.append(", createTime=").append(createTime);
-        sb.append(", modifyTime=").append(modifyTime);
-        sb.append(", labId=").append(labId);
-        sb.append(", labName='").append(labName).append('\'');
-        sb.append(", simulateMsType=").append(simulateMsType);
-        sb.append('}');
-        return sb.toString();
     }
 }
