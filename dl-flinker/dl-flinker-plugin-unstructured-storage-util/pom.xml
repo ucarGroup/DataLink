@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<parent>
+		<artifactId>dl-flinker</artifactId>
+		<groupId>com.ucar.datalink</groupId>
+<<<<<<< HEAD
+		<version>1.0.0-beta</version>
+=======
+		<version>0.0.1</version>
+>>>>>>> a8d05997a2e54ecba6e2446c1b86818a0f49dd83
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>plugin-unstructured-storage-util</artifactId>
+	<name>dl-flinker-plugin-unstructured-storage-util</name>
+	<description>plugin-unstructured-storage-util通用的文件类型的读取写入方法，供TxtFileReader/Writer, OSSReader/Writer 使用。</description>
+	<packaging>jar</packaging>
+	<dependencies>
+		<dependency>
+			<groupId>com.ucar.datalink</groupId>
+			<artifactId>dl-flinker-api</artifactId>
+<<<<<<< HEAD
+			<version>${dl-flinker-api.version}</version>
+=======
+			<version>0.0.1</version>
+>>>>>>> a8d05997a2e54ecba6e2446c1b86818a0f49dd83
+			<exclusions>
+				<exclusion>
+					<artifactId>slf4j-log4j12</artifactId>
+					<groupId>org.slf4j</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>16.0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sourceforge.javacsv</groupId>
+			<artifactId>javacsv</artifactId>
+			<version>2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-compress</artifactId>
+			<version>1.9</version>
+		</dependency>
+		<dependency>
+			<groupId>org.anarres.lzo</groupId>
+			<artifactId>lzo-core</artifactId>
+			<version>1.0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>

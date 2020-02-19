@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<parent>
+		<artifactId>dl-flinker</artifactId>
+		<groupId>com.ucar.datalink</groupId>
+<<<<<<< HEAD
+		<version>1.0.0-beta</version>
+=======
+		<version>0.0.1</version>
+>>>>>>> a8d05997a2e54ecba6e2446c1b86818a0f49dd83
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>dl-flinker-hbasewriter98</artifactId>
+	<name>dl-flinker-hbasewriter98</name>
+<<<<<<< HEAD
+=======
+	<version>0.0.1-SNAPSHOT</version>
+>>>>>>> a8d05997a2e54ecba6e2446c1b86818a0f49dd83
+
+
+	<dependencies>
+		<dependency>
+			<groupId>com.ucar.datalink</groupId>
+			<artifactId>dl-flinker-api</artifactId>
+<<<<<<< HEAD
+			<version>${dl-flinker-api.version}</version>
+=======
+			<version>0.0.1</version>
+>>>>>>> a8d05997a2e54ecba6e2446c1b86818a0f49dd83
+			<exclusions>
+				<exclusion>
+					<artifactId>slf4j-log4j12</artifactId>
+					<groupId>org.slf4j</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.hbase</groupId>
+			<artifactId>hbase-client</artifactId>
+			<version>0.98.16.1-hadoop1</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>commons-logging</artifactId>
+					<groupId>commons-logging</groupId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.mortbay.jetty</groupId>
+					<artifactId>jetty</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.mortbay.jetty</groupId>
+					<artifactId>jetty-util</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.mortbay.jetty</groupId>
+					<artifactId>jsp-2.1</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.mortbay.jetty</groupId>
+					<artifactId>jsp-api-2.1</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.mortbay.jetty</groupId>
+					<artifactId>servlet-api-2.1</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>javax.servlet</groupId>
+					<artifactId>servlet-api</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>javax.servlet.jsp</groupId>
+					<artifactId>jsp-api</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>tomcat</groupId>
+					<artifactId>jasper-compiler</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>tomcat</groupId>
+					<artifactId>jasper-runtime</artifactId>
+				</exclusion>
+				<exclusion>
+					<artifactId>log4j</artifactId>
+					<groupId>log4j</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.zookeeper</groupId>
+			<artifactId>zookeeper</artifactId>
+			<version>3.3.2</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>log4j</artifactId>
+					<groupId>log4j</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			<!-- compiler plugin -->
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+					<encoding>${project-sourceEncoding}</encoding>
+				</configuration>
+			</plugin>
+			<!-- assembly plugin -->
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<descriptors>
+						<descriptor>src/main/assembly/package.xml</descriptor>
+					</descriptors>
+					<finalName>dl-flinker</finalName>
+					<outputDirectory>${project.parent.parent.build.directory}</outputDirectory>
+				</configuration>
+				<executions>
+					<execution>
+						<id>dwzip</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

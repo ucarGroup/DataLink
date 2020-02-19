@@ -1,0 +1,25 @@
+{
+  "name": "esreader",
+  "parameter": {
+    "hosts": "10.104.100.89,10.104.100.90",
+    "httpPort": 9200,
+    "tcpPort": 9300,
+    "username": "admin",
+    "password": "admin",
+    "esIndex": "t_b_city",
+    "esType": "t_b_city",
+    "esQuery": {},
+    "columns": [
+      "t_b_city|name",
+      "t_b_city|en_name",
+      "t_b_city|administrative_name",
+      "t_b_city|status",
+      "t_b_city|center_lon",
+      "t_b_city|center_lat",
+      "t_b_city|create_time",
+      "t_b_city|modify_time"
+    ],
+    "esSearchTimeout": "5m",
+    "batchSize": 1000
+  }
+}

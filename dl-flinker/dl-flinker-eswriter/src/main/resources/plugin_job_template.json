@@ -1,0 +1,21 @@
+{
+    "name": "eswriter",
+    "parameter": {
+        "username": "",
+        "password": "",
+        "hosts": "",
+        "httpPort":9200,
+        "tcpPort":9300,
+        "batchSize":20,
+        "retryTimes":3,
+        "table":"",
+        "column": [
+            "id",
+            "order_no",
+            "member_id"
+        ],
+        "esIndex": "ucar_order",
+        "esType": "t_scd_order",
+        "operateType":"insert"
+    }
+}

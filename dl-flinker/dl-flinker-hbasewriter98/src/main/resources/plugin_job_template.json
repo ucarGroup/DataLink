@@ -1,0 +1,10 @@
+{
+    "name": "hbasewriter98",
+    "parameter": {
+        "hbaseConfig": "",
+        "table": "",
+        "encoding": "",
+        "batchSize": "",
+        "column": []
+    }
+}
