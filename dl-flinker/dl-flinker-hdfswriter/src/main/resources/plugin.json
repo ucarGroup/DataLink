@@ -1,7 +1,0 @@
-{
-    "name": "hdfswriter",
-    "class": "com.ucar.datalink.flinker.plugin.writer.hdfswriter.HdfsWriter",
-    "description": "useScene: prod. mechanism: via FileSystem connect HDFS write data concurrent.",
-    "developer": "ucar"
-}
-

@@ -1,6 +1,0 @@
-{
-    "name": "kuduwriter",
-    "class": "com.ucar.datalink.flinker.plugin.writer.kuduwriter.KuduWriter",
-    "description": "kudu description......",
-    "developer": "xiaoyang.li"
-}
