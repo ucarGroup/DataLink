@@ -1,0 +1,6 @@
+{
+  "name": "esreader",
+  "class": "com.ucar.datalink.flinker.plugin.reader.esreader.EsReader",
+  "description": "使用elasticsearch的rest接口 scroll命令，从集群中拉取指定数据",
+  "developer": "ucar"
+}

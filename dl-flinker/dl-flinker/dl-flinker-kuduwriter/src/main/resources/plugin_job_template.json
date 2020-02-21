@@ -1,0 +1,10 @@
+{
+    "name": "kuduwriter",
+    "parameter": {
+        "table":"",
+        "writeMode": "upsert",
+        "column": [],
+        "master_addresses":[]
+
+    }
+}

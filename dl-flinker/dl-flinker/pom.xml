@@ -1,0 +1,63 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.ucar.datalink</groupId>
+		<artifactId>datalink</artifactId>
+		<version>1.0.0-beta</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>dl-flinker</artifactId>
+	<packaging>pom</packaging>
+	<name>flinker module for datalink</name>
+
+    <properties>
+        <flinker-api-project-version>0.0.1-SNAPSHOT</flinker-api-project-version>
+        <commons-lang3-version>3.3.2</commons-lang3-version>
+        <commons-configuration-version>1.10</commons-configuration-version>
+        <commons-cli-version>1.2</commons-cli-version>
+        <fastjson-version>1.1.43</fastjson-version>
+        <guava-version>16.0.1</guava-version>
+        <diamond.version>3.7.2.1-SNAPSHOT</diamond.version>
+		<dl-flinker-api.version>1.0.0-beta</dl-flinker-api.version>
+
+        <!--slf4j 1.7.10 和 logback-classic 1.0.13 是好基友 -->
+        <slf4j-api-version>1.7.10</slf4j-api-version>
+        <logback-classic-version>1.0.13</logback-classic-version>
+        <commons-io-version>2.4</commons-io-version>
+        <mysql-connector-java-version>8.0.11</mysql-connector-java-version>
+        <junit-version>4.11</junit-version>
+
+        <project-sourceEncoding>UTF-8</project-sourceEncoding>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+    </properties>
+
+	<modules>
+		<module>dl-flinker-api</module>
+		<module>dl-flinker-core</module>
+        <module>dl-flinker-plugin-unstructured-storage-util</module>
+        <module>dl-flinker-plugin-rdbms-util</module>
+
+        <!-- reader -->
+        <module>dl-flinker-esreader</module>
+        <module>dl-flinker-hanareader</module>
+        <module>dl-flinker-hbasereader98</module>
+        <module>dl-flinker-hdfsreader</module>
+        <module>dl-flinker-mysqlreader</module>
+        <module>dl-flinker-oraclereader</module>
+        <module>dl-flinker-sqlserverreader</module>
+			
+        <!-- writer -->
+        <module>dl-flinker-eswriter</module>
+        <module>dl-flinker-hbasewriter98</module>
+        <module>dl-flinker-hdfswriter</module>
+        <module>dl-flinker-kuduwriter</module>
+        <module>dl-flinker-mysqlwriter</module>
+        <module>dl-flinker-sqlserverwriter</module>
+		
+	</modules>
+
+
+</project>
