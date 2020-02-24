@@ -56,7 +56,6 @@
         <module>dl-flinker-kuduwriter</module>
         <module>dl-flinker-mysqlwriter</module>
         <module>dl-flinker-sqlserverwriter</module>
-		
 	</modules>
 
 
