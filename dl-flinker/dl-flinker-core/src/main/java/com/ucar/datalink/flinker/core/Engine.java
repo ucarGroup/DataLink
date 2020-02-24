@@ -266,7 +266,7 @@ public class Engine {
 			saveJobFailureState(args,e);
 			System.exit(exitCode);
 		}finally {
-			DataSourceInitController.getInstance().destroy();
+
 		}
 		System.exit(exitCode);
 	}

@@ -35,7 +35,7 @@ public final class DataSourceInitController {
     }
 
     public void destroy() {
-        DataSourceController.getInstance().destroy();
+
     }
 
     private String getProperty(Properties properties, String key) {
