@@ -1,5 +1,6 @@
 package com.ucar.datalink.writer.hbase.handle;
 
+import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.contract.log.rdbms.EventColumn;
 import com.ucar.datalink.contract.log.rdbms.EventType;
@@ -53,7 +54,7 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
                                             RdbEventRecord firstRecord = mr.getValue().get(0);
                                             String tableName = firstRecord.getTableName();
                                             MediaMappingInfo mappingInfo = RecordMeta.mediaMapping(firstRecord);
-                                            HBaseSyncParameter hBaseSyncParameter = mappingInfo.getParameterObj();
+                                            HBaseSyncParameter hBaseSyncParameter = JSONObject.toJavaObject(mappingInfo.getParameterObj(), HBaseSyncParameter.class);
                                             MediaSourceInfo targetMediaSourceInfo = mappingInfo.getTargetMediaSource();
 
                                             HTable hTable = HTableFactory.getHTable(tableName, targetMediaSourceInfo);
@@ -126,7 +127,7 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
     }
 
     private String getFamilyName(MediaMappingInfo mediaMappingInfo) {
-        HBaseMappingParameter parameter = mediaMappingInfo.getParameterObj();
+        HBaseMappingParameter parameter = JSONObject.toJavaObject(mediaMappingInfo.getParameterObj(), HBaseMappingParameter.class);
         if (parameter != null) {
             return StringUtils.isNotBlank(parameter.getFamilyName()) ? parameter.getFamilyName() : "default";
         } else {

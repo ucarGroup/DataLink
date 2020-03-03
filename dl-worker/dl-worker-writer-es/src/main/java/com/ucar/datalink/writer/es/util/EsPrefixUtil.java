@@ -1,5 +1,6 @@
 package com.ucar.datalink.writer.es.util;
 
+import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.domain.media.MediaInfo;
 import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.domain.media.ModeUtils;
@@ -17,7 +18,7 @@ public class EsPrefixUtil {
      */
     public static String getEsPrefixName(String tableName, MediaMappingInfo mappingInfo) {
         if (mappingInfo.isEsUsePrefix()) {
-            EsMappingParameter parameter = mappingInfo.getParameterObj();
+            EsMappingParameter parameter = JSONObject.toJavaObject(mappingInfo.getParameterObj(), EsMappingParameter.class);
             if (parameter != null && StringUtils.isNotBlank(parameter.getPrefixName())) {
                 return parameter.getPrefixName() + Constants.SEPARATOR;
             } else {
