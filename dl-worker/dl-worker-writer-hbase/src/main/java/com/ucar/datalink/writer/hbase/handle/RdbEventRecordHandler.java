@@ -104,7 +104,7 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
                     for (EventColumn column : columns) {
                         String columnName = column.getColumnName();
                         String columnValue = column.getColumnValue();
-                        put.add(Bytes.toBytes("default"), Bytes.toBytes(columnName), columnValue == null ? null : Bytes.toBytes(columnValue));
+                        put.add(Bytes.toBytes(family), Bytes.toBytes(columnName), columnValue == null ? null : Bytes.toBytes(columnValue));
                     }
                     puts.add(put);
                 } else if (record.getEventType() == EventType.DELETE && syncDelete) {
