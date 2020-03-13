@@ -8,7 +8,9 @@ import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.parameter.hbase.HBaseMediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.zk.ZkMediaSrcParameter;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,12 +33,19 @@ public class HBaseConfigurationFactory {
                 MediaSourceInfo zkMediaSource = DataLinkFactory.getObject(MediaService.class).getMediaSourceById(hbaseParameter.getZkMediaSourceId());
                 ZkMediaSrcParameter zkParameter = zkMediaSource.getParameterObj();
                 String address = zkParameter.parseServersToString();
-                String prot = zkParameter.parsePort() + "";
+                String port = zkParameter.parsePort() + "";
                 String znode = hbaseParameter.getZnodeParent();
                 Configuration conf = HBaseConfiguration.create();
-                conf.set("hbase.zookeeper.quorum", address);
-                conf.set("hbase.zookeeper.property.clientPort", prot);
-                conf.set("zookeeper.znode.parent", znode);
+                // kerberos 认证
+                if (StringUtils.isNotEmpty(hbaseParameter.getKdc())) {
+                    System.setProperty("java.security.krb5.realm", hbaseParameter.getRealm());
+                    System.setProperty("java.security.krb5.kdc", hbaseParameter.getKdc());
+                    conf.addResource(new Path(hbaseParameter.getHbaseSitePath()));
+                } else {
+                    conf.set("hbase.zookeeper.quorum", address);
+                    conf.set("hbase.zookeeper.property.clientPort", port);
+                    conf.set("zookeeper.znode.parent", znode);
+                }
                 return conf;
             }
         });

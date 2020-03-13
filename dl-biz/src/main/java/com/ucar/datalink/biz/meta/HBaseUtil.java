@@ -82,7 +82,7 @@ public class HBaseUtil {
         checkHbase(info);
         HBaseMediaSrcParameter parameter = info.getParameterObj();
         long zkId = parameter.getZkMediaSourceId();
-        String znode = parameter.getZnodeParent();
+        //String znode = parameter.getZnodeParent();
         MediaSourceInfo zkInfo = dao.findMediaSourceById(zkId);
         checkZookeepr(zkInfo);
         ZkMediaSrcParameter zkParameter = zkInfo.getParameterObj();
@@ -92,7 +92,7 @@ public class HBaseUtil {
         vo.setZkAddress(zkParameter.getServers());
         vo.setPort(zkParameter.parsePort() + "");
         vo.setZnode(parameter.getZnodeParent());
-
+        vo.setHbaseParameter(parameter);
         String json = execute(vo, GET_TABLES_URL);
         return JSONObject.parseArray(json, MediaMeta.class);
     }
@@ -119,7 +119,7 @@ public class HBaseUtil {
         vo.setZkAddress(zkParameter.getServers());
         vo.setPort(zkParameter.parsePort() + "");
         vo.setZnode(parameter.getZnodeParent());
-
+        vo.setHbaseParameter(parameter);
         if (HBASE_SPECIFIED_NUM.get() > 0) {
             vo.setOnceFethAmount(HBASE_SPECIFIED_NUM.get());
         }
@@ -144,6 +144,7 @@ public class HBaseUtil {
         vo.setZkAddress(zkParameter.getServers());
         vo.setPort(zkParameter.parsePort() + "");
         vo.setZnode(parameter.getZnodeParent());
+        vo.setHbaseParameter(parameter);
         String json = execute(vo, GET_REGION_COUNT);
         int result = -1;
         try {
@@ -170,7 +171,7 @@ public class HBaseUtil {
         vo.setPort(zkParameter.parsePort() + "");
         vo.setZnode(parameter.getZnodeParent());
         vo.setSplitCount(splitCount);
-
+        vo.setHbaseParameter(parameter);
         String json = execute(vo, GENERATE_SPLIT_INFO);
         Map<String, Object> map = JSONObject.parseObject(json, Map.class);
         JSONArray array = (JSONArray) map.get("range");
@@ -249,9 +250,7 @@ public class HBaseUtil {
     public static List<String> checkTargetTables(MediaSourceInfo realTargetMediaSourceInfo, Set<String> targetTableNameSet) {
         List<String> returnList = Lists.newArrayList();
         List<MediaMeta> mediaMetaList = getTables(realTargetMediaSourceInfo);
-        List<String> tableNameList = mediaMetaList.stream().map(m -> {
-            return m.getName();
-        }).collect(Collectors.toList());
+        List<String> tableNameList = mediaMetaList.stream().map(m -> m.getName()).collect(Collectors.toList());
         Iterator<String> it = targetTableNameSet.iterator();
         while (it.hasNext()) {
             String targetTableName = it.next();
@@ -280,7 +279,7 @@ public class HBaseUtil {
         vo.setZkAddress(zkParameter.getServers());
         vo.setPort(zkParameter.parsePort() + "");
         vo.setZnode(parameter.getZnodeParent());
-
+        vo.setHbaseParameter(parameter);
         String json = execute(vo, GET_STATUS_URL);
 
         logger.info("返回的hbase集群状态信息:" + json);
