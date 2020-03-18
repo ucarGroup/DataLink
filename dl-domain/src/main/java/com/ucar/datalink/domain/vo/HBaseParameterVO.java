@@ -1,5 +1,7 @@
 package com.ucar.datalink.domain.vo;
 
+import com.ucar.datalink.domain.media.parameter.hbase.HBaseMediaSrcParameter;
+
 /**
  * Created by user on 2017/7/2.
  */
@@ -16,6 +18,8 @@ public class HBaseParameterVO {
     private int splitCount;
 
     private int onceFethAmount;
+
+    private HBaseMediaSrcParameter hbaseParameter;
 
     public String getZkAddress() {
         return zkAddress;
@@ -63,6 +67,14 @@ public class HBaseParameterVO {
 
     public void setOnceFethAmount(int onceFethAmount) {
         this.onceFethAmount = onceFethAmount;
+    }
+
+    public HBaseMediaSrcParameter getHbaseParameter() {
+        return hbaseParameter;
+    }
+
+    public void setHbaseParameter(HBaseMediaSrcParameter hbaseParameter) {
+        this.hbaseParameter = hbaseParameter;
     }
 
     @Override

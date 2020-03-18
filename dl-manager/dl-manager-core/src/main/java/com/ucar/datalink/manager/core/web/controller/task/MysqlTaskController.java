@@ -260,7 +260,7 @@ public class MysqlTaskController extends BaseTaskController {
     @RequestMapping(value = "/toRestartMysqlTask")
     public ModelAndView toRestartMysqlTask(String id) {
         ModelAndView mav = new ModelAndView("task/mysqlTaskRestart");
-        mav.addObject("id", id);
+        mav.addObject("taskId", id);
         return mav;
     }
 

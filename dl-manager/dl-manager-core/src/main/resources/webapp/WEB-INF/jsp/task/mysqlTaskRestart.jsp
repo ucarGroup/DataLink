@@ -20,7 +20,7 @@
 
             <div class="modal-body">
                 <form id="restart_form" class="form-horizontal" role="form">
-                    <input type="hidden" id="form-restart-id" name="id" value="${id}"/>
+                    <input type="hidden" id="form-restart-id" name="id" value="${taskId}"/>
 
                     <div class="form-group">
                         <label class="col-sm-3 control-label no-padding-right"

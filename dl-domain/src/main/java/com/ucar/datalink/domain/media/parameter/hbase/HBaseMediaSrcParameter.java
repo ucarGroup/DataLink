@@ -28,6 +28,23 @@ public class HBaseMediaSrcParameter extends MediaSrcParameter {
      */
     private Integer keyvalueMaxsize;
 
+    /**
+     * kerberos认证 krb5.conf
+     */
+    private String realm;
+    private String kdc;
+    /**
+     * 登录用户
+     */
+    private String loginPrincipal;
+    /**
+     * 登录用户Keytab文件绝对路径
+     */
+    private String loginKeytabPath;
+    /**
+     * hbase-site.xml 绝对路径
+     */
+    private String hbaseSitePath;
 
     public String getNameServices() {
         return nameServices;
@@ -61,5 +78,43 @@ public class HBaseMediaSrcParameter extends MediaSrcParameter {
         this.keyvalueMaxsize = keyvalueMaxsize;
     }
 
+    public String getRealm() {
+        return realm;
+    }
 
+    public void setRealm(String realm) {
+        this.realm = realm;
+    }
+
+    public String getKdc() {
+        return kdc;
+    }
+
+    public void setKdc(String kdc) {
+        this.kdc = kdc;
+    }
+
+    public String getLoginPrincipal() {
+        return loginPrincipal;
+    }
+
+    public void setLoginPrincipal(String loginPrincipal) {
+        this.loginPrincipal = loginPrincipal;
+    }
+
+    public String getLoginKeytabPath() {
+        return loginKeytabPath;
+    }
+
+    public void setLoginKeytabPath(String loginKeytabPath) {
+        this.loginKeytabPath = loginKeytabPath;
+    }
+
+    public String getHbaseSitePath() {
+        return hbaseSitePath;
+    }
+
+    public void setHbaseSitePath(String hbaseSitePath) {
+        this.hbaseSitePath = hbaseSitePath;
+    }
 }

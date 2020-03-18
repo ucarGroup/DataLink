@@ -46,8 +46,8 @@ public class HBaseMetaResource {
             return check;
         }
         EventBus eventBus = EventBusFactory.getEventBus();
-        HBaseMediaSrcParameter hbaseParameter = new HBaseMediaSrcParameter();
-        hbaseParameter.setZnodeParent(vo.getZnode());
+        HBaseMediaSrcParameter hbaseParameter = vo.getHbaseParameter();
+
         ZkMediaSrcParameter zkParameter = new ZkMediaSrcParameter();
         zkParameter.setServers(vo.getZkAddress());
 
@@ -83,8 +83,7 @@ public class HBaseMetaResource {
             return check;
         }
         EventBus eventBus = EventBusFactory.getEventBus();
-        HBaseMediaSrcParameter hbaseParameter = new HBaseMediaSrcParameter();
-        hbaseParameter.setZnodeParent(vo.getZnode());
+        HBaseMediaSrcParameter hbaseParameter = vo.getHbaseParameter();
         ZkMediaSrcParameter zkParameter = new ZkMediaSrcParameter();
         zkParameter.setServers(vo.getZkAddress());
 
@@ -118,8 +117,7 @@ public class HBaseMetaResource {
             return check;
         }
         EventBus eventBus = EventBusFactory.getEventBus();
-        HBaseMediaSrcParameter hbaseParameter = new HBaseMediaSrcParameter();
-        hbaseParameter.setZnodeParent(vo.getZnode());
+        HBaseMediaSrcParameter hbaseParameter = vo.getHbaseParameter();
         ZkMediaSrcParameter zkParameter = new ZkMediaSrcParameter();
         zkParameter.setServers(vo.getZkAddress());
         String tableName = vo.getTableName();
@@ -164,8 +162,7 @@ public class HBaseMetaResource {
             return check;
         }
         EventBus eventBus = EventBusFactory.getEventBus();
-        HBaseMediaSrcParameter hbaseParameter = new HBaseMediaSrcParameter();
-        hbaseParameter.setZnodeParent(vo.getZnode());
+        HBaseMediaSrcParameter hbaseParameter = vo.getHbaseParameter();
         ZkMediaSrcParameter zkParameter = new ZkMediaSrcParameter();
         zkParameter.setServers(vo.getZkAddress());
         String tableName = vo.getTableName();
@@ -202,8 +199,7 @@ public class HBaseMetaResource {
             return check;
         }
         EventBus eventBus = EventBusFactory.getEventBus();
-        HBaseMediaSrcParameter hbaseParameter = new HBaseMediaSrcParameter();
-        hbaseParameter.setZnodeParent(vo.getZnode());
+        HBaseMediaSrcParameter hbaseParameter = vo.getHbaseParameter();
         ZkMediaSrcParameter zkParameter = new ZkMediaSrcParameter();
         zkParameter.setServers(vo.getZkAddress());
         String tableName = vo.getTableName();
@@ -240,8 +236,7 @@ public class HBaseMetaResource {
             return check;
         }
         EventBus eventBus = EventBusFactory.getEventBus();
-        HBaseMediaSrcParameter hbaseParameter = new HBaseMediaSrcParameter();
-        hbaseParameter.setZnodeParent(vo.getZnode());
+        HBaseMediaSrcParameter hbaseParameter = vo.getHbaseParameter();
         ZkMediaSrcParameter zkParameter = new ZkMediaSrcParameter();
         zkParameter.setServers(vo.getZkAddress());
         String tableName = vo.getTableName();

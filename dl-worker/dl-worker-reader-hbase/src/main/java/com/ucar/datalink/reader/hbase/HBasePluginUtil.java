@@ -9,11 +9,13 @@ import com.ucar.datalink.domain.meta.ColumnMeta;
 import com.ucar.datalink.domain.meta.MediaMeta;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.filter.PageFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,36 +40,44 @@ public class HBasePluginUtil {
     private static final long MAX_CACHE_AMOUNT = 1000;
 
     /**
-     *  根据传入的MediaSourceInfo的id，检查对应的hbase集群是否连接正常
+     * 根据传入的MediaSourceInfo的id，检查对应的hbase集群是否连接正常
+     *
      * @param event
      * @return
      */
     public static void checkHBaseConnection(HBaseConnCheckEvent event) {
-        if(logger.isErrorEnabled()) {
-            logger.debug("start executeTableEvent method "+event.toString());
+        if (logger.isErrorEnabled()) {
+            logger.debug("start executeTableEvent method " + event.toString());
         }
         HBaseMediaSrcParameter hbaseParameter = event.getHbaseParameter();
         ZkMediaSrcParameter zkParameter = event.getZkParameter();
         String znode = hbaseParameter.getZnodeParent();
         String address = zkParameter.parseServersToString();
-        String port = zkParameter.parsePort()+"";
+        String port = zkParameter.parsePort() + "";
         org.apache.hadoop.conf.Configuration conf = HBaseConfiguration.create();
         conf.set("hbase.zookeeper.quorum", address);
         conf.set("hbase.zookeeper.property.clientPort", port);
         conf.set("zookeeper.znode.parent", znode);
         HBaseAdmin admin = null;
         try {
+            if (StringUtils.isNotEmpty(hbaseParameter.getKdc())) {
+                System.setProperty("java.security.krb5.realm", hbaseParameter.getRealm());
+                System.setProperty("java.security.krb5.kdc",hbaseParameter.getKdc());
+                conf.addResource(new Path(hbaseParameter.getHbaseSitePath()));
+                UserGroupInformation.setConfiguration(conf);
+                UserGroupInformation.loginUserFromKeytab(hbaseParameter.getLoginPrincipal(), hbaseParameter.getLoginKeytabPath());
+            }
             admin = new HBaseAdmin(conf);
             event.getCallback().onCompletion(null, "success");
-        } catch(Exception e) {
-            logger.error(e.getMessage(),e);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             event.getCallback().onCompletion(e, "failure");
         } finally {
             if (admin != null) {
                 try {
                     admin.close();
                 } catch (IOException e) {
-                    logger.error("close hbase admin failure",e);
+                    logger.error("close hbase admin failure", e);
                     event.getCallback().onCompletion(e, "failure");
                 }
             }
@@ -77,11 +87,12 @@ public class HBasePluginUtil {
 
     /**
      * 工具类的这个函数提供给HBaseTaskReaderListener使用，用来获取HBase中的所有表
+     *
      * @param event
      */
     public static void executeTableEvent(HBaseTablesEvent event) {
-        if(logger.isErrorEnabled()) {
-            logger.debug("start executeTableEvent method "+event.toString());
+        if (logger.isErrorEnabled()) {
+            logger.debug("start executeTableEvent method " + event.toString());
         }
         HBaseAdmin admin = null;
         List<String> tableNameList = new ArrayList<String>();
@@ -96,12 +107,19 @@ public class HBasePluginUtil {
             String address = zkParameter.parseServersToString();
             String znode = hbaseParameter.getZnodeParent();
             org.apache.hadoop.conf.Configuration conf = HBaseConfiguration.create();
+            if (StringUtils.isNotEmpty(hbaseParameter.getKdc())) {
+                System.setProperty("java.security.krb5.realm", hbaseParameter.getRealm());
+                System.setProperty("java.security.krb5.kdc",hbaseParameter.getKdc());
+                conf.addResource(new Path(hbaseParameter.getHbaseSitePath()));
+                UserGroupInformation.setConfiguration(conf);
+                UserGroupInformation.loginUserFromKeytab(hbaseParameter.getLoginPrincipal(), hbaseParameter.getLoginKeytabPath());
+            }
             conf.set("hbase.zookeeper.quorum", address);
             conf.set("hbase.zookeeper.property.clientPort", port);
             conf.set("zookeeper.znode.parent", znode);
             logger.info("executeTableEvent hbase admin begin connection.");
             admin = new HBaseAdmin(conf);
-            logger.info("executeTableEvent hbase admin execute success "+admin.toString());
+            logger.info("executeTableEvent hbase admin execute success " + admin.toString());
             String[] tables = admin.getTableNames();
             for (String s : tables) {
                 tableNameList.add(s);
@@ -112,20 +130,20 @@ public class HBasePluginUtil {
                 tm.setDbType(MediaSourceType.HBASE);
                 list.add(tm);
             }
-            logger.info("hbase media_meta : "+list.toString());
+            logger.info("hbase media_meta : " + list.toString());
             event.getCallback().onCompletion(null, list);
         } catch (IOException e) {
-            logger.error("get HbaseTable error",e);
+            logger.error("get HbaseTable error", e);
             event.getCallback().onCompletion(e, list);
-        } catch(Exception e) {
-            logger.error("unknown error ",e);
+        } catch (Exception e) {
+            logger.error("unknown error ", e);
             event.getCallback().onCompletion(e, list);
         } finally {
             if (admin != null) {
                 try {
                     admin.close();
                 } catch (IOException e) {
-                    logger.error("close hbase admin failure",e);
+                    logger.error("close hbase admin failure", e);
                     event.getCallback().onCompletion(e, list);
                 }
             }
@@ -136,11 +154,12 @@ public class HBasePluginUtil {
 
     /**
      * 工具类的这个函数提供给HBaseTaskReaderListener使用，用来获取HBase中某个表下的所有列元信息
+     *
      * @param event
      */
     public static void executeColumnEvent(HBaseColumnsEvent event) {
-        if(logger.isDebugEnabled()) {
-            logger.debug("start executeColumnEvent method "+event.toString());
+        if (logger.isDebugEnabled()) {
+            logger.debug("start executeColumnEvent method " + event.toString());
         }
         List<ColumnMeta> columns = new ArrayList<>();
         try {
@@ -148,20 +167,20 @@ public class HBasePluginUtil {
             String tableName = event.getTableName();
             ZkMediaSrcParameter zkParameter = event.getZkParameter();
             int fetchAmount = event.getOnceFetchAmount();
-            List<String> columnFamilys = getHbaseColumnFamilies(tableName,hbaseParameter,zkParameter);
-            if(logger.isDebugEnabled()) {
-                logger.debug("getHbaseColumnFamilies success "+columnFamilys.toString());
+            List<String> columnFamilys = getHbaseColumnFamilies(tableName, hbaseParameter, zkParameter);
+            if (logger.isDebugEnabled()) {
+                logger.debug("getHbaseColumnFamilies success " + columnFamilys.toString());
             }
-            if(columnFamilys==null || columnFamilys.size()==0) {
-                event.getCallback().onCompletion(null,columns);
+            if (columnFamilys == null || columnFamilys.size() == 0) {
+                event.getCallback().onCompletion(null, columns);
                 return;
             }
 
             for (String cf : columnFamilys) {
-                Set<String> qualifiers = getHbaseQualifier(tableName, zkParameter.parseServersToString(),
-                        zkParameter.parsePort() + "", hbaseParameter.getZnodeParent(), cf,fetchAmount);
-                if(logger.isDebugEnabled()) {
-                    logger.debug("getHbaseQualifier success "+qualifiers.toString());
+                Set<String> qualifiers = getHbaseQualifier(tableName, zkParameter.parseServersToString(), hbaseParameter,
+                        zkParameter.parsePort() + "", hbaseParameter.getZnodeParent(), cf, fetchAmount);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("getHbaseQualifier success " + qualifiers.toString());
                 }
                 if (qualifiers == null || qualifiers.size() == 0) {
                     ColumnMeta meta = new ColumnMeta();
@@ -180,15 +199,16 @@ public class HBasePluginUtil {
                 }
             }
             event.getCallback().onCompletion(null, columns);
-        } catch(Exception e) {
-            logger.error(e.getMessage(),e);
-            event.getCallback().onCompletion(e,columns);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            event.getCallback().onCompletion(e, columns);
         }
     }
 
 
     /**
      * 这个函数提供给 executeColumnEvent()使用的，用来获取HBase中一个表的所有列簇
+     *
      * @param table
      * @param hbaseParameter
      * @param zkParameter
@@ -206,8 +226,15 @@ public class HBasePluginUtil {
             conf.set("hbase.zookeeper.property.clientPort", zkParameter.parsePort() + "");
             conf.set("zookeeper.znode.parent", hbaseParameter.getZnodeParent());
             logger.info("getHbaseColumnFamilies hbase admin begin connection.");
+            if (StringUtils.isNotEmpty(hbaseParameter.getKdc())) {
+                System.setProperty("java.security.krb5.realm", hbaseParameter.getRealm());
+                System.setProperty("java.security.krb5.kdc",hbaseParameter.getKdc());
+                conf.addResource(new Path(hbaseParameter.getHbaseSitePath()));
+                UserGroupInformation.setConfiguration(conf);
+                UserGroupInformation.loginUserFromKeytab(hbaseParameter.getLoginPrincipal(), hbaseParameter.getLoginKeytabPath());
+            }
             admin = new HBaseAdmin(conf);
-            logger.info("getHbaseColumnFamilies hbase admin execute success "+admin.toString());
+            logger.info("getHbaseColumnFamilies hbase admin execute success " + admin.toString());
             HTableDescriptor s = admin.getTableDescriptor(table.getBytes());
             HColumnDescriptor[] columns = s.getColumnFamilies();
             if (columns != null) {
@@ -222,7 +249,7 @@ public class HBasePluginUtil {
                 try {
                     admin.close();
                 } catch (IOException e) {
-                    logger.error("close hbase admin failure",e);
+                    logger.error("close hbase admin failure", e);
                 }
             }
         }
@@ -233,6 +260,7 @@ public class HBasePluginUtil {
     /**
      * 这个函数提供给executeColumnEvent()使用的，在表名，列簇名已知的情况下，获取这个列族中所有的动态列 qualifier，
      * 因为ualifier是动态生成的所以HBaseAdmin的API就无法获取了，只能通过HTable查询10条记录然后获取所有的qualifier
+     *
      * @param tableName
      * @param hosts
      * @param port
@@ -240,7 +268,7 @@ public class HBasePluginUtil {
      * @param columnFamily
      * @return
      */
-    private static Set<String> getHbaseQualifier(String tableName, String hosts, String port, String znode, String columnFamily, int fetchAmount) {
+    private static Set<String> getHbaseQualifier(String tableName, String hosts, HBaseMediaSrcParameter hbaseParameter, String port, String znode, String columnFamily, int fetchAmount) {
         HBaseAdmin admin = null;
         ResultScanner rs = null;
         Set<String> columnList = new HashSet<>();
@@ -252,18 +280,25 @@ public class HBasePluginUtil {
             conf.set("hbase.zookeeper.quorum", hosts);
             conf.set("hbase.zookeeper.property.clientPort", port);
             conf.set("zookeeper.znode.parent", znode);
+            if (StringUtils.isNotEmpty(hbaseParameter.getKdc())) {
+                System.setProperty("java.security.krb5.realm", hbaseParameter.getRealm());
+                System.setProperty("java.security.krb5.kdc",hbaseParameter.getKdc());
+                conf.addResource(new Path(hbaseParameter.getHbaseSitePath()));
+                UserGroupInformation.setConfiguration(conf);
+                UserGroupInformation.loginUserFromKeytab(hbaseParameter.getLoginPrincipal(), hbaseParameter.getLoginKeytabPath());
+            }
             logger.info("getHbaseQualifier hbase admin begin connection.");
             admin = new HBaseAdmin(conf);
-            logger.info("getHbaseQualifier hbase admin execute success "+admin.toString());
+            logger.info("getHbaseQualifier hbase admin execute success " + admin.toString());
             HTable hTable = new HTable(conf, tableName);
-            logger.info("getHbaseQualifier hbase table execute success "+admin.toString());
-            if(logger.isDebugEnabled()) {
-                logger.debug("htable execute success "+hTable.toString());
+            logger.info("getHbaseQualifier hbase table execute success " + admin.toString());
+            if (logger.isDebugEnabled()) {
+                logger.debug("htable execute success " + hTable.toString());
             }
             Scan scan = new Scan();
             scan.addFamily(columnFamily.getBytes());
-            scan.setCaching((int)MAX_CACHE_AMOUNT);
-            if(fetchAmount <= 0) {
+            scan.setCaching((int) MAX_CACHE_AMOUNT);
+            if (fetchAmount <= 0) {
                 scan.setFilter(new PageFilter(MAX_FETCH_NUM));
             } else {
                 scan.setFilter(new PageFilter(fetchAmount));
@@ -271,11 +306,11 @@ public class HBasePluginUtil {
             rs = hTable.getScanner(scan);
 
             for (Result res : rs) {
-                if(res == null) {
+                if (res == null) {
                     continue;
                 }
                 for (Cell cell : res.rawCells()) {
-                    if(!columnList.contains(Bytes.toString(cell.getQualifier()))){
+                    if (!columnList.contains(Bytes.toString(cell.getQualifier()))) {
                         columnList.add(Bytes.toString(cell.getQualifier()));
                     }
                 }
@@ -308,14 +343,13 @@ public class HBasePluginUtil {
     }
 
 
-
     public static void caclRegionCount(HBaseRegionCountEvent event) {
         Configuration configuration = HBaseConfiguration.create();
         HBaseMediaSrcParameter hbaseParameter = event.getHbaseParameter();
         String tableName = event.getTableName();
         ZkMediaSrcParameter zkParameter = event.getZkParameter();
         String hosts = zkParameter.parseServersToString();
-        String port = zkParameter.parsePort()+"";
+        String port = zkParameter.parsePort() + "";
         String znode = hbaseParameter.getZnodeParent();
 
         HBaseAdmin admin = null;
@@ -325,17 +359,24 @@ public class HBasePluginUtil {
             configuration.set("hbase.zookeeper.quorum", hosts);
             configuration.set("hbase.zookeeper.property.clientPort", port);
             configuration.set("zookeeper.znode.parent", znode);
+            if (StringUtils.isNotEmpty(hbaseParameter.getKdc())) {
+                System.setProperty("java.security.krb5.realm", hbaseParameter.getRealm());
+                System.setProperty("java.security.krb5.kdc",hbaseParameter.getKdc());
+                configuration.addResource(new Path(hbaseParameter.getHbaseSitePath()));
+                UserGroupInformation.setConfiguration(configuration);
+                UserGroupInformation.loginUserFromKeytab(hbaseParameter.getLoginPrincipal(), hbaseParameter.getLoginKeytabPath());
+            }
             admin = new HBaseAdmin(configuration);
             htable = new HTable(configuration, tableName);
             Pair<byte[][], byte[][]> regionRanges = htable.getStartEndKeys();
             regionsCount = regionRanges.getFirst().length;
             event.getCallback().onCompletion(null, new Integer(regionsCount));
-        } catch(Exception e) {
+        } catch (Exception e) {
             if (admin != null) {
                 try {
                     admin.close();
                 } catch (IOException ex) {
-                    logger.error(e.getMessage(),e);
+                    logger.error(e.getMessage(), e);
                     event.getCallback().onCompletion(e, new Integer(-1));
                 }
             }
@@ -350,7 +391,7 @@ public class HBasePluginUtil {
         String tableName = event.getTableName();
         ZkMediaSrcParameter zkParameter = event.getZkParameter();
         String hosts = zkParameter.parseServersToString();
-        String port = zkParameter.parsePort()+"";
+        String port = zkParameter.parsePort() + "";
         String znode = hbaseParameter.getZnodeParent();
         int groupNbr = event.getSplitCount();
 
@@ -362,6 +403,13 @@ public class HBasePluginUtil {
             configuration.set("hbase.zookeeper.quorum", hosts);
             configuration.set("hbase.zookeeper.property.clientPort", port);
             configuration.set("zookeeper.znode.parent", znode);
+            if (StringUtils.isNotEmpty(hbaseParameter.getKdc())) {
+                System.setProperty("java.security.krb5.realm", hbaseParameter.getRealm());
+                System.setProperty("java.security.krb5.kdc",hbaseParameter.getKdc());
+                configuration.addResource(new Path(hbaseParameter.getHbaseSitePath()));
+                UserGroupInformation.setConfiguration(configuration);
+                UserGroupInformation.loginUserFromKeytab(hbaseParameter.getLoginPrincipal(), hbaseParameter.getLoginKeytabPath());
+            }
             admin = new HBaseAdmin(configuration);
             htable = new HTable(configuration, tableName);
             Pair<byte[][], byte[][]> regionRanges = htable.getStartEndKeys();
@@ -389,28 +437,28 @@ public class HBasePluginUtil {
             result.put("range", list);
             event.getCallback().onCompletion(null, result);
         } catch (Exception e) {
-            logger.error(e.getMessage(),e);
+            logger.error(e.getMessage(), e);
             event.getCallback().onCompletion(e, result);
         } finally {
             if (admin != null) {
                 try {
                     admin.close();
                 } catch (IOException e) {
-                    logger.error(e.getMessage(),e);
+                    logger.error(e.getMessage(), e);
                     event.getCallback().onCompletion(e, result);
                 }
             }
         }
     }
 
-    public static void main(String args[]){
-        Integer i =Integer.parseInt("2186734009");
+    public static void main(String args[]) {
+        Integer i = Integer.parseInt("2186734009");
         System.out.println(i);
     }
 
     public static void executeStatusEvent(HBaseStatusEvent event) {
-        if(logger.isErrorEnabled()) {
-            logger.debug("start executeStatusEvent method "+event.toString());
+        if (logger.isErrorEnabled()) {
+            logger.debug("start executeStatusEvent method " + event.toString());
         }
         HBaseAdmin admin = null;
         List<String> tableNameList = new ArrayList<String>();
@@ -428,24 +476,31 @@ public class HBasePluginUtil {
             conf.set("hbase.zookeeper.quorum", address);
             conf.set("hbase.zookeeper.property.clientPort", port);
             conf.set("zookeeper.znode.parent", znode);
+            if (StringUtils.isNotEmpty(hbaseParameter.getKdc())) {
+                System.setProperty("java.security.krb5.realm", hbaseParameter.getRealm());
+                System.setProperty("java.security.krb5.kdc",hbaseParameter.getKdc());
+                conf.addResource(new Path(hbaseParameter.getHbaseSitePath()));
+                UserGroupInformation.setConfiguration(conf);
+                UserGroupInformation.loginUserFromKeytab(hbaseParameter.getLoginPrincipal(), hbaseParameter.getLoginKeytabPath());
+            }
             logger.info("executeTableEvent hbase admin begin connection.");
             admin = new HBaseAdmin(conf);
-            logger.info("executeTableEvent hbase admin execute success "+admin.toString());
+            logger.info("executeTableEvent hbase admin execute success " + admin.toString());
             ClusterStatus status = admin.getClusterStatus();
             String result = JSONObject.toJSONString(status);
             event.getCallback().onCompletion(null, result);
         } catch (IOException e) {
-            logger.error("get Hbase status error",e);
+            logger.error("get Hbase status error", e);
             event.getCallback().onCompletion(e, list);
-        } catch(Exception e) {
-            logger.error("unknown error ",e);
+        } catch (Exception e) {
+            logger.error("unknown error ", e);
             event.getCallback().onCompletion(e, list);
         } finally {
             if (admin != null) {
                 try {
                     admin.close();
                 } catch (IOException e) {
-                    logger.error("close hbase admin failure",e);
+                    logger.error("close hbase admin failure", e);
                     event.getCallback().onCompletion(e, list);
                 }
             }

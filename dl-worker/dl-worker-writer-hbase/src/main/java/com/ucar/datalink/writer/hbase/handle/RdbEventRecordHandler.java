@@ -1,5 +1,6 @@
 package com.ucar.datalink.writer.hbase.handle;
 
+import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.common.errors.DatalinkException;
 import com.ucar.datalink.contract.log.rdbms.EventColumn;
 import com.ucar.datalink.contract.log.rdbms.EventType;
@@ -12,11 +13,13 @@ import com.ucar.datalink.domain.plugin.writer.hbase.HBaseSyncParameter;
 import com.ucar.datalink.worker.api.handle.AbstractHandler;
 import com.ucar.datalink.worker.api.task.TaskWriterContext;
 import com.ucar.datalink.worker.api.util.BatchSplitter;
+import com.ucar.datalink.writer.hbase.handle.util.HBaseTableFactory;
 import com.ucar.datalink.writer.hbase.handle.util.HTableFactory;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,10 +56,10 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
                                             RdbEventRecord firstRecord = mr.getValue().get(0);
                                             String tableName = firstRecord.getTableName();
                                             MediaMappingInfo mappingInfo = RecordMeta.mediaMapping(firstRecord);
-                                            HBaseSyncParameter hBaseSyncParameter = mappingInfo.getParameterObj();
+                                            HBaseSyncParameter hBaseSyncParameter = JSONObject.toJavaObject(mappingInfo.getParameterObj(), HBaseSyncParameter.class);
                                             MediaSourceInfo targetMediaSourceInfo = mappingInfo.getTargetMediaSource();
 
-                                            HTable hTable = HTableFactory.getHTable(tableName, targetMediaSourceInfo);
+                                            Table hTable = HBaseTableFactory.getTable(tableName, targetMediaSourceInfo);
                                             List<List<RdbEventRecord>> batchRecords = BatchSplitter.splitForBatch(mr.getValue(), context.getWriterParameter().getBatchSize());
                                             for (List<RdbEventRecord> recordList : batchRecords) {
                                                 writeToHBase(recordList, hTable, hBaseSyncParameter != null && hBaseSyncParameter.isSyncDelete());
@@ -81,7 +84,7 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
         }
     }
 
-    void writeToHBase(List<RdbEventRecord> recordList, HTable hTable, boolean syncDelete) {
+    void writeToHBase(List<RdbEventRecord> recordList, Table hTable, boolean syncDelete) {
         try {
 
             List<Put> puts = new LinkedList<>();
@@ -97,13 +100,13 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
                     Put put = new Put(Bytes.toBytes(keyValue));
 
                     String family = getFamilyName(RecordMeta.mediaMapping(record));
-                    put.add(Bytes.toBytes(family), Bytes.toBytes(keyName), Bytes.toBytes(keyValue));
+                    put.addColumn(Bytes.toBytes(family), Bytes.toBytes(keyName), Bytes.toBytes(keyValue));
 
                     List<EventColumn> columns = record.getColumns();
                     for (EventColumn column : columns) {
                         String columnName = column.getColumnName();
                         String columnValue = column.getColumnValue();
-                        put.add(Bytes.toBytes("default"), Bytes.toBytes(columnName), columnValue == null ? null : Bytes.toBytes(columnValue));
+                        put.addColumn(Bytes.toBytes(family), Bytes.toBytes(columnName), columnValue == null ? null : Bytes.toBytes(columnValue));
                     }
                     puts.add(put);
                 } else if (record.getEventType() == EventType.DELETE && syncDelete) {
@@ -113,11 +116,9 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
             }
             if (puts.size() > 0) {
                 hTable.put(puts);
-                hTable.flushCommits();
             }
             if (deletes.size() > 0) {
                 hTable.delete(deletes);
-                hTable.flushCommits();
             }
         } catch (Exception e) {
             logger.info("write to HBase failed.", e);
@@ -126,7 +127,7 @@ public class RdbEventRecordHandler extends AbstractHandler<RdbEventRecord> {
     }
 
     private String getFamilyName(MediaMappingInfo mediaMappingInfo) {
-        HBaseMappingParameter parameter = mediaMappingInfo.getParameterObj();
+        HBaseMappingParameter parameter = JSONObject.toJavaObject(mediaMappingInfo.getParameterObj(), HBaseMappingParameter.class);
         if (parameter != null) {
             return StringUtils.isNotBlank(parameter.getFamilyName()) ? parameter.getFamilyName() : "default";
         } else {

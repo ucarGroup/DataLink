@@ -25,7 +25,41 @@
                                id="form-add-desc" value="${hbaseMediaSourceView.desc}"/>
                     </div>
                 </div>
-
+                <div class="form-group">
+                    <label class="col-sm-3 control-label no-padding-right" for="form-add-realm">realm（Kerberos认证时需要）</label>
+                    <div class="col-sm-9">
+                        <input type="text" style="width:350px;height:35px" name="hbaseMediaSrcParameter.realm" class="col-xs-10 col-sm-5"
+                               id="form-add-realm" value="${hbaseMediaSourceView.hbaseMediaSrcParameter.realm}"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label no-padding-right" for="form-add-kdc">kdc（Kerberos认证时需要）</label>
+                    <div class="col-sm-9">
+                        <input type="text" style="width:350px;height:35px" name="hbaseMediaSrcParameter.kdc" class="col-xs-10 col-sm-5"
+                               id="form-add-kdc" value="${hbaseMediaSourceView.hbaseMediaSrcParameter.kdc}"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label no-padding-right" for="form-add-loginPrincipal">loginPrincipal（Kerberos认证时需要）</label>
+                    <div class="col-sm-9">
+                        <input type="text" style="width:350px;height:35px" name="hbaseMediaSrcParameter.loginPrincipal" class="col-xs-10 col-sm-5"
+                               id="form-add-loginPrincipal" value="${hbaseMediaSourceView.hbaseMediaSrcParameter.loginPrincipal}"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label no-padding-right" for="form-add-loginKeytabPath">loginKeytabPath（Kerberos认证时需要）</label>
+                    <div class="col-sm-9">
+                        <input type="text" style="width:350px;height:35px" name="hbaseMediaSrcParameter.loginKeytabPath" class="col-xs-10 col-sm-5"
+                               id="form-add-loginKeytabPath" value="${hbaseMediaSourceView.hbaseMediaSrcParameter.loginKeytabPath}"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-3 control-label no-padding-right" for="form-add-hbaseSitePath">hbaseSitePath（Kerberos认证时需要）</label>
+                    <div class="col-sm-9">
+                        <input type="text" style="width:350px;height:35px" name="hbaseMediaSrcParameter.hbaseSitePath" class="col-xs-10 col-sm-5"
+                               id="form-add-hbaseSitePath" value="${hbaseMediaSourceView.hbaseMediaSrcParameter.hbaseSitePath}"/>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right"
                            for="form-add-znodeParent">znode路径</label>

@@ -1,5 +1,6 @@
 package com.ucar.datalink.writer.hdfs.handle.util;
 
+import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.domain.media.MediaMappingInfo;
 import com.ucar.datalink.domain.plugin.writer.hdfs.FileSplitMode;
 import com.ucar.datalink.domain.plugin.writer.hdfs.FileSplitStrategy;
@@ -132,7 +133,7 @@ public class HdfsFilePathGenerator {
     }
 
     public FileSplitMode getFileSplitMode(MediaMappingInfo mappingInfo) {
-        HdfsMappingParameter hdfsMappingParameter = mappingInfo.getParameterObj();
+        HdfsMappingParameter hdfsMappingParameter = JSONObject.toJavaObject(mappingInfo.getParameterObj(), HdfsMappingParameter.class);
         if (hdfsMappingParameter != null) {
             List<FileSplitStrategy> fileSplitStrategieList = hdfsMappingParameter.getFileSplitStrategieList();
             if (fileSplitStrategieList != null && fileSplitStrategieList.size() > 0) {
