@@ -1,0 +1,31 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 10
+      }
+    },
+    "content": [
+      {
+        "writer": {
+          "name": "eswriter",
+          "parameter": {
+            "username": "@username",
+            "password": "@password",
+            "hosts": "@hosts",
+            "httpPort": "@httpPort",
+            "tcpPort": "@tcpPort",
+            "batchSize": 200,
+            "retryTimes": 3,
+            "table": "@table",
+            "column": ["@column"],
+            "esIndex": "@esIndex",
+            "esType": "@esType",
+            "operateType": "upsert",
+            "isAddTablePrefix": "true"
+          }
+        }
+      }
+    ]
+  }
+}

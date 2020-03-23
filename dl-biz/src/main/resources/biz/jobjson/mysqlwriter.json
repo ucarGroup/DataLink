@@ -1,0 +1,36 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel":3
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "writer": {
+          "name": "mysqlwriter",
+          "parameter": {
+            "writeMode": "ondupkey",
+            "username": "@username",
+            "password": "@password",
+            "column": [
+              "@column"
+            ],
+
+            "connection": [
+              {
+                "jdbcUrl": "@jdbcUrl",
+                "table": ["@table"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

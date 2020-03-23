@@ -1,0 +1,31 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 10
+      }
+    },
+    "content": [
+      {
+        "writer": {
+          "name": "hdfswriter",
+          "parameter": {
+            "defaultFS": "@hdfsUrl",
+            "fileType": "orc",
+            "fileName": "@table",
+            "createPathIfNotExist": true,
+            "hadoopUserName": "increment",
+            "errorRetryTimes": 100,
+            "column": [
+                "@column"
+            ],
+            "writeMode": "append",
+            "fieldDelimiter": "\t",
+            "compress": "snappy",
+            "path": "@path"
+          }
+        }
+      }
+    ]
+  }
+}

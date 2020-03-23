@@ -1,0 +1,23 @@
+{
+  "job": {
+    "content": [
+      {
+        "writer": {
+          "name": "hbasewriter98",
+          "parameter": {
+            "hbaseConfig": {
+              "hbase_zookeeper_quorum":"@hbaseIp",
+              "hbase_zookeeper_property_clientPort":"5181",
+              "zookeeper_znode_parent":"@hbase_znode",
+              "zookeeper_session_timeout":"100000",
+              "hbase_client_keyvalue_maxsize":"1048576000"
+            },
+            "table": "@table",
+            "column": ["@column"],
+            "encoding": "utf-8"
+          }
+        }
+      }
+    ]
+  }
+}

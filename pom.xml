@@ -17,6 +17,7 @@
         <module>dl-contract</module>
         <module>dl-domain</module>
         <module>dl-extend</module>
+        <module>dl-flinker</module>
     </modules>
 
     <profiles>

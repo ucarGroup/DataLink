@@ -123,6 +123,16 @@ public class UCarAlarmServiceImpl implements AlarmService {
         }
     }
 
+    @Override
+    public void alarmFlinkerJobError(MonitorInfo monitorInfo, String errorMsg) {
+        String content = AlarmTemplate.buildErrorEmailContent(MessageFormat.format("全量任务[{0}:ID = {1}]出现异常", monitorInfo.getResourceName(), monitorInfo.getResourceId()), errorMsg, envName);
+        sendEmail(monitorInfo, content, "Flinker任务异常");
+        if (isSendSms) {
+            String smsContent = AlarmTemplate.buildErrorSMSContent(MessageFormat.format("全量任务[{0}:ID = {1}]出现异常", monitorInfo.getResourceName(), monitorInfo.getResourceId()), envName);
+            sendSMS(monitorInfo, smsContent, smsUrl);
+        }
+    }
+
     public void sendEmail(String content, String subject) {
         try {
             MailInfo mailInfo = buildMailInfo(getMailAddress(), content, subject);

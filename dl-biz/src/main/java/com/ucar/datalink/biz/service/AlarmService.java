@@ -25,4 +25,6 @@ public interface AlarmService {
     void alarmTaskStatusMismatch(MonitorInfo monitorInfo, TaskStatusMismatchLogInfo taskStatusMismatchLogInfo);
 
     void alarmTaskSyncStatus(MonitorInfo monitorInfo, Long busyTime);
+
+    void alarmFlinkerJobError(MonitorInfo monitorInfo, String errorMsg);
 }

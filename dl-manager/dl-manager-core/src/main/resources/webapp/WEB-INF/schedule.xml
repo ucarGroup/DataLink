@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd
+       http://www.springframework.org/schema/task
+       http://www.springframework.org/schema/task/spring-task-3.0.xsd">
+
+       <!-- job 任务队列 -->
+       <bean id="jobRunQueue" class="com.ucar.datalink.biz.service.impl.JobRunQueueDaemonService" scope="singleton"/>
+       <bean id="jobRunQueueInvoke" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean" scope="singleton">
+              <property name="targetObject" ref="jobRunQueue" />
+              <property name="targetMethod" value="jobRunQueueScan" />
+       </bean>
+       <bean id="jobRunQueueCron" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean" scope="singleton">
+              <property name="jobDetail" ref="jobRunQueueInvoke" />
+              <property name="cronExpression" value="0 0/1 * * * ?" />
+       </bean>
+
+</beans>

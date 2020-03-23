@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.JobScheduleDAO">
+
+    <resultMap id="jobSchedule" type="jobSchedule">
+        <result property="id" column="id" />
+        <result property="jobId" column="job_id" />
+        <result property="scheduleName" column="schedule_name" />
+        <result property="cron" column="cron_expression" />
+        <result property="isRetry" column="is_retry" />
+        <result property="retryNumber" column="retry_number" />
+        <result property="retryInterval" column="retry_interval" />
+        <result property="maxRunningTime" column="max_running_time" />
+        <result property="onlineState" column="online_state" />
+        <result property="isDelete" column="is_delete" />
+        <result property="remark" column="remark" />
+        <result property="creatorId" column="creator_id" />
+        <result property="creatorName" column="creator_name" />
+        <result property="scheduleState" column="schedule_state" />
+        <result property="createTime" column="create_time" />
+        <result property="modifieTime" column="modifie_time" />
+    </resultMap>
+
+
+    <!-- job schedule -->
+    <sql id="allJobScheduleColumns">id,job_id,schedule_name,cron_expression,is_retry,retry_number,retry_interval,max_running_time,online_state,is_delete,remark,creator_id,creator_name,schedule_state,create_time,modifie_time</sql>
+
+
+    <select id="getById" resultMap="jobSchedule" parameterType="long">
+        SELECT
+        <include refid="allJobScheduleColumns"/>
+        FROM t_dl_flinker_job_schedule WHERE id=#{0} AND is_delete=false
+    </select>
+
+    <select id="getByConfigId" resultMap="jobSchedule" parameterType="long">
+        SELECT
+        <include refid="allJobScheduleColumns"/>
+        FROM t_dl_flinker_job_schedule WHERE job_id=#{0} AND is_delete=false LIMIT 1
+    </select>
+
+
+    <select id="getList" resultMap="jobSchedule">
+        SELECT
+        <include refid="allJobScheduleColumns"/>
+        FROM t_dl_flinker_job_schedule WHERE is_delete=false
+    </select>
+
+
+    <select id="selectBatchJobSchedule" resultMap="jobSchedule" >
+        SELECT
+        <include refid="allJobScheduleColumns"/>
+        FROM t_dl_flinker_job_schedule WHERE is_delete=false
+            <if test="0 > scheduleState">
+                AND (schedule_state=0 OR schedule_state=1)
+            </if>
+            <if test="scheduleState > 0">
+                AND schedule_state=1
+            </if>
+            <if test="scheduleState == 0">
+                AND schedule_state=0
+            </if>
+        AND job_id IN
+        (
+          SELECT id FROM t_dl_flinker_job_config WHERE is_delete=0
+          <if test="0 > isTiming">
+              AND (timing_yn=0 OR timing_yn=1)
+          </if>
+          <if test="isTiming > 0">
+              AND timing_yn=1
+          </if>
+          <if test="isTiming == 0">
+              AND timing_yn=0
+          </if>
+          <if test="jobName != null">
+              AND job_name LIKE CONCAT('%',#{jobName},'%')
+          </if>
+          <if test="jobName == null">
+              <if test="srcName != null">
+                  AND job_src_media_source_id IN
+                  (SELECT id FROM t_dl_media_source WHERE ms_name=#{srcName})
+              </if>
+              <if test="srcName == null">
+                  <if test="srcType != null">
+                      AND job_src_media_source_id IN
+                      ( SELECT id FROM t_dl_media_source WHERE ms_type=#{srcType} )
+                  </if>
+              </if>
+              <if test="destName != null">
+                      AND job_target_media_source_id IN
+                      (SELECT id FROM t_dl_media_source WHERE ms_name=#{destName})
+                  </if>
+              <if test="destName == null">
+                  <if test="destType != null">
+                      AND job_target_media_source_id IN
+                      ( SELECT id FROM t_dl_media_source WHERE ms_type=#{destType} )
+                  </if>
+              </if>
+              <if test="mediaName != null">
+                  AND job_media_name=#{mediaName}
+              </if>
+          </if>
+        )
+    </select>
+
+
+    <insert id="insert" parameterType="jobSchedule">
+        INSERT INTO t_dl_flinker_job_schedule
+        (job_id,
+        schedule_name,
+        cron_expression,
+        is_retry,
+        retry_number,
+        retry_interval,
+        max_running_time,
+        online_state,
+        is_delete,
+        remark,
+        creator_id,
+        creator_name,
+        schedule_state,
+        create_time,
+        modifie_time
+        )
+        VALUES
+        (#{jobId},
+        #{scheduleName},
+        #{cron},
+        #{isRetry},
+        #{retryNumber},
+        #{retryInterval},
+        #{maxRunningTime},
+        #{onlineState},
+        #{isDelete},
+        #{remark},
+        #{creatorId},
+        #{creatorName},
+        #{scheduleState},
+        now(),
+        now()
+        )
+        <selectKey resultType="long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+    </insert>
+
+
+    <update id="update" parameterType="jobSchedule">
+        UPDATE t_dl_flinker_job_schedule
+        SET
+        schedule_name=#{scheduleName},
+        cron_expression=#{cron},
+        is_retry=#{isRetry},
+        retry_number=#{retryNumber},
+        retry_interval=#{retryInterval},
+        max_running_time=#{maxRunningTime},
+        online_state=#{onlineState},
+        remark=#{remark},
+        creator_id=#{creatorId},
+        creator_name=#{creatorName},
+        schedule_state=#{scheduleState},
+        modifie_time=now()
+        WHERE id=#{id}
+    </update>
+
+    <update id="updateByJobConfig" parameterType="jobSchedule">
+        UPDATE t_dl_flinker_job_schedule
+        SET
+        sechdule_name=#{scheduleName},
+        cron_expression=#{cron},
+        is_retry=#{isRetry},
+        retry_number=#{retryNumber},
+        retry_interval=#{retryInterval},
+        max_running_time=#{maxRunningTime},
+        online_state=#{onlineState},
+        remark=#{remark},
+        creator_id=#{creatorId},
+        creator_name=#{creatorName},
+        schedule_state=#{scheduleState},
+        modifie_time=now()
+        WHERE job_id=#{jobId}
+    </update>
+
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM t_dl_flinker_job_schedule
+        WHERE id=#{0}
+    </delete>
+
+    <update id="deleteByJobConfigId" parameterType="long">
+        UPDATE t_dl_flinker_job_schedule
+        SET is_delete=true WHERE job_id=#{0}
+    </update>
+
+   <select id="getJobScheduleByConfigId" resultMap="jobSchedule" parameterType="long">
+       SELECT
+       <include refid="allJobScheduleColumns"/>
+       FROM t_dl_flinker_job_schedule WHERE job_id=#{0} AND is_delete=false
+   </select>
+
+
+    <update id="updateState" parameterType="jobSchedule">
+        UPDATE t_dl_flinker_job_schedule
+        SET schedule_state=#{scheduleState}
+        WHERE id=#{id}
+    </update>
+
+    <select id="latestJobScheduleRecord" resultType="jobConfig">
+        SELECT
+        <include refid="allJobScheduleColumns"/>
+        FROM `t_dl_flinker_job_schedule` ORDER BY id DESC LIMIT 1
+    </select>
+
+
+
+</mapper>

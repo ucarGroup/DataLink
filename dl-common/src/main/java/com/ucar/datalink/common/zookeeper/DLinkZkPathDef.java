@@ -33,11 +33,25 @@ public class DLinkZkPathDef {
 
     public static final String TaskSyncStatusNode;
 
-    public static final String ServiceRoot;
+    public static final String FlinkerRoot;
 
-    public static final String ServiceMailRoot;
+    public static final String FlinkerWorkerRoot;
 
-    public static final String ServiceMailNode;
+    public static final String FlinkerWorkerNode;
+
+    public static final String FlinkerJobsRoot;
+
+    public static final String FlinkerRunningRoot;
+
+    public static final String FlinkerRunningNode;
+
+    public static final String FlinkerMonitorRoot;
+
+    public static final String FlinkerMonitorNode;
+
+    public static final String FlinkerConfRoot;
+
+    public static final String FlinkerConfNode;
 
     static {
         Root = DLinkZkUtils.get().zkRoot();
@@ -56,9 +70,16 @@ public class DLinkZkPathDef {
         TaskPositionNode = TaskNode + "/position";
         TaskSyncStatusNode = TaskNode + "/syncstatus";
 
-        ServiceRoot = Root + "/service";
-        ServiceMailRoot = ServiceRoot + "/mail";
-        ServiceMailNode = ServiceMailRoot + "/{0}";
+        FlinkerRoot = Root + "/flinker";
+        FlinkerWorkerRoot = FlinkerRoot + "/workers";
+        FlinkerWorkerNode = FlinkerWorkerRoot + "/{0}";
+        FlinkerJobsRoot = FlinkerRoot + "/jobs";
+        FlinkerRunningRoot = FlinkerJobsRoot + "/running";
+        FlinkerRunningNode = FlinkerRunningRoot + "/{0}";
+        FlinkerMonitorRoot = FlinkerRoot + "/monitor";
+        FlinkerMonitorNode = FlinkerMonitorRoot + "/{0}";
+        FlinkerConfRoot = FlinkerRoot + "/conf";
+        FlinkerConfNode = FlinkerConfRoot + "/{0}";
     }
 
     public static String getManagerClusterNode(String node) {
@@ -85,8 +106,17 @@ public class DLinkZkPathDef {
         return MessageFormat.format(TaskSyncStatusNode, taskId);
     }
 
-    public static String getServiceMailNode(String msg) {
-        return MessageFormat.format(ServiceMailNode, msg);
+    public static String getFlinkerWorkerNode(String workerIp) {
+        return MessageFormat.format(FlinkerWorkerNode, workerIp);
     }
 
+    public static String getJobRunningNode(String jobName) {
+        return MessageFormat.format(FlinkerRunningNode, jobName);
+    }
+
+    public static String getJobConfNode(String jobName) {
+        return MessageFormat.format(FlinkerConfNode, jobName);
+    }
+
+    public static String getMonitorNode(String monitorIp) { return MessageFormat.format(FlinkerMonitorNode, monitorIp); }
 }

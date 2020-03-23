@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.JobQueueDAO">
+
+    <resultMap id="jobQueueInfo" type="jobQueueInfo">
+        <result property="id" column="id" />
+        <result property="queueName" column="queue_name" />
+        <result property="mail" column="mail" />
+        <result property="queueState" column="queue_state" />
+        <result property="failToStop" column="fail_to_stop" />
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <resultMap id="jobQueue" type="jobQueue">
+        <result property="id" column="id" />
+        <result property="jobName" column="job_name" />
+        <result property="queueId" column="queue_id" />
+        <result property="tableName" column="table_name" />
+        <result property="jobState" column="job_state" />
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+    <!-- job run queue -->
+    <sql id="allJobQueueInfoColumns">id,queue_name,mail,queue_state,fail_to_stop,create_time,modify_time</sql>
+
+    <sql id="allJobQueueColumns">id,job_name,queue_id,table_name,job_state,create_time,modify_time</sql>
+
+
+    <select id="allJobQueueInfo" resultMap="jobQueueInfo" >
+        SELECT
+        <include refid="allJobQueueInfoColumns"/>
+        FROM t_dl_flinker_job_queue_info
+    </select>
+
+    <select id="allExecuteJobQueueInfo" resultMap="jobQueueInfo" >
+        SELECT
+        <include refid="allJobQueueInfoColumns"/>
+        FROM t_dl_flinker_job_queue_info
+        WHERE queue_state='EXECUTE'
+    </select>
+
+    <select id="getJobQueueInfoById" resultMap="jobQueueInfo" parameterType="long">
+        SELECT
+        <include refid="allJobQueueInfoColumns"/>
+        FROM t_dl_flinker_job_queue_info
+        WHERE id=#{0}
+    </select>
+
+    <select id="getJobQueueInfoByName" resultMap="jobQueueInfo" parameterType="String">
+        SELECT
+        <include refid="allJobQueueInfoColumns"/>
+        FROM t_dl_flinker_job_queue_info
+        WHERE queue_name=#{0}
+    </select>
+
+
+    <insert id="createJobQueueInfo" parameterType="jobQueueInfo">
+        INSERT INTO t_dl_flinker_job_queue_info
+        (queue_name,
+        mail,
+        queue_state,
+        fail_to_stop,
+        create_time,
+        modify_time)
+        VALUES
+        (#{queueName},
+        #{mail},
+        #{queueState},
+        #{failToStop},
+        now(),
+        now()
+        )
+    </insert>
+
+    <update id="modifyJobQueueInfo" parameterType="jobQueueInfo">
+        UPDATE t_dl_flinker_job_queue_info
+        SET
+        mail=#{mail},
+        queue_state=#{queueState},
+        fail_to_stop=#{failToStop},
+        modify_time=now()
+        WHERE id=#{id}
+    </update>
+
+
+    <delete id="deleteJobQueueInfo" parameterType="long">
+        DELETE FROM
+        t_dl_flinker_job_queue_info
+        WHERE id=#{0}
+    </delete>
+
+    <!-- job queue  -->
+    <select id="allJobQueue" resultMap="jobQueue" >
+        SELECT
+        <include refid="allJobQueueColumns"/>
+        FROM t_dl_flinker_job_queue
+    </select>
+
+    <select id="allJobQueueForQueueId" resultMap="jobQueue" >
+        SELECT
+        <include refid="allJobQueueColumns"/>
+        FROM t_dl_flinker_job_queue
+        WHERE 1=1
+        AND queue_id=#{0}
+    </select>
+
+
+    <select id="unexecuteJob" resultMap="jobQueue" >
+        SELECT
+        <include refid="allJobQueueColumns"/>
+        FROM t_dl_flinker_job_queue
+        WHERE job_state='UNEXECUTE'
+        ORDER BY id ASC LIMIT 1
+    </select>
+
+    <select id="allQueueStatByQueueId" resultMap="jobQueue" >
+        SELECT
+        <include refid="allJobQueueColumns"/>
+        FROM t_dl_flinker_job_queue
+        WHERE queue_id=#{0}
+    </select>
+
+    <select id="getJobQueueById" resultMap="jobQueue" >
+        SELECT
+        <include refid="allJobQueueColumns"/>
+        FROM t_dl_flinker_job_queue
+        WHERE id=#{0}
+    </select>
+
+    <select id="getJobQueueByJobJobNameAndQueueId" resultMap="jobQueue" >
+        SELECT
+        <include refid="allJobQueueColumns"/>
+        FROM t_dl_flinker_job_queue
+        WHERE job_name=#{0} AND queue_id=#{1}
+    </select>
+
+    <select id="getJobQueueByName" resultMap="jobQueue" >
+        SELECT
+        <include refid="allJobQueueColumns"/>
+        FROM t_dl_flinker_job_queue
+        WHERE job_name=#{0}
+    </select>
+
+
+
+    <insert id="createJobQueue" parameterType="jobQueue">
+        INSERT INTO t_dl_flinker_job_queue
+        (job_name,
+        queue_id,
+        table_name,
+        job_state,
+        create_time,
+        modify_time)
+
+        VALUES
+        (#{jobName},
+        #{queueId},
+        #{tableName},
+        #{jobState},
+        now(),
+        now()
+        )
+    </insert>
+
+
+    <update id="modifyJobQueue" parameterType="jobQueue">
+        UPDATE t_dl_flinker_job_queue
+        SET
+        job_state=#{jobState},
+        modify_time=now()
+        WHERE id=#{id}
+    </update>
+
+    <delete id="deleteJobQueue" parameterType="long">
+        DELETE FROM
+        t_dl_flinker_job_queue
+        WHERE id=#{0}
+    </delete>
+
+    <update id="abandoneRemainJob" parameterType="long">
+        UPDATE t_dl_flinker_job_queue
+        SET
+        job_state='ABANDONED',
+        modify_time=now()
+        WHERE queue_id=#{0} AND job_state='UNEXECUTE'
+    </update>
+
+
+</mapper>

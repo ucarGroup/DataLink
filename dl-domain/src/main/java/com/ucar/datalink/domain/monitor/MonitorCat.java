@@ -10,7 +10,8 @@ import java.util.List;
 public enum MonitorCat {
 
     TASK_MONITOR(1, "任务监控"),
-    WORKER_MONITOR(2, "机器监控");
+    WORKER_MONITOR(2, "机器监控"),
+    FLINKER_MONITOR(3, "全量任务监控");
 
     private final int key;
     private final String desc;
@@ -29,7 +30,7 @@ public enum MonitorCat {
     }
 
     public static List<MonitorCat> getMonitorCatList() {
-        return Lists.newArrayList(TASK_MONITOR, WORKER_MONITOR);
+        return Lists.newArrayList(TASK_MONITOR, WORKER_MONITOR, FLINKER_MONITOR);
     }
 
 }

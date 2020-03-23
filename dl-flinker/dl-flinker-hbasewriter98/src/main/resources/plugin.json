@@ -1,0 +1,6 @@
+{
+    "name": "hbasewriter98",
+    "class": "com.ucar.datalink.flinker.plugin.writer.hbasewriter98.HbaseWriter98",
+    "description": "useScene: prod. mechanism: write data to hbase98 version.",
+    "developer": "ucar"
+}

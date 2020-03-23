@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucar.datalink.biz.dal.JobRunQueueDAO">
+
+    <resultMap id="jobRunQueue" type="jobRunQueue">
+        <result property="id" column="id" />
+        <result property="jobIdList" column="job_id_list" />
+        <result property="currentPorcessId" column="current_process_id" />
+        <result property="queueState" column="queue_state"/>
+        <result property="jobCount" column="job_count"/>
+        <result property="successList" column="success_list"/>
+        <result property="failureList" column="failure_list"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifyTime" column="modify_time"/>
+    </resultMap>
+
+
+    <!-- job run queue -->
+    <sql id="allJobRunQueueColumns">id,job_id_list,current_process_id,queue_state,job_count,success_list,failure_list,create_time,modify_time</sql>
+
+    <insert id="addJobRunQueueInfo" parameterType="jobRunQueue">
+        INSERT INTO t_dl_flinker_job_run_queue
+        (job_id_list,
+        current_process_id,
+        queue_state,
+        job_count,
+        success_list,
+        failure_list,
+        create_time,
+        modify_time
+        )
+        VALUES
+        (#{jobIdList},
+        #{currentPorcessId},
+        #{queueState},
+        #{jobCount},
+        #{successList},
+        #{failureList},
+        now(),
+        now()
+        )
+    </insert>
+
+    <delete id="deleteJobRunQueueInfo" parameterType="long">
+        DELETE FROM
+        t_dl_flinker_job_run_queue
+        WHERE id=#{0}
+    </delete>
+
+    <update id="updateJobRunQueueInfo" parameterType="jobRunQueue">
+        UPDATE t_dl_flinker_job_run_queue
+        SET
+        current_process_id=#{currentPorcessId},
+        queue_state=#{queueState},
+        success_list=#{successList},
+        failure_list=#{failureList},
+        modify_time=now()
+        WHERE id=#{id}
+    </update>
+
+    <update id="updateJobRunQueueState">
+        UPDATE t_dl_flinker_job_run_queue
+        SET
+        queue_state=#{0},
+        modify_time=now()
+        WHERE id=#{1}
+    </update>
+
+    <update id="updateJobRunQueueTopTime">
+        UPDATE t_dl_flinker_job_run_queue
+        SET
+        top_time=now()
+        WHERE id=#{0}
+    </update>
+
+    <update id="updateJobRunQueueConfig">
+        UPDATE t_dl_flinker_job_run_queue
+        SET
+        current_process_id=#{currentPorcessId},
+        queue_state=#{queueState},
+        success_list=#{successList},
+        failure_list=#{failureList},
+        job_id_list=#{jobIdList},
+        job_count=#{jobCount},
+        modify_time=now()
+        WHERE id=#{id}
+    </update>
+
+
+    <select id="getJobRunQueueInfoById" resultMap="jobRunQueue">
+        SELECT
+        <include refid="allJobRunQueueColumns"/>
+        FROM t_dl_flinker_job_run_queue WHERE id=#{0}
+    </select>
+
+    <select id="getAllJobRunQueueInfo" resultMap="jobRunQueue">
+        SELECT
+        <include refid="allJobRunQueueColumns"/>
+        FROM t_dl_flinker_job_run_queue
+
+    </select>
+
+    <select id="getAllJobRunQueueInfoByState" resultMap="jobRunQueue">
+        SELECT
+        <include refid="allJobRunQueueColumns"/>
+        FROM t_dl_flinker_job_run_queue WHERE 1=1
+        <if test="state != null">
+            AND queue_state=#{state}
+        </if>
+        ORDER BY top_time DESC, id ASC
+    </select>
+
+</mapper>

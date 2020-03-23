@@ -1,0 +1,27 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel":10
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "writer": {
+          "name": "kuduwriter",
+          "parameter": {
+            "master_addresses" : ["@master_addresses"],
+            "bufferSize": "1000",
+            "table": "@table",
+            "writeMode": "upsert",
+            "column": ["@column"]
+          }
+        }
+      }
+    ]
+  }
+}

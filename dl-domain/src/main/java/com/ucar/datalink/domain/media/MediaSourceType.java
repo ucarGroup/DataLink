@@ -20,7 +20,7 @@ public enum MediaSourceType {
     }
 
     public static List<MediaSourceType> getAllSrcMediaSourceTypes() {
-        return Lists.newArrayList(MYSQL, SQLSERVER, HDFS, HBASE, ELASTICSEARCH, POSTGRESQL);
+        return Lists.newArrayList(MYSQL, SQLSERVER, HDFS, HBASE, ELASTICSEARCH, POSTGRESQL,ORACLE);
     }
 
 	public static List<MediaSourceType> getAllSrcTypesForIncrement() {

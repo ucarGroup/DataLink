@@ -1,0 +1,34 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel":3
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "writer": {
+          "name": "sqlserverwriter",
+          "parameter": {
+            "username": "@username",
+            "password": "@password",
+            "column": ["@column"],
+            "connection": [
+              {
+                "table": ["@table"],
+                "jdbcUrl": "@jdbcUrl"
+              }
+            ],
+            "writeMode": "replace",
+            "primaryKey": "@pkname",
+            "identity_insert_mode":"false"
+          }
+        }
+      }
+    ]
+  }
+}
