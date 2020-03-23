@@ -2,12 +2,8 @@ package com.ucar.datalink.biz.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.service.*;
-import com.ucar.datalink.biz.utils.ConfigReadUtil;
-import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.biz.utils.DataxUtil;
 import com.ucar.datalink.domain.job.*;
-import com.ucar.datalink.domain.mail.MailInfo;
-import com.ucar.datalink.domain.user.UserInfo;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -490,12 +486,6 @@ public class JobRunQueueDaemonService extends JobDaemonService {
         //logger.info("[JobRunQueueListener]processUnexecuteJob end");
     }
 
-
-    //private static List<Long> parseRemaiderJobList(JobRunQueueInfo info) {
-    //  return new ArrayList<>();
-    //}
-
-
     /**
      * 根据id列表，返回id的数量
      *
@@ -609,83 +599,9 @@ public class JobRunQueueDaemonService extends JobDaemonService {
         }, "job-run-queue_send-mail").start();
     }
 
-
     private void sendMail(long queue_id) {
-        String title = "job队列执行完毕";
-        UserService userService = DataLinkFactory.getObject(UserService.class);
-        String content = assembleMailInfo(queue_id);
-        MailInfo info = new MailInfo();
-        info.setSubject(title);
-        info.setMailContent(content);
-        List<String> recipient = new ArrayList<>();
-        List<UserInfo> users = null;//开源版本
-        if (users != null && users.size() > 0) {
-            for (UserInfo u : users) {
-                if (StringUtils.isNotBlank(u.getUcarEmail())) {
-                    String email = u.getUcarEmail() + "@ucarinc.com";
-                    recipient.add(email);
-                } else {
-                    //邮箱都为空就不
-                }
-            }
-        }
-        info.setRecipient(recipient);
-        mailService.sendMail(info);
-        logger.info("send mail job queue " + users);
+        logger.info("job队列执行完毕，队列ID："+ queue_id);
     }
-
-
-    public String assembleMailInfo(long queue_id) {
-        JobRunQueueService service = DataLinkFactory.getObject(JobRunQueueService.class);
-        JobRunQueueInfo info = service.getJobRunQueueInfoById(queue_id);
-        List<JobPair> successList = idsStringToList(info.getSuccessList());
-        List<JobPair> failureList = idsStringToList(info.getFailureList());
-
-        StringBuilder buf = new StringBuilder();
-        String env = ConfigReadUtil.getString("datax.env");
-        buf.append("&nbsp &nbsp &nbsp").append("当前环境 : ").append(env).append("<br/><br/>");
-        buf.append("执行成功的job  :").append("<br/>");
-        if (successList.size() > 0) {
-            buf.append(assembleSuccessOrFailureInfo(successList));
-        }
-        buf.append("<hr/>").append("<br/>");
-        buf.append("执行失败的job :").append("<br/>");
-        if (failureList.size() > 0) {
-            buf.append(assembleSuccessOrFailureInfo(failureList));
-        }
-        return buf.toString();
-    }
-
-
-    private static String assembleSuccessOrFailureInfo(List<JobPair> list) {
-        StringBuilder buf = new StringBuilder();
-        JobService jobService = DataLinkFactory.getObject(JobService.class);
-        MediaSourceService mediaService = DataLinkFactory.getObject(MediaSourceService.class);
-        buf.append("<table border='1'>");
-        buf.append("<tr><td>config id</td>");
-        buf.append("<td>job name</td>");
-        buf.append("<td>源库名称</td>");
-        buf.append("<td>目标库名称</td>");
-        buf.append("<td>是否定时</td></tr>");
-        for (JobPair jp : list) {
-            JobConfigInfo configInfo = jobService.getJobConfigById(jp.jobConfigId);
-            String configId = configInfo.getId() + "";
-            String mediaName = configInfo.getJob_media_name();
-            String srcName = mediaService.getById(configInfo.getJob_src_media_source_id()).getName();
-            String targetName = mediaService.getById(configInfo.getJob_target_media_source_id()).getName();
-            String isTiming = configInfo.isTiming_yn() ? "true" : "false";
-            buf.append("<tr>");
-            buf.append("<td>").append(configId).append("</td>");
-            buf.append("<td>").append(mediaName).append("</td>");
-            buf.append("<td>").append(srcName).append("</td>");
-            buf.append("<td>").append(targetName).append("</td>");
-            buf.append("<td>").append(isTiming).append("</td>");
-            buf.append("</tr>");
-        }
-        buf.append("</table><br/>");
-        return buf.toString();
-    }
-
 
     /**
      * job_id和job_execution_id对
@@ -704,6 +620,5 @@ public class JobRunQueueDaemonService extends JobDaemonService {
             return jobConfigId + "-" + jobExecutionId;
         }
     }
-
 
 }

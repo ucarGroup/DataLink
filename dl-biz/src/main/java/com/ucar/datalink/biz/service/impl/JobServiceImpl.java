@@ -4,7 +4,7 @@ import com.ucar.datalink.biz.dal.JobDAO;
 import com.ucar.datalink.biz.service.JobService;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.biz.utils.DataxUtil;
-import com.ucar.datalink.biz.utils.job.JobConfigBuilder;
+import com.ucar.datalink.biz.utils.flinker.job.JobConfigBuilder;
 import com.ucar.datalink.domain.job.JobConfigInfo;
 import com.ucar.datalink.domain.job.JobExecutionInfo;
 import com.ucar.datalink.domain.job.JobExecutionMonitor;

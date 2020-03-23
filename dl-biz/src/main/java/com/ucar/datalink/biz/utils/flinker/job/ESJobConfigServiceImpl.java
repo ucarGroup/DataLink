@@ -1,11 +1,11 @@
-package com.ucar.datalink.biz.utils.job;
+package com.ucar.datalink.biz.utils.flinker.job;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.meta.ElasticSearchUtil;
 import com.ucar.datalink.biz.meta.MetaMapping;
 import com.ucar.datalink.biz.utils.DataxJobConfigConstant;
-import com.ucar.datalink.biz.utils.module.ElasticSearchJobExtendProperty;
-import com.ucar.datalink.biz.utils.module.JobExtendProperty;
+import com.ucar.datalink.biz.utils.flinker.module.ElasticSearchJobExtendProperty;
+import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
 import com.ucar.datalink.common.utils.DLConfig;
 import com.ucar.datalink.domain.job.HostNodeInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;

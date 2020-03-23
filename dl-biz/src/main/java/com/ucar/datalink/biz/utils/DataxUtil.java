@@ -5,7 +5,7 @@ import com.ucar.datalink.biz.dal.MediaSourceDAO;
 import com.ucar.datalink.biz.meta.MetaManager;
 import com.ucar.datalink.biz.meta.MetaMapping;
 import com.ucar.datalink.biz.service.JobService;
-import com.ucar.datalink.biz.utils.job.JobConfigBuilder;
+import com.ucar.datalink.biz.utils.flinker.job.JobConfigBuilder;
 import com.ucar.datalink.common.errors.DynamicParamException;
 import com.ucar.datalink.common.utils.DLConfig;
 import com.ucar.datalink.domain.job.FlinkerMachineInfo;

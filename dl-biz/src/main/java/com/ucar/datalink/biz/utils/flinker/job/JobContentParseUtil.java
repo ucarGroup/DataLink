@@ -1,4 +1,4 @@
-package com.ucar.datalink.biz.utils.job;
+package com.ucar.datalink.biz.utils.flinker.job;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.common.utils.DLConfig;

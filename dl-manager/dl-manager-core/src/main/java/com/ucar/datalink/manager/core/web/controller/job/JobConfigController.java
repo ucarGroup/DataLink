@@ -12,16 +12,16 @@ import com.ucar.datalink.biz.service.*;
 import com.ucar.datalink.biz.utils.AuditLogOperType;
 import com.ucar.datalink.biz.utils.AuditLogUtils;
 import com.ucar.datalink.biz.utils.DataxUtil;
-import com.ucar.datalink.biz.utils.job.JobConfigBuilder;
-import com.ucar.datalink.biz.utils.job.JobContentParseUtil;
-import com.ucar.datalink.biz.utils.module.AdvanceJobProperty;
-import com.ucar.datalink.biz.utils.module.JobExtendProperty;
-import com.ucar.datalink.biz.utils.module.TimingJobExtendPorperty;
+import com.ucar.datalink.biz.utils.flinker.check.SyncCheckUtil;
+import com.ucar.datalink.biz.utils.flinker.job.JobConfigBuilder;
+import com.ucar.datalink.biz.utils.flinker.job.JobContentParseUtil;
+import com.ucar.datalink.biz.utils.flinker.module.AdvanceJobProperty;
+import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
+import com.ucar.datalink.biz.utils.flinker.module.TimingJobExtendPorperty;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.domain.auditLog.AuditLogInfo;
 import com.ucar.datalink.domain.event.HBaseRange;
 import com.ucar.datalink.domain.job.*;
-import com.ucar.datalink.domain.mail.MailInfo;
 import com.ucar.datalink.domain.media.ColumnMappingMode;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
@@ -842,7 +842,6 @@ public class JobConfigController {
                 }
                 paths.add(DataxUtil.parseHDFSWritePath(info));
             }
-            sendMailByAsynchronous(new Long(srcID), new Long(destID), view.getJob_media_name(), paths);
             return "success";
         } catch (Exception e) {
             logger.error("Add job config Error.", e);
@@ -976,7 +975,6 @@ public class JobConfigController {
                     sb.append(arr[i]).append(",");
                 }
             }
-            sendMailByAsynchronous(srcInfo, destInfo, sb.toString(), paths);
             return "success";
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -1101,7 +1099,7 @@ public class JobConfigController {
                 return "fail";
             }
             JobConfigInfo jobConfigInfo = jobService.getJobConfigById(Long.parseLong(id));
-            //SyncModifyUtil.checkModifyColumnWithoutOpen(jobConfigInfo);开源版本
+            SyncCheckUtil.checkModifyColumnWithoutOpen(jobConfigInfo);
             return "success";
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -1546,17 +1544,6 @@ public class JobConfigController {
         }
     }
 
-
-    private void sendMailByAsynchronous(long srcID, long destID, String names, List<String> paths) {
-        MediaSourceInfo src = mediaSourceService.getById(srcID);
-        MediaSourceInfo dest = mediaSourceService.getById(destID);
-        sendMailByAsynchronous(src, dest, names, paths);
-    }
-
-    private void sendMailByAsynchronous(MediaSourceInfo srcInfo, MediaSourceInfo destInfo, String names, List<String> paths) {
-        new Thread(new SendMailThread(srcInfo, destInfo, names, paths), "send_job_task_by_mail").start();
-    }
-
     private class SendMailThread implements Runnable {
         private MediaSourceInfo srcInfo;
         private MediaSourceInfo destInfo;
@@ -1587,23 +1574,6 @@ public class JobConfigController {
     private void sendMail(MediaSourceInfo src, MediaSourceInfo dest, String names, List<String> paths) throws Exception {
         String title = src.getName() + "库同步" + dest.getType().name();
         String content = assembleMailInfo(src, dest, names, paths);
-        MailInfo info = new MailInfo();
-        info.setSubject(title);
-        info.setMailContent(content);
-        List<String> recipient = new ArrayList<>();
-        List<UserInfo> users = null;//开源版本
-        if (users != null && users.size() > 0) {
-            for (UserInfo u : users) {
-                if (StringUtils.isNotBlank(u.getUcarEmail())) {
-                    String email = u.getUcarEmail() + UCAR_MAIL_SUFFIX;
-                    recipient.add(email);
-                } else {
-                    //邮箱都为空就不
-                }
-            }
-        }
-        info.setRecipient(recipient);
-        mailService.sendMail(info);
     }
 
     public static String assembleMailInfo(MediaSourceInfo srcInfo, MediaSourceInfo destInfo, String names, List<String> paths) throws Exception {

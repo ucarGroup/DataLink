@@ -1,17 +1,15 @@
-package com.ucar.datalink.biz.utils.job;
+package com.ucar.datalink.biz.utils.flinker.job;
 
 import com.alibaba.fastjson.JSONObject;
-import com.ucar.datalink.biz.meta.MetaManager;
 import com.ucar.datalink.biz.meta.MetaMapping;
-import com.ucar.datalink.biz.meta.RDBMSUtil;
 import com.ucar.datalink.biz.utils.DataxJobConfigConstant;
-import com.ucar.datalink.biz.utils.module.JobExtendProperty;
-import com.ucar.datalink.biz.utils.module.SqlServerJobExtendProperty;
+import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
+import com.ucar.datalink.biz.utils.flinker.module.MySqlJobExtendProperty;
 import com.ucar.datalink.common.utils.DLConfig;
-import com.ucar.datalink.domain.job.HostNodeInfo;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.parameter.MediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.rdb.RdbMediaSrcParameter;
+import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
 import com.ucar.datalink.domain.meta.ColumnMeta;
 import com.ucar.datalink.domain.meta.MediaMeta;
 import org.apache.commons.lang.StringUtils;
@@ -19,52 +17,54 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
- * Created by user on 2017/7/20.
+ * Created by user on 2017/9/12.
  */
-
-public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqlServerJobConfigServiceImpl.class);
-
-    private static final String IS_AUTO_INCREMENT_KEY = "isAutoIncrement";
+public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SddlJobConfigServiceImpl.class);
 
     @Override
     public String createReaderJson(MediaSourceInfo info, List<ColumnMeta> metas, JobExtendProperty property, String mediaName) {
         checkType(info.getParameterObj());
-        RdbMediaSrcParameter parameter = (RdbMediaSrcParameter)info.getParameterObj();
+        SddlMediaSrcParameter sddlParameter = (SddlMediaSrcParameter)info.getParameterObj();
+        sddlParameter.getProxyDbId();
+        RdbMediaSrcParameter parameter = getMediaSourceInfoById(sddlParameter.getProxyDbId()).getParameterObj();
         Map<String,String> srcExtendJson = property.getReader();
+
         Random rand = new Random();
         String ip = null;
         if(parameter.getReadConfig().getHosts()!=null && parameter.getReadConfig().getHosts().size()>0) {
             ip = parameter.getReadConfig().getHosts().get( rand.nextInt(parameter.getReadConfig().getHosts().size()) );
         } else {
-            ip = parameter.getWriteConfig().getWriteHost();
+            throw new RuntimeException("mysql read ip is emtpy");
         }
         String etlHost = parameter.getReadConfig().getEtlHost();
         if(StringUtils.isBlank(etlHost)) {
             etlHost = ip;
         }
         String port = parameter.getPort()+"";
-        String schema = parameter.getNamespace();
+        String schema = info.getParameterObj().getNamespace();
         String username = parameter.getReadConfig().getUsername();
         String password = parameter.getReadConfig().getDecryptPassword();
 
         String json = "";
         try{
-            String etlUrl = MessageFormat.format(DataxJobConfigConstant.SQLSERVER_URL, etlHost, port, schema);
-            String url = MessageFormat.format(DataxJobConfigConstant.SQLSERVER_URL, ip, port, schema);
+            String etlUrl = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, etlHost, port, schema);
+            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
             String columns = buildColumnParm( metas );
-            String reader = loadJobConfig(DataxJobConfigConstant.SQLSERVER_READER);
+            String reader = loadJobConfig(DataxJobConfigConstant.MYSQL_READER);
             json = replace(reader,etlUrl,username,password,columns);
             json = replaceSingleTable(json,mediaName);
+            //json = createSharingStrateg(dataxJobConfig,json);
             json = processSplitPrimaryKey(metas,json);
             json = processReaderExtendJson(json, srcExtendJson,url);
-            json = primaryKeyIsString(metas,json);
         }catch (Exception e){
-            LOGGER.error("sqlserver createReaderJson error ",e);
+            LOGGER.error("mysql createReaderJson error ",e);
         }
         return json;
     }
@@ -76,36 +76,21 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
         Map<String,String> destExtendJson = property.getWriter();
         String ip = parameter.getWriteConfig().getWriteHost();
         String port = parameter.getPort()+"";
-        String sehema = parameter.getNamespace();
+        String schema = info.getParameterObj().getNamespace();
         String username = parameter.getWriteConfig().getUsername();
         String password = parameter.getWriteConfig().getDecryptPassword();
 
         String json = "";
         try{
-
-            MediaMeta target = changeNameToAlias( MetaMapping.transformToRDBMS(srcMediaMeta) );
-            String url = MessageFormat.format(DataxJobConfigConstant.SQLSERVER_URL, ip, port, sehema);
+            MediaMeta target = MetaMapping.transformToRDBMS(srcMediaMeta);
+            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
             String columns = buildColumnParm( target.getColumn() );
-            String reader = loadJobConfig(DataxJobConfigConstant.SQLSERVER_WRITER);
+            String reader = loadJobConfig(DataxJobConfigConstant.MYSQL_WRITER);
             json = replace(reader,url,username,password,columns);
             json = replaceSingleTable(json, parseMediaName(mediaName) );
-            json = replacePk(json,info,mediaName);
-
-            List<ColumnMeta> columnMetas = RDBMSUtil.getColumns(info,mediaName);
-            boolean isContainAutoIncrement = false;
-            for(ColumnMeta cm : columnMetas) {
-                if( cm.isAutoIncrement() ) {
-                    isContainAutoIncrement = true;
-                    break;
-                }
-            }
-            if( isContainAutoIncrement ) {
-                destExtendJson.put(IS_AUTO_INCREMENT_KEY,"true");
-            }
-
             json = processWriterExtendJson(json,destExtendJson);
         }catch (Exception e){
-            LOGGER.error("sqlserver createWriterJson error ",e);
+            LOGGER.error("mysql createWriterJson error ",e);
         }
         return json;
     }
@@ -121,34 +106,32 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
         if(parameter.getReadConfig().getHosts()!=null && parameter.getReadConfig().getHosts().size()>0) {
             ip = parameter.getReadConfig().getHosts().get( rand.nextInt(parameter.getReadConfig().getHosts().size()) );
         } else {
-            throw new RuntimeException("sqlserver read ip is emtpy");
+            ip = parameter.getWriteConfig().getWriteHost();
         }
         String etlHost = parameter.getReadConfig().getEtlHost();
         if(StringUtils.isBlank(etlHost)) {
             etlHost = ip;
         }
         String port = parameter.getPort()+"";
-        String schema = parameter.getNamespace();
+        String schema = info.getParameterObj().getNamespace();
         String username = parameter.getReadConfig().getUsername();
         String password = parameter.getReadConfig().getDecryptPassword();
 
         String json = "";
         try{
-            String etlUrl = MessageFormat.format(DataxJobConfigConstant.SQLSERVER_URL, etlHost, port, schema);
-            String url = MessageFormat.format(DataxJobConfigConstant.SQLSERVER_URL, ip, port, schema);
+            String etlUrl = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, etlHost, port, schema);
+            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
             String columns = buildColumnParm( metas );
-            String reader = loadJobConfig(DataxJobConfigConstant.SQLSERVER_READER);
+            String reader = loadJobConfig(DataxJobConfigConstant.MYSQL_READER);
             json = replace(reader,etlUrl,username,password,columns );
             json = replaceMultiTable(json,names);
             json = processSplitPrimaryKey(metas,json);
             json = processReaderExtendJson(json, srcExtendJson,url);
-            json = primaryKeyIsString(metas,json);
         }catch (Exception e){
-            LOGGER.error("sqlserver createReaderJson error ",e);
+            LOGGER.error("mysql createReaderJson error ",e);
         }
         return json;
     }
-
 
 
     private String processReaderExtendJson(String json, Map<String, String> srcExtendJson,String url) {
@@ -156,7 +139,7 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
             return json;
         }
         String extendJson = JSONObject.toJSONString(srcExtendJson);
-        SqlServerJobExtendProperty jobExtend = JSONObject.parseObject(extendJson, SqlServerJobExtendProperty.class);
+        MySqlJobExtendProperty jobExtend = JSONObject.parseObject(extendJson, MySqlJobExtendProperty.class);
         filterSpace(jobExtend);
         DLConfig connConf = DLConfig.parseFrom(json);
         if( StringUtils.isNotBlank(jobExtend.getWhere()) ) {
@@ -166,7 +149,9 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
             //connConf.remove("job.content[0].reader.parameter.splitPk");
             connConf.remove("job.content[0].reader.parameter.connection[0].table");
             connConf.remove("job.content[0].reader.parameter.where");
-            connConf.set("job.content[0].reader.parameter.connection[0].querySql", jobExtend.getQuerySql());
+            List<String> list = new ArrayList<>();
+            list.add(jobExtend.getQuerySql());
+            connConf.set("job.content[0].reader.parameter.connection[0].querySql", list);
         }
         if( StringUtils.isNotBlank(jobExtend.getJdbcReaderUrl()) ) {
             List<String> list = (List<String>)connConf.get("job.content[0].reader.parameter.connection[0].jdbcUrl");
@@ -191,7 +176,7 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
             return json;
         }
         String extendJson = JSONObject.toJSONString(destExtendJson);
-        SqlServerJobExtendProperty jobExtend = JSONObject.parseObject(extendJson, SqlServerJobExtendProperty.class);
+        MySqlJobExtendProperty jobExtend = JSONObject.parseObject(extendJson, MySqlJobExtendProperty.class);
         filterSpace(jobExtend);
         DLConfig connConf = DLConfig.parseFrom(json);
         if( StringUtils.isNotBlank(jobExtend.getPreSql()) ) {
@@ -204,22 +189,18 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
             list.add(jobExtend.getPostSql());
             connConf.set("job.content[0].writer.parameter.postSql", list);
         }
-        boolean isContainAutoIncrement = Boolean.parseBoolean( jobExtend.getIsAutoIncrement() );
-        Boolean isOn = Boolean.parseBoolean(jobExtend.getIdentityInsertMode());
-        if( isContainAutoIncrement || isOn ) {
-            connConf.set("job.content[0].writer.parameter.identity_insert_mode", "true");
-        } else {
-            connConf.set("job.content[0].writer.parameter.identity_insert_mode", "false");
-        }
         json = connConf.toJSON();
         return json;
     }
 
+
+
     private void checkType(MediaSrcParameter parameter) {
-        if( !(parameter instanceof RdbMediaSrcParameter)) {
+        if( !(parameter instanceof SddlMediaSrcParameter)) {
             throw new RuntimeException("media source type error "+parameter);
         }
     }
+
 
     /**
      * 处理job配置中的 splitPk 参数，这个值不再强制指定为 id，而是根据读取到的列元信息自动选择
@@ -239,24 +220,6 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
         return json;
     }
 
-
-    private String replacePk(String json,MediaSourceInfo info, String mediaName) throws Exception {
-        List<ColumnMeta> destColumns = MetaManager.getColumns(info,parseMediaName(mediaName) );
-        String pkName = "";
-        for(ColumnMeta cm : destColumns) {
-            if(cm.isPrimaryKey()) {
-                pkName = cm.getName();
-                break;
-            }
-        }
-        if(StringUtils.isNotBlank(pkName)) {
-            json = json.replaceAll(DataxJobConfigConstant.WRITE_PK_NAME,pkName);
-        } else {
-            json = json.replaceAll(DataxJobConfigConstant.WRITE_PK_NAME,"");
-        }
-        return json;
-    }
-
     private String replace(String json,String url,String userName,String passWord,String column){
         if(StringUtils.isNotBlank(url)){
             json = json.replaceAll(DataxJobConfigConstant.JDBCURL, url);
@@ -270,6 +233,9 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
         if(StringUtils.isNotBlank(column)){
             //json = json.replaceAll(DataxJobConfigConstant.COLUMN,column);
             json = replaceColumns(json,column);
+        }
+        if(json.contains(DataxJobConfigConstant.COLUMN)) {
+            json.replaceAll(DataxJobConfigConstant.COLUMN,"");
         }
         return json;
     }
@@ -285,39 +251,38 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
         if(names!=null && names.size()>0) {
             DLConfig connConf = DLConfig.parseFrom(json);
             connConf.remove("job.content[0].reader.parameter.connection[0].table");
-            connConf.set("job.content[0].reader.parameter.connection[0].table",names);
+            connConf.set("job.content[0].reader.parameter.connection[0].table", names);
             json = connConf.toJSON();
         }
         return json;
     }
 
 
-    private void filterSpace(SqlServerJobExtendProperty property) {
-        if (property == null) {
+    private void filterSpace(MySqlJobExtendProperty property) {
+        if(property == null) {
             return;
         }
 //        if(StringUtils.isNotBlank( property.getJdbcReaderUrl() )) {
 //            String jdbcReader_url = removeEnter(property.getJdbcReaderUrl());
 //            property.setJdbcReaderUrl(jdbcReader_url);
 //        }
-        if (StringUtils.isNotBlank(property.getPostSql())) {
+        if(StringUtils.isNotBlank(property.getPostSql())) {
             String postSql = removeEnter(property.getPostSql());
             property.setPostSql(postSql);
         }
-        if (StringUtils.isNotBlank(property.getPreSql())) {
+        if(StringUtils.isNotBlank(property.getPreSql())) {
             String preSql = removeEnter(property.getPreSql());
             property.setPreSql(preSql);
         }
-        if (StringUtils.isNotBlank(property.getQuerySql())) {
+        if(StringUtils.isNotBlank(property.getQuerySql())) {
             String querySql = removeEnter(property.getQuerySql());
             property.setQuerySql(querySql);
         }
-        if (StringUtils.isNotBlank(property.getWhere())) {
+        if(StringUtils.isNotBlank(property.getWhere())) {
             String where = removeEnter(property.getWhere());
             property.setWhere(where);
         }
     }
-
 
     private String removeEnter(String content) {
         if(content.contains("\n")) {
@@ -328,8 +293,6 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
     }
 
 
-
-    @Override
     public String reloadReader(String json,MediaSourceInfo info) {
         try {
             checkType(info.getParameterObj());
@@ -339,7 +302,7 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
             if(parameter.getReadConfig().getHosts()!=null && parameter.getReadConfig().getHosts().size()>0) {
                 ip = parameter.getReadConfig().getHosts().get( rand.nextInt(parameter.getReadConfig().getHosts().size()) );
             } else {
-                throw new RuntimeException("sqlserver read ip is emtpy");
+                throw new RuntimeException("mysql read ip is emtpy");
             }
             String etlHost = parameter.getReadConfig().getEtlHost();
             if(StringUtils.isBlank(etlHost)) {
@@ -349,8 +312,8 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
             String schema = info.getParameterObj().getNamespace();
             String username = parameter.getReadConfig().getUsername();
             String password = parameter.getReadConfig().getDecryptPassword();
-            String etlUrl = MessageFormat.format(DataxJobConfigConstant.SQLSERVER_URL, etlHost, port, schema);
-            String url = MessageFormat.format(DataxJobConfigConstant.SQLSERVER_URL, ip, port, schema);
+            String etlUrl = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, etlHost, port, schema);
+            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
 
             DLConfig connConf = DLConfig.parseFrom(json);
             List<String> list = new ArrayList<>();
@@ -369,7 +332,6 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
         return json;
     }
 
-    @Override
     public String reloadWriter(String json, MediaSourceInfo info) {
         try {
             checkType(info.getParameterObj());
@@ -379,7 +341,7 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
             String schema = info.getParameterObj().getNamespace();
             String username = parameter.getWriteConfig().getUsername();
             String password = parameter.getWriteConfig().getDecryptPassword();
-            String url = MessageFormat.format(DataxJobConfigConstant.SQLSERVER_URL, ip, port, schema);
+            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
             DLConfig connConf = DLConfig.parseFrom(json);
             connConf.remove("job.content[0].writer.parameter.connection[0].jdbcUrl");
             connConf.set("job.content[0].writer.parameter.connection[0].jdbcUrl", url);
@@ -394,147 +356,39 @@ public class SqlServerJobConfigServiceImpl extends AbstractJobConfigService{
         return json;
     }
 
-
     @Override
-    public List<HostNodeInfo> parseSrcContent(String json) {
+    public String replaceJsonResult(String json, Object object, MediaSourceInfo srcInfo) {
+        String dbName = (String)object;
         DLConfig connConf = DLConfig.parseFrom(json);
-        List<String> list = parseHostInfoToList(json,"job.content[0].reader.parameter.connection[0].jdbcUrl");
-        String username = parseHostInfo(json,"job.content[0].reader.parameter.username");
-        String password = parseHostInfo(json,"job.content[0].reader.parameter.password");
-        List<HostNodeInfo> hosts = new ArrayList<>();
-        list.forEach(i->{
-            String url = i.split("/")[2];
-            HostNodeInfo h = new HostNodeInfo();
-            String[] arr = url.split(":");
-            h.setHost(arr[0]);
-            if(arr[1].contains(";")) {
-                h.setPort(arr[1].split(";")[0]);
-            }else {
-                h.setPort(arr[1]);
-            }
-            hosts.add(h);
-        });
-        return hosts;
-    }
-
-    @Override
-    public List<HostNodeInfo> parseDestContent(String json) {
-        DLConfig connConf = DLConfig.parseFrom(json);
-        String username = parseHostInfo(json,"job.content[0].writer.parameter.username");
-        String password = parseHostInfo(json,"job.content[0].writer.parameter.password");
-        List<String> list = parseHostInfoToList(json,"job.content[0].writer.parameter.connection[0].jdbcUrl");
-        List<HostNodeInfo> hosts = new ArrayList<>();
-        list.forEach(i->{
-            String url = i.split("/")[2];
-            HostNodeInfo h = new HostNodeInfo();
-            String[] arr = url.split(":");
-            h.setHost(arr[0]);
-            if(arr[1].contains(";")) {
-                h.setPort(arr[1].split(";")[0]);
-            }else {
-                h.setPort(arr[1]);
-            }
-            hosts.add(h);
-        });
-        return hosts;
-    }
-
-
-    @Override
-    public List<HostNodeInfo> parseSrcMediaSourceToHostNode(MediaSourceInfo info) {
-        checkType(info.getParameterObj());
-        RdbMediaSrcParameter parameter = (RdbMediaSrcParameter)info.getParameterObj();
-        String dataxHost = parameter.getReadConfig().getEtlHost();
-        String port = parameter.getPort()+"";
-        Set<String> hosts = new HashSet<>();
-        hosts.add(dataxHost);
-
-        List<HostNodeInfo> hostList = new ArrayList<>();
-        hosts.forEach(i->{
-            HostNodeInfo h = new HostNodeInfo();
-            h.setHost(i);
-            h.setPort(port);
-            hostList.add(h);
-        });
-        return hostList;
-    }
-
-
-    @Override
-    public List<HostNodeInfo> parseDestMediaSourceToHostNode(MediaSourceInfo info) {
-        checkType(info.getParameterObj());
-        RdbMediaSrcParameter parameter = (RdbMediaSrcParameter)info.getParameterObj();
-        String writeHost = parameter.getWriteConfig().getWriteHost();
-        String port = parameter.getPort()+"";
-        Set<String> hosts = new HashSet<>();
-        hosts.add(writeHost);
-
-        List<HostNodeInfo> hostList = new ArrayList<>();
-        hosts.forEach(i->{
-            HostNodeInfo h = new HostNodeInfo();
-            h.setHost(i);
-            h.setPort(port);
-            hostList.add(h);
-        });
-        return hostList;
-    }
-
-    @Override
-    public boolean compareSrcHostInfos(List<HostNodeInfo> fromJobConfigHosts, List<HostNodeInfo> fromMediaSourceHosts) {
-        return compareHost(fromJobConfigHosts,fromMediaSourceHosts);
-    }
-
-
-    @Override
-    public boolean compareDestHostInfos(List<HostNodeInfo> fromJobConfigHosts, List<HostNodeInfo> fromMediaSourceHosts) {
-        return compareHost(fromJobConfigHosts,fromMediaSourceHosts);
-    }
-
-    private boolean compareHost(List<HostNodeInfo> fromJobConfigHosts, List<HostNodeInfo> fromMediaSourceHosts) {
-         if( (fromJobConfigHosts==null||fromJobConfigHosts.size()==0) || (fromMediaSourceHosts==null||fromMediaSourceHosts.size()==0)) {
-            return false;
+        Object obj = connConf.get("job.content[0].reader.parameter.connection[0].jdbcUrl");
+        if(obj instanceof String) {
+            String url = (String)connConf.get("job.content[0].reader.parameter.connection[0].jdbcUrl");
+            url = replaceJdbcUrl(url,dbName);
+            connConf.remove("job.content[0].reader.parameter.connection[0].jdbcUrl");
+            connConf.set("job.content[0].reader.parameter.connection[0].jdbcUrl", url);
         }
-        Set<HostNodeInfo> jobconfigSet = new HashSet<>(fromJobConfigHosts);
-        Set<HostNodeInfo> mediaSet = new HashSet<>(fromMediaSourceHosts);
-        for(HostNodeInfo i : jobconfigSet) {
-            for(HostNodeInfo j : mediaSet) {
-                if(i.compareTo(j) != 0) {
-                    return false;
-                }
+        else {
+            List<String> list = (List<String>)connConf.get("job.content[0].reader.parameter.connection[0].jdbcUrl");
+            List<String> newUrl = new ArrayList<>();
+            for(String url : list) {
+                String tmp = replaceJdbcUrl(url,dbName);
+                newUrl.add(tmp);
             }
+            connConf.remove("job.content[0].reader.parameter.connection[0].jdbcUrl");
+            connConf.set("job.content[0].reader.parameter.connection[0].jdbcUrl", newUrl);
         }
-        return true;
+        json = connConf.toJSON();
+        return json;
     }
 
-
-    private static final Set<String> INTEGER_PRIMARY_KEY_SET = new HashSet<>();
-    static {
-        INTEGER_PRIMARY_KEY_SET.add("bigint");
-        INTEGER_PRIMARY_KEY_SET.add("tinyint");
-        INTEGER_PRIMARY_KEY_SET.add("smallint");
-        INTEGER_PRIMARY_KEY_SET.add("int");
-        INTEGER_PRIMARY_KEY_SET.add("bigint identity");
-        INTEGER_PRIMARY_KEY_SET.add("bigint unsigned");
-        INTEGER_PRIMARY_KEY_SET.add("int identity");
-        INTEGER_PRIMARY_KEY_SET.add("tinyint unsigned");
-        INTEGER_PRIMARY_KEY_SET.add("int unsigned");
-        INTEGER_PRIMARY_KEY_SET.add("integer");
-        INTEGER_PRIMARY_KEY_SET.add("int4");
-        INTEGER_PRIMARY_KEY_SET.add("smallint identity");
-
-    }
-    private String primaryKeyIsString(List<ColumnMeta> metas, String json) {
-        DLConfig connConf = DLConfig.parseFrom(json);
-        for(ColumnMeta cm : metas) {
-            if( cm.isPrimaryKey() ) {
-                String type = cm.getType().toLowerCase();
-                if( !INTEGER_PRIMARY_KEY_SET.contains(type) ) {
-                    connConf.set("job.content[0].reader.parameter.primaryIsString","true");
-                    break;
-                }
-            }
+    private String replaceJdbcUrl(String url, String dbName) {
+        if(url!=null && url.lastIndexOf("/")!=-1) {
+            int index = url.lastIndexOf("/");
+            String prefix = url.substring(0,index);
+            url = prefix + "/" + dbName;
         }
-        return connConf.toJSON();
+        return url;
     }
+
 
 }

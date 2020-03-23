@@ -7,7 +7,6 @@ import com.ucar.datalink.biz.service.JobService;
 import com.ucar.datalink.biz.service.MailService;
 import com.ucar.datalink.biz.service.impl.JobServiceDynamicArgs;
 import com.ucar.datalink.domain.job.*;
-import com.ucar.datalink.domain.mail.MailInfo;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +53,6 @@ public class JobQueueScanUtil {
 
     private static String currentProcessJobName;
 
-    private static final String ENV = ConfigReadUtil.getString("datax.env");
 
     static {
         es = Executors.newFixedThreadPool(1);
@@ -249,7 +247,6 @@ public class JobQueueScanUtil {
 
     private static void finshJobQueue(JobQueueInfo jobQueueInfo, long queueId,List<JobQueue> list) {
         //全部执行完，修改queue的状态，发送邮件
-        //JobQueueInfo jobQueueInfo = jobQueueService.getJobQueueInfoById(queueId);
         jobQueueInfo.setQueueState(JOB_QUEUE_STAT_FINISH);
         jobQueueService.modifyJobQueueInfo(jobQueueInfo);
         currentProcessJobName = "";
@@ -259,13 +256,7 @@ public class JobQueueScanUtil {
     private static void sendMail(long queueId, List<JobQueue> list) {
         JobQueueInfo jobQueueInfo = jobQueueService.getJobQueueInfoById(queueId);
 
-        MailInfo info = new MailInfo();
-        info.setSubject("job 执行完成_"+ENV);
-        info.setMailContent( assembleMailContent(jobQueueInfo,list) );
-        List<String> recipient = parseMail(jobQueueInfo.getMail());
-        info.setRecipient(recipient);
-        logger.info("send mail :"+info.getSubject()+"  -> "+info.getMailContent());
-        mailService.sendMail(info);
+        logger.info("job 执行完成_ \r\n" + assembleMailContent(jobQueueInfo, list));
     }
 
     private static List<String> parseMail(String mailArr) {
@@ -283,7 +274,7 @@ public class JobQueueScanUtil {
 
     private static String assembleMailContent(JobQueueInfo info, List<JobQueue> list) {
         StringBuilder sb = new StringBuilder();
-        sb.append("&nbsp &nbsp &nbsp").append("当前环境 : ").append(ENV).append("<br/>");
+        sb.append("&nbsp &nbsp &nbsp").append("<br/>");
         sb.append("job队列名称：  ");
         sb.append(info.getQueueName());
         sb.append("<br/>");

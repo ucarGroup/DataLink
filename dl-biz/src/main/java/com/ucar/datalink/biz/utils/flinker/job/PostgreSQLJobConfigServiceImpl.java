@@ -1,15 +1,13 @@
-package com.ucar.datalink.biz.utils.job;
+package com.ucar.datalink.biz.utils.flinker.job;
 
-import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.meta.MetaMapping;
 import com.ucar.datalink.biz.utils.DataxJobConfigConstant;
-import com.ucar.datalink.biz.utils.module.JobExtendProperty;
-import com.ucar.datalink.biz.utils.module.MySqlJobExtendProperty;
+import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
+import com.ucar.datalink.biz.utils.flinker.module.SqlServerJobExtendProperty;
 import com.ucar.datalink.common.utils.DLConfig;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.parameter.MediaSrcParameter;
 import com.ucar.datalink.domain.media.parameter.rdb.RdbMediaSrcParameter;
-import com.ucar.datalink.domain.media.parameter.sddl.SddlMediaSrcParameter;
 import com.ucar.datalink.domain.meta.ColumnMeta;
 import com.ucar.datalink.domain.meta.MediaMeta;
 import org.apache.commons.lang.StringUtils;
@@ -23,84 +21,17 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * Created by user on 2017/9/12.
+ * Created by user on 2017/9/7.
  */
-public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SddlJobConfigServiceImpl.class);
+public class PostgreSQLJobConfigServiceImpl extends AbstractJobConfigService {
+
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PostgreSQLJobConfigServiceImpl.class);
 
     @Override
     public String createReaderJson(MediaSourceInfo info, List<ColumnMeta> metas, JobExtendProperty property, String mediaName) {
         checkType(info.getParameterObj());
-        SddlMediaSrcParameter sddlParameter = (SddlMediaSrcParameter)info.getParameterObj();
-        sddlParameter.getProxyDbId();
-        RdbMediaSrcParameter parameter = getMediaSourceInfoById(sddlParameter.getProxyDbId()).getParameterObj();
-        Map<String,String> srcExtendJson = property.getReader();
-
-        Random rand = new Random();
-        String ip = null;
-        if(parameter.getReadConfig().getHosts()!=null && parameter.getReadConfig().getHosts().size()>0) {
-            ip = parameter.getReadConfig().getHosts().get( rand.nextInt(parameter.getReadConfig().getHosts().size()) );
-        } else {
-            throw new RuntimeException("mysql read ip is emtpy");
-        }
-        String etlHost = parameter.getReadConfig().getEtlHost();
-        if(StringUtils.isBlank(etlHost)) {
-            etlHost = ip;
-        }
-        String port = parameter.getPort()+"";
-        String schema = info.getParameterObj().getNamespace();
-        String username = parameter.getReadConfig().getUsername();
-        String password = parameter.getReadConfig().getDecryptPassword();
-
-        String json = "";
-        try{
-            String etlUrl = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, etlHost, port, schema);
-            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
-            String columns = buildColumnParm( metas );
-            String reader = loadJobConfig(DataxJobConfigConstant.MYSQL_READER);
-            json = replace(reader,etlUrl,username,password,columns);
-            json = replaceSingleTable(json,mediaName);
-            //json = createSharingStrateg(dataxJobConfig,json);
-            json = processSplitPrimaryKey(metas,json);
-            json = processReaderExtendJson(json, srcExtendJson,url);
-        }catch (Exception e){
-            LOGGER.error("mysql createReaderJson error ",e);
-        }
-        return json;
-    }
-
-    @Override
-    public String createWriterJson(MediaSourceInfo srcInfo, MediaSourceInfo info, MediaMeta srcMediaMeta, JobExtendProperty property, String mediaName) {
-        checkType(info.getParameterObj());
         RdbMediaSrcParameter parameter = (RdbMediaSrcParameter)info.getParameterObj();
-        Map<String,String> destExtendJson = property.getWriter();
-        String ip = parameter.getWriteConfig().getWriteHost();
-        String port = parameter.getPort()+"";
-        String schema = info.getParameterObj().getNamespace();
-        String username = parameter.getWriteConfig().getUsername();
-        String password = parameter.getWriteConfig().getDecryptPassword();
-
-        String json = "";
-        try{
-            MediaMeta target = MetaMapping.transformToRDBMS(srcMediaMeta);
-            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
-            String columns = buildColumnParm( target.getColumn() );
-            String reader = loadJobConfig(DataxJobConfigConstant.MYSQL_WRITER);
-            json = replace(reader,url,username,password,columns);
-            json = replaceSingleTable(json, parseMediaName(mediaName) );
-            json = processWriterExtendJson(json,destExtendJson);
-        }catch (Exception e){
-            LOGGER.error("mysql createWriterJson error ",e);
-        }
-        return json;
-    }
-
-
-    @Override
-    public String createReaderJson(MediaSourceInfo info, List<ColumnMeta> metas, JobExtendProperty property, List<String> names) {
-        checkType(info.getParameterObj());
-        RdbMediaSrcParameter parameter = (RdbMediaSrcParameter)info.getParameterObj();
-        Map<String,String> srcExtendJson = property.getReader();
         Random rand = new Random();
         String ip = null;
         if(parameter.getReadConfig().getHosts()!=null && parameter.getReadConfig().getHosts().size()>0) {
@@ -113,94 +44,92 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
             etlHost = ip;
         }
         String port = parameter.getPort()+"";
-        String schema = info.getParameterObj().getNamespace();
+        String schema = parameter.getNamespace();
         String username = parameter.getReadConfig().getUsername();
         String password = parameter.getReadConfig().getDecryptPassword();
 
         String json = "";
         try{
-            String etlUrl = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, etlHost, port, schema);
-            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
+            String etlUrl = MessageFormat.format(DataxJobConfigConstant.POSTGRE_SQL_URL, etlHost, port, schema);
+            String url = MessageFormat.format(DataxJobConfigConstant.POSTGRE_SQL_URL, ip, port, schema);
             String columns = buildColumnParm( metas );
-            String reader = loadJobConfig(DataxJobConfigConstant.MYSQL_READER);
+            String reader = loadJobConfig(DataxJobConfigConstant.POSTGRE_SQL_READER);
+            json = replace(reader,etlUrl,username,password,columns);
+            json = replaceSingleTable(json,mediaName);
+            json = processSplitPrimaryKey(metas,json);
+        }catch (Exception e){
+            LOGGER.error("postgresql createReaderJson error ",e);
+        }
+        return json;
+    }
+
+    @Override
+    public String createWriterJson(MediaSourceInfo srcInfo, MediaSourceInfo info, MediaMeta srcMediaMeta, JobExtendProperty property, String mediaName) {
+        checkType(info.getParameterObj());
+        RdbMediaSrcParameter parameter = (RdbMediaSrcParameter)info.getParameterObj();
+        String ip = parameter.getWriteConfig().getWriteHost();
+        String port = parameter.getPort()+"";
+        String sehema = parameter.getNamespace();
+        String username = parameter.getWriteConfig().getUsername();
+        String password = parameter.getWriteConfig().getDecryptPassword();
+
+        String json = "";
+        try{
+            MediaMeta target = MetaMapping.transformToRDBMS(srcMediaMeta);
+            String url = MessageFormat.format(DataxJobConfigConstant.POSTGRE_SQL_URL, ip, port, sehema);
+            String columns = buildColumnParm( target.getColumn() );
+            String reader = loadJobConfig(DataxJobConfigConstant.POSTGRE_SQL_WRITER);
+            json = replace(reader,url,username,password,columns);
+            json = replaceSingleTable(json, parseMediaName(mediaName) );
+        }catch (Exception e){
+            LOGGER.error("postgresql createWriterJson error ",e);
+        }
+        return json;
+    }
+
+
+    public String createReaderJson(MediaSourceInfo info, List<ColumnMeta> metas, Map<String, String> srcExtendJson, List<String> names) {
+        checkType(info.getParameterObj());
+        RdbMediaSrcParameter parameter = (RdbMediaSrcParameter)info.getParameterObj();
+        Random rand = new Random();
+        String ip = null;
+        if(parameter.getReadConfig().getHosts()!=null && parameter.getReadConfig().getHosts().size()>0) {
+            ip = parameter.getReadConfig().getHosts().get( rand.nextInt(parameter.getReadConfig().getHosts().size()) );
+        } else {
+            throw new RuntimeException("sqlserver read ip is emtpy");
+        }
+        String etlHost = parameter.getReadConfig().getEtlHost();
+        if(StringUtils.isBlank(etlHost)) {
+            etlHost = ip;
+        }
+        String port = parameter.getPort()+"";
+        String schema = parameter.getNamespace();
+        String username = parameter.getReadConfig().getUsername();
+        String password = parameter.getReadConfig().getDecryptPassword();
+
+        String json = "";
+        try{
+            String etlUrl = MessageFormat.format(DataxJobConfigConstant.POSTGRE_SQL_URL, etlHost, port, schema);
+            String url = MessageFormat.format(DataxJobConfigConstant.POSTGRE_SQL_URL, ip, port, schema);
+            String columns = buildColumnParm( metas );
+            String reader = loadJobConfig(DataxJobConfigConstant.POSTGRE_SQL_READER);
             json = replace(reader,etlUrl,username,password,columns );
             json = replaceMultiTable(json,names);
             json = processSplitPrimaryKey(metas,json);
-            json = processReaderExtendJson(json, srcExtendJson,url);
         }catch (Exception e){
-            LOGGER.error("mysql createReaderJson error ",e);
+            LOGGER.error("sqlserver createReaderJson error ",e);
         }
         return json;
     }
 
-
-    private String processReaderExtendJson(String json, Map<String, String> srcExtendJson,String url) {
-        if(srcExtendJson==null || srcExtendJson.size()==0) {
-            return json;
-        }
-        String extendJson = JSONObject.toJSONString(srcExtendJson);
-        MySqlJobExtendProperty jobExtend = JSONObject.parseObject(extendJson, MySqlJobExtendProperty.class);
-        filterSpace(jobExtend);
-        DLConfig connConf = DLConfig.parseFrom(json);
-        if( StringUtils.isNotBlank(jobExtend.getWhere()) ) {
-            connConf.set("job.content[0].reader.parameter.where", jobExtend.getWhere());
-        }
-        if( StringUtils.isNotBlank(jobExtend.getQuerySql()) ) {
-            //connConf.remove("job.content[0].reader.parameter.splitPk");
-            connConf.remove("job.content[0].reader.parameter.connection[0].table");
-            connConf.remove("job.content[0].reader.parameter.where");
-            List<String> list = new ArrayList<>();
-            list.add(jobExtend.getQuerySql());
-            connConf.set("job.content[0].reader.parameter.connection[0].querySql", list);
-        }
-        if( StringUtils.isNotBlank(jobExtend.getJdbcReaderUrl()) ) {
-            List<String> list = (List<String>)connConf.get("job.content[0].reader.parameter.connection[0].jdbcUrl");
-            list.add(jobExtend.getJdbcReaderUrl());
-            connConf.remove("job.content[0].reader.parameter.connection[0].jdbcUrl");
-            connConf.set("job.content[0].reader.parameter.connection[0].jdbcUrl", list);
-        } else {
-            List<String> list = (List<String>)connConf.get("job.content[0].reader.parameter.connection[0].jdbcUrl");
-            list.add(url);
-            if(StringUtils.isNotBlank(jobExtend.getJdbcReaderUrl())) {
-                list.add(jobExtend.getJdbcReaderUrl());
-            }
-            connConf.remove("job.content[0].reader.parameter.connection[0].jdbcUrl");
-            connConf.set("job.content[0].reader.parameter.connection[0].jdbcUrl", list);
-        }
-        json = connConf.toJSON();
-        return json;
-    }
-
-    private String processWriterExtendJson(String json, Map<String, String> destExtendJson) {
-        if(destExtendJson==null || destExtendJson.size()==0) {
-            return json;
-        }
-        String extendJson = JSONObject.toJSONString(destExtendJson);
-        MySqlJobExtendProperty jobExtend = JSONObject.parseObject(extendJson, MySqlJobExtendProperty.class);
-        filterSpace(jobExtend);
-        DLConfig connConf = DLConfig.parseFrom(json);
-        if( StringUtils.isNotBlank(jobExtend.getPreSql()) ) {
-            List<String> list = new ArrayList<>();
-            list.add(jobExtend.getPreSql());
-            connConf.set("job.content[0].writer.parameter.preSql", list);
-        }
-        if( StringUtils.isNotBlank(jobExtend.getPostSql()) ) {
-            List<String> list = new ArrayList<>();
-            list.add(jobExtend.getPostSql());
-            connConf.set("job.content[0].writer.parameter.postSql", list);
-        }
-        json = connConf.toJSON();
-        return json;
-    }
 
 
 
     private void checkType(MediaSrcParameter parameter) {
-        if( !(parameter instanceof SddlMediaSrcParameter)) {
+        if( !(parameter instanceof RdbMediaSrcParameter)) {
             throw new RuntimeException("media source type error "+parameter);
         }
     }
-
 
     /**
      * 处理job配置中的 splitPk 参数，这个值不再强制指定为 id，而是根据读取到的列元信息自动选择
@@ -220,6 +149,7 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
         return json;
     }
 
+
     private String replace(String json,String url,String userName,String passWord,String column){
         if(StringUtils.isNotBlank(url)){
             json = json.replaceAll(DataxJobConfigConstant.JDBCURL, url);
@@ -233,9 +163,6 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
         if(StringUtils.isNotBlank(column)){
             //json = json.replaceAll(DataxJobConfigConstant.COLUMN,column);
             json = replaceColumns(json,column);
-        }
-        if(json.contains(DataxJobConfigConstant.COLUMN)) {
-            json.replaceAll(DataxJobConfigConstant.COLUMN,"");
         }
         return json;
     }
@@ -251,38 +178,39 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
         if(names!=null && names.size()>0) {
             DLConfig connConf = DLConfig.parseFrom(json);
             connConf.remove("job.content[0].reader.parameter.connection[0].table");
-            connConf.set("job.content[0].reader.parameter.connection[0].table", names);
+            connConf.set("job.content[0].reader.parameter.connection[0].table",names);
             json = connConf.toJSON();
         }
         return json;
     }
 
 
-    private void filterSpace(MySqlJobExtendProperty property) {
-        if(property == null) {
+    private void filterSpace(SqlServerJobExtendProperty property) {
+        if (property == null) {
             return;
         }
 //        if(StringUtils.isNotBlank( property.getJdbcReaderUrl() )) {
 //            String jdbcReader_url = removeEnter(property.getJdbcReaderUrl());
 //            property.setJdbcReaderUrl(jdbcReader_url);
 //        }
-        if(StringUtils.isNotBlank(property.getPostSql())) {
+        if (StringUtils.isNotBlank(property.getPostSql())) {
             String postSql = removeEnter(property.getPostSql());
             property.setPostSql(postSql);
         }
-        if(StringUtils.isNotBlank(property.getPreSql())) {
+        if (StringUtils.isNotBlank(property.getPreSql())) {
             String preSql = removeEnter(property.getPreSql());
             property.setPreSql(preSql);
         }
-        if(StringUtils.isNotBlank(property.getQuerySql())) {
+        if (StringUtils.isNotBlank(property.getQuerySql())) {
             String querySql = removeEnter(property.getQuerySql());
             property.setQuerySql(querySql);
         }
-        if(StringUtils.isNotBlank(property.getWhere())) {
+        if (StringUtils.isNotBlank(property.getWhere())) {
             String where = removeEnter(property.getWhere());
             property.setWhere(where);
         }
     }
+
 
     private String removeEnter(String content) {
         if(content.contains("\n")) {
@@ -291,6 +219,7 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
         }
         return content;
     }
+
 
 
     public String reloadReader(String json,MediaSourceInfo info) {
@@ -302,7 +231,7 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
             if(parameter.getReadConfig().getHosts()!=null && parameter.getReadConfig().getHosts().size()>0) {
                 ip = parameter.getReadConfig().getHosts().get( rand.nextInt(parameter.getReadConfig().getHosts().size()) );
             } else {
-                throw new RuntimeException("mysql read ip is emtpy");
+                throw new RuntimeException("postgresql read ip is emtpy");
             }
             String etlHost = parameter.getReadConfig().getEtlHost();
             if(StringUtils.isBlank(etlHost)) {
@@ -312,8 +241,8 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
             String schema = info.getParameterObj().getNamespace();
             String username = parameter.getReadConfig().getUsername();
             String password = parameter.getReadConfig().getDecryptPassword();
-            String etlUrl = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, etlHost, port, schema);
-            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
+            String etlUrl = MessageFormat.format(DataxJobConfigConstant.POSTGRE_SQL_URL, etlHost, port, schema);
+            String url = MessageFormat.format(DataxJobConfigConstant.POSTGRE_SQL_URL, ip, port, schema);
 
             DLConfig connConf = DLConfig.parseFrom(json);
             List<String> list = new ArrayList<>();
@@ -341,7 +270,7 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
             String schema = info.getParameterObj().getNamespace();
             String username = parameter.getWriteConfig().getUsername();
             String password = parameter.getWriteConfig().getDecryptPassword();
-            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
+            String url = MessageFormat.format(DataxJobConfigConstant.POSTGRE_SQL_URL, ip, port, schema);
             DLConfig connConf = DLConfig.parseFrom(json);
             connConf.remove("job.content[0].writer.parameter.connection[0].jdbcUrl");
             connConf.set("job.content[0].writer.parameter.connection[0].jdbcUrl", url);
@@ -355,40 +284,5 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
         }
         return json;
     }
-
-    @Override
-    public String replaceJsonResult(String json, Object object, MediaSourceInfo srcInfo) {
-        String dbName = (String)object;
-        DLConfig connConf = DLConfig.parseFrom(json);
-        Object obj = connConf.get("job.content[0].reader.parameter.connection[0].jdbcUrl");
-        if(obj instanceof String) {
-            String url = (String)connConf.get("job.content[0].reader.parameter.connection[0].jdbcUrl");
-            url = replaceJdbcUrl(url,dbName);
-            connConf.remove("job.content[0].reader.parameter.connection[0].jdbcUrl");
-            connConf.set("job.content[0].reader.parameter.connection[0].jdbcUrl", url);
-        }
-        else {
-            List<String> list = (List<String>)connConf.get("job.content[0].reader.parameter.connection[0].jdbcUrl");
-            List<String> newUrl = new ArrayList<>();
-            for(String url : list) {
-                String tmp = replaceJdbcUrl(url,dbName);
-                newUrl.add(tmp);
-            }
-            connConf.remove("job.content[0].reader.parameter.connection[0].jdbcUrl");
-            connConf.set("job.content[0].reader.parameter.connection[0].jdbcUrl", newUrl);
-        }
-        json = connConf.toJSON();
-        return json;
-    }
-
-    private String replaceJdbcUrl(String url, String dbName) {
-        if(url!=null && url.lastIndexOf("/")!=-1) {
-            int index = url.lastIndexOf("/");
-            String prefix = url.substring(0,index);
-            url = prefix + "/" + dbName;
-        }
-        return url;
-    }
-
 
 }

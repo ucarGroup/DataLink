@@ -1,7 +1,7 @@
-package com.ucar.datalink.biz.utils.job;
+package com.ucar.datalink.biz.utils.flinker.job;
 
 import com.ucar.datalink.biz.utils.DataxJobConfigConstant;
-import com.ucar.datalink.biz.utils.module.JobExtendProperty;
+import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.common.utils.DLConfig;

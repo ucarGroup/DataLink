@@ -1,9 +1,9 @@
-package com.ucar.datalink.biz.utils.job;
+package com.ucar.datalink.biz.utils.flinker.job;
 
 import com.ucar.datalink.biz.meta.MetaManager;
 import com.ucar.datalink.biz.meta.MetaMapping;
-import com.ucar.datalink.biz.utils.module.JobExtendProperty;
-import com.ucar.datalink.biz.utils.module.AdvanceJobProperty;
+import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
+import com.ucar.datalink.biz.utils.flinker.module.AdvanceJobProperty;
 import com.ucar.datalink.common.utils.DLConfig;
 import com.ucar.datalink.common.utils.DbConfigEncryption;
 import com.ucar.datalink.domain.job.HostNodeInfo;
