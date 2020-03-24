@@ -8,10 +8,7 @@ package com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.batch;
 import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.AbstractRequestEs;
 import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.constant.ESEnum;
 import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.result.ProcessResult;
-import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.vo.BatchContentVo;
-import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.vo.BatchDocVo;
-import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.vo.VoItf;
-import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.vo.BulkResultVo;
+import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.vo.*;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 
@@ -60,5 +57,25 @@ public class BatchDoc extends AbstractRequestEs {
 	   
 	    return resultVo;
 	}
+
+	/**
+	 * 批量更新插入数据
+	 */
+	public BulkResultVo batchUpsertDoc(BatchDocVo vo , List<BatchUpsertContentVo> contents) throws UnsupportedEncodingException {
+
+		if(contents == null ||contents.size() == 0) {
+			return new BulkResultVo();
+		}
+
+		StringBuilder sb = new StringBuilder();
+		for(BatchUpsertContentVo contentVo : contents) {
+			sb.append(contentVo.toString());
+		}
+
+		vo.setContents(sb.toString());
+
+		return (BulkResultVo) ProcessResult.parseResult(processRequest(vo, vo.getContents().getBytes("utf-8")), ESEnum.ParseEnum.BULK);
+	}
+
 
 }

@@ -6,13 +6,12 @@ import com.ucar.datalink.flinker.api.plugin.RecordReceiver;
 import com.ucar.datalink.flinker.api.spi.Writer;
 import com.ucar.datalink.flinker.api.util.Configuration;
 import com.ucar.datalink.flinker.api.util.ErrorRecord;
+import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.loadBalance.ESConfigVo;
+import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.loadBalance.ESMultiClusterManage;
 import com.ucar.datalink.flinker.plugin.writer.eswriter.exception.VersionConflictException;
-import com.zuche.framework.es.loadBalance.ESConfigVo;
-import com.zuche.framework.es.loadBalance.ESMultiClusterManage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.ucar.datalink.flinker.api.util.ErrorRecord;
-import java.text.MessageFormat;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;

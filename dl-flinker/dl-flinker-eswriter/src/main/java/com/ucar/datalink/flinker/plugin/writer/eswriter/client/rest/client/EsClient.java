@@ -505,7 +505,24 @@ public class EsClient {
 		}
 	}
 
-	/**
+
+    /**
+     * Description:批量插入文档，如果文档已存在，则更新操作
+     * @date 2016-6-1 上午11:33:26
+     * @author  李洪波(hb.li@zhuche.com)
+     * @since 1.0
+     * @param vo
+     * @param contents
+     * @return 返回 BulkResultVo
+     * @throws UnsupportedEncodingException
+     */
+    public static BulkResultVo batchUpsertDocWithResultParse(BatchDocVo vo , List<BatchUpsertContentVo> contents) throws UnsupportedEncodingException {
+        BulkResultVo result = BatchDoc.getInstance().batchUpsertDoc(vo, contents);
+        return result;
+    }
+
+
+    /**
 	 *
 	 * Description: 结构化查询,返回结果包含详情
 	 * Created on 2016-6-12 下午5:55:51

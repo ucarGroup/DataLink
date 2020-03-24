@@ -1,20 +1,21 @@
 package com.ucar.datalink.flinker.plugin.writer.eswriter;
 
+import com.alibaba.fastjson.JSON;
 import com.ucar.datalink.flinker.api.element.Column;
 import com.ucar.datalink.flinker.api.element.Record;
-import com.ucar.datalink.flinker.api.util.Configuration;
 import com.ucar.datalink.flinker.api.exception.DataXException;
-import com.zuche.framework.es.client.EsClient;
-import com.zuche.framework.es.constant.ESEnum;
-import com.zuche.framework.es.vo.BatchContentVo;
-import com.zuche.framework.es.vo.BatchDocVo;
-import com.zuche.framework.es.vo.BatchUpsertContentVo;
-import com.zuche.framework.es.vo.BulkResultVo;
+import com.ucar.datalink.flinker.api.util.Configuration;
+import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.client.EsClient;
+import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.constant.ESEnum;
+import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.vo.BatchContentVo;
+import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.vo.BatchDocVo;
+import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.vo.BatchUpsertContentVo;
+import com.ucar.datalink.flinker.plugin.writer.eswriter.client.rest.vo.BulkResultVo;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
-import com.alibaba.fastjson.JSON;
+
 import java.io.UnsupportedEncodingException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;

@@ -211,5 +211,5 @@ public class ESEnum {
 	    ALLUPDATE,
 	    UPDATE,
 	    DELETE;
-	} 
+	}
 }
