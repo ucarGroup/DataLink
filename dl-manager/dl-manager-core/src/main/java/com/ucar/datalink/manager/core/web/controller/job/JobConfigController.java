@@ -81,12 +81,6 @@ public class JobConfigController {
      */
     private static final String DATE_FORMAT = "yyyy-MM-dd kk:mm:ss";
 
-    /**
-     * 集团邮箱后缀
-     */
-    private static final String UCAR_MAIL_SUFFIX = "@ucarinc.com";
-
-
     @Autowired
     JobService jobService;
 

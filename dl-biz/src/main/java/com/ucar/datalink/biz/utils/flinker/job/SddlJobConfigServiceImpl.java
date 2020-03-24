@@ -2,7 +2,7 @@ package com.ucar.datalink.biz.utils.flinker.job;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.meta.MetaMapping;
-import com.ucar.datalink.biz.utils.DataxJobConfigConstant;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobConfigConstant;
 import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
 import com.ucar.datalink.biz.utils.flinker.module.MySqlJobExtendProperty;
 import com.ucar.datalink.common.utils.DLConfig;
@@ -54,10 +54,10 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
 
         String json = "";
         try{
-            String etlUrl = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, etlHost, port, schema);
-            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
+            String etlUrl = MessageFormat.format(FlinkerJobConfigConstant.MYSQL_URL, etlHost, port, schema);
+            String url = MessageFormat.format(FlinkerJobConfigConstant.MYSQL_URL, ip, port, schema);
             String columns = buildColumnParm( metas );
-            String reader = loadJobConfig(DataxJobConfigConstant.MYSQL_READER);
+            String reader = loadJobConfig(FlinkerJobConfigConstant.MYSQL_READER);
             json = replace(reader,etlUrl,username,password,columns);
             json = replaceSingleTable(json,mediaName);
             //json = createSharingStrateg(dataxJobConfig,json);
@@ -83,9 +83,9 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
         String json = "";
         try{
             MediaMeta target = MetaMapping.transformToRDBMS(srcMediaMeta);
-            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
+            String url = MessageFormat.format(FlinkerJobConfigConstant.MYSQL_URL, ip, port, schema);
             String columns = buildColumnParm( target.getColumn() );
-            String reader = loadJobConfig(DataxJobConfigConstant.MYSQL_WRITER);
+            String reader = loadJobConfig(FlinkerJobConfigConstant.MYSQL_WRITER);
             json = replace(reader,url,username,password,columns);
             json = replaceSingleTable(json, parseMediaName(mediaName) );
             json = processWriterExtendJson(json,destExtendJson);
@@ -119,10 +119,10 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
 
         String json = "";
         try{
-            String etlUrl = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, etlHost, port, schema);
-            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
+            String etlUrl = MessageFormat.format(FlinkerJobConfigConstant.MYSQL_URL, etlHost, port, schema);
+            String url = MessageFormat.format(FlinkerJobConfigConstant.MYSQL_URL, ip, port, schema);
             String columns = buildColumnParm( metas );
-            String reader = loadJobConfig(DataxJobConfigConstant.MYSQL_READER);
+            String reader = loadJobConfig(FlinkerJobConfigConstant.MYSQL_READER);
             json = replace(reader,etlUrl,username,password,columns );
             json = replaceMultiTable(json,names);
             json = processSplitPrimaryKey(metas,json);
@@ -209,40 +209,40 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
     private String processSplitPrimaryKey(List<ColumnMeta> list, String json) {
         for(ColumnMeta cm : list) {
             if(cm.isPrimaryKey()) {
-                json = json.replaceAll(DataxJobConfigConstant.RMDBS_SPLIT_PK,cm.getName());
+                json = json.replaceAll(FlinkerJobConfigConstant.RMDBS_SPLIT_PK,cm.getName());
                 break;
             }
         }
         //如果当前表没有配置主键信息则将 splitPk这个字段设置为空字符串
-        if( json.contains(DataxJobConfigConstant.RMDBS_SPLIT_PK) ) {
-            json = json.replaceAll(DataxJobConfigConstant.RMDBS_SPLIT_PK,"");
+        if( json.contains(FlinkerJobConfigConstant.RMDBS_SPLIT_PK) ) {
+            json = json.replaceAll(FlinkerJobConfigConstant.RMDBS_SPLIT_PK,"");
         }
         return json;
     }
 
     private String replace(String json,String url,String userName,String passWord,String column){
         if(StringUtils.isNotBlank(url)){
-            json = json.replaceAll(DataxJobConfigConstant.JDBCURL, url);
+            json = json.replaceAll(FlinkerJobConfigConstant.JDBCURL, url);
         }
         if(StringUtils.isNotBlank(userName)){
-            json = json.replaceAll(DataxJobConfigConstant.USERNAME,userName);
+            json = json.replaceAll(FlinkerJobConfigConstant.USERNAME,userName);
         }
         if(StringUtils.isNotBlank(passWord)){
-            json = json.replaceAll(DataxJobConfigConstant.PASSWORD,passWord);
+            json = json.replaceAll(FlinkerJobConfigConstant.PASSWORD,passWord);
         }
         if(StringUtils.isNotBlank(column)){
-            //json = json.replaceAll(DataxJobConfigConstant.COLUMN,column);
+            //json = json.replaceAll(FlinkerJobConfigConstant.COLUMN,column);
             json = replaceColumns(json,column);
         }
-        if(json.contains(DataxJobConfigConstant.COLUMN)) {
-            json.replaceAll(DataxJobConfigConstant.COLUMN,"");
+        if(json.contains(FlinkerJobConfigConstant.COLUMN)) {
+            json.replaceAll(FlinkerJobConfigConstant.COLUMN,"");
         }
         return json;
     }
 
     private String replaceSingleTable(String json, String name) {
         if(StringUtils.isNotBlank(name)){
-            json = json.replaceAll(DataxJobConfigConstant.TABLE,name);
+            json = json.replaceAll(FlinkerJobConfigConstant.TABLE,name);
         }
         return json;
     }
@@ -312,8 +312,8 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
             String schema = info.getParameterObj().getNamespace();
             String username = parameter.getReadConfig().getUsername();
             String password = parameter.getReadConfig().getDecryptPassword();
-            String etlUrl = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, etlHost, port, schema);
-            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
+            String etlUrl = MessageFormat.format(FlinkerJobConfigConstant.MYSQL_URL, etlHost, port, schema);
+            String url = MessageFormat.format(FlinkerJobConfigConstant.MYSQL_URL, ip, port, schema);
 
             DLConfig connConf = DLConfig.parseFrom(json);
             List<String> list = new ArrayList<>();
@@ -341,7 +341,7 @@ public class SddlJobConfigServiceImpl extends AbstractJobConfigService {
             String schema = info.getParameterObj().getNamespace();
             String username = parameter.getWriteConfig().getUsername();
             String password = parameter.getWriteConfig().getDecryptPassword();
-            String url = MessageFormat.format(DataxJobConfigConstant.MYSQL_URL, ip, port, schema);
+            String url = MessageFormat.format(FlinkerJobConfigConstant.MYSQL_URL, ip, port, schema);
             DLConfig connConf = DLConfig.parseFrom(json);
             connConf.remove("job.content[0].writer.parameter.connection[0].jdbcUrl");
             connConf.set("job.content[0].writer.parameter.connection[0].jdbcUrl", url);

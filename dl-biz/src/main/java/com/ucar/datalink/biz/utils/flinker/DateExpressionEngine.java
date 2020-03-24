@@ -1,4 +1,4 @@
-package com.ucar.datalink.biz.utils;
+package com.ucar.datalink.biz.utils.flinker;
 
 
 import com.google.common.base.Preconditions;

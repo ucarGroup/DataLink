@@ -1,4 +1,4 @@
-package com.ucar.datalink.biz.utils;
+package com.ucar.datalink.biz.utils.flinker;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.service.JobControlService;
@@ -6,6 +6,8 @@ import com.ucar.datalink.biz.service.JobQueueService;
 import com.ucar.datalink.biz.service.JobService;
 import com.ucar.datalink.biz.service.MailService;
 import com.ucar.datalink.biz.service.impl.JobServiceDynamicArgs;
+import com.ucar.datalink.biz.utils.DataLinkFactory;
+import com.ucar.datalink.biz.utils.DataxUtil;
 import com.ucar.datalink.domain.job.*;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -39,20 +41,13 @@ public class JobQueueScanUtil {
 
     private static final long CHECK_JOB_STATE_SLEEP_TIME = 10 * 1000;
 
-
     public static final String JOB_QUEUE_STATE_EXECUTE = "EXECUTE";
 
     public static final String JOB_QUEUE_STAT_FINISH = "FINISH";
 
-    /**
-     * 集团邮箱后缀
-     */
-    private static final String UCAR_MAIL_SUFFIX = "@ucarinc.com";
-
     private static volatile boolean isRunning = false;
 
     private static String currentProcessJobName;
-
 
     static {
         es = Executors.newFixedThreadPool(1);
@@ -81,8 +76,6 @@ public class JobQueueScanUtil {
     public static boolean isRunning() {
         return isRunning;
     }
-
-
 
     private static class ScanThread implements Runnable {
 
@@ -198,9 +191,7 @@ public class JobQueueScanUtil {
             } catch (InterruptedException e) {
                 logger.error(e.getMessage(),e);
             }
-
         }
-
     }
 
     /**
@@ -255,21 +246,7 @@ public class JobQueueScanUtil {
 
     private static void sendMail(long queueId, List<JobQueue> list) {
         JobQueueInfo jobQueueInfo = jobQueueService.getJobQueueInfoById(queueId);
-
         logger.info("job 执行完成_ \r\n" + assembleMailContent(jobQueueInfo, list));
-    }
-
-    private static List<String> parseMail(String mailArr) {
-        List<String> list = new ArrayList<>();
-        if(StringUtils.isBlank(mailArr)) {
-            return list;
-        }
-        String[] strArr = mailArr.split(",");
-        for(String s : strArr) {
-            String mail = s + UCAR_MAIL_SUFFIX;
-            list.add(mail);
-        }
-        return list;
     }
 
     private static String assembleMailContent(JobQueueInfo info, List<JobQueue> list) {
@@ -280,7 +257,6 @@ public class JobQueueScanUtil {
         sb.append("<br/>");
         sb.append("<table border='1'>").append("<tr><td>job名称</td><td>任务状态</td></tr>");
         list.forEach(i->{
-            //sb.append(i.getJobName()).append("  ").append(i.getJobState());
             sb.append("<tr><td>").append(i.getJobName()).append("</td>").append("<td>").append(i.getJobState()).append("</td></tr>");
         });
         return sb.toString();

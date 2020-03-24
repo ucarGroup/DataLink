@@ -3,7 +3,7 @@ package com.ucar.datalink.biz.utils.flinker.job;
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.meta.HBaseUtil;
 import com.ucar.datalink.biz.meta.MetaMapping;
-import com.ucar.datalink.biz.utils.DataxJobConfigConstant;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobConfigConstant;
 import com.ucar.datalink.biz.utils.flinker.module.HBaseJobExtendProperty;
 import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
 import com.ucar.datalink.common.utils.DLConfig;
@@ -75,13 +75,13 @@ public class HbaseJobConfigServiceImpl extends AbstractJobConfigService {
             metas.clear();
             metas.addAll(list);
             String columns = buildColumn(metas);
-            String reader = loadJobConfig(DataxJobConfigConstant.HBASE_READER);
+            String reader = loadJobConfig(FlinkerJobConfigConstant.HBASE_READER);
             json = replaceColumns(reader,columns);
             if (StringUtils.isNotBlank(mediaName)) {
-                json = json.replaceAll(DataxJobConfigConstant.TABLE, mediaName);
+                json = json.replaceAll(FlinkerJobConfigConstant.TABLE, mediaName);
             }
-            json = json.replaceAll(DataxJobConfigConstant.HBASE_ZK_IP, hosts);
-            json = json.replaceAll(DataxJobConfigConstant.HBASE_ZK_ZNODE, hbaseParameter.getZnodeParent());
+            json = json.replaceAll(FlinkerJobConfigConstant.HBASE_ZK_IP, hosts);
+            json = json.replaceAll(FlinkerJobConfigConstant.HBASE_ZK_ZNODE, hbaseParameter.getZnodeParent());
         } catch (Exception e) {
             LOGGER.error("hbase createReaderJson error ", e);
             LOGGER.error("hbase createReader json -> " + json);
@@ -110,11 +110,11 @@ public class HbaseJobConfigServiceImpl extends AbstractJobConfigService {
             } else {
                 columns = buildColumn(target.getColumn());
             }
-            String writer = loadJobConfig(DataxJobConfigConstant.HBASE_WRITER);
+            String writer = loadJobConfig(FlinkerJobConfigConstant.HBASE_WRITER);
             json = replaceColumns(writer,columns);
-            json = json.replaceAll(DataxJobConfigConstant.TABLE, parseMediaName(mediaName));
-            json = json.replaceAll(DataxJobConfigConstant.HBASE_ZK_IP, hosts);
-            json = json.replaceAll(DataxJobConfigConstant.HBASE_ZK_ZNODE, hbaseParameter.getZnodeParent());
+            json = json.replaceAll(FlinkerJobConfigConstant.TABLE, parseMediaName(mediaName));
+            json = json.replaceAll(FlinkerJobConfigConstant.HBASE_ZK_IP, hosts);
+            json = json.replaceAll(FlinkerJobConfigConstant.HBASE_ZK_ZNODE, hbaseParameter.getZnodeParent());
         } catch (Exception e) {
             LOGGER.error("hbase createWriterJson error ", e);
         }

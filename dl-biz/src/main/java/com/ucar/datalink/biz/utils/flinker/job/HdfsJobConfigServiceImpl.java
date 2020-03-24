@@ -3,7 +3,7 @@ package com.ucar.datalink.biz.utils.flinker.job;
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.meta.MetaMapping;
 import com.ucar.datalink.biz.utils.ConfigReadUtil;
-import com.ucar.datalink.biz.utils.DataxJobConfigConstant;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobConfigConstant;
 import com.ucar.datalink.biz.utils.flinker.module.HDFSJobExtendProperty;
 import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
 import com.ucar.datalink.biz.utils.flinker.module.TimingJobExtendPorperty;
@@ -89,20 +89,20 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
             }
             if(names[0].equals("default")) {
                 if( isContainSpecifiedPreDate(srcExtendJson) ) {
-                    path = HDFS_READER_PATH_PREFIX +  names[1] +"/dt="+  DataxJobConfigConstant.DATAX_SPECIFIED_PRE_DATE_ESCAPE +"/*";
+                    path = HDFS_READER_PATH_PREFIX +  names[1] +"/dt="+  FlinkerJobConfigConstant.DATAX_SPECIFIED_PRE_DATE_ESCAPE +"/*";
                 } else {
                     if(timing.isOpen() && INCREMENT.equals(timing.getType())) {
-                        path = HDFS_READER_PATH_PREFIX +  names[1] +"/dt="+  DataxJobConfigConstant.DATAX_PRE_DATE_ESCAPE +"/*";
+                        path = HDFS_READER_PATH_PREFIX +  names[1] +"/dt="+  FlinkerJobConfigConstant.DATAX_PRE_DATE_ESCAPE +"/*";
                     } else {
                         path = HDFS_READER_PATH_PREFIX +  names[1] +"/*";
                     }
                 }
             } else {
                 if( isContainSpecifiedPreDate(srcExtendJson) ) {
-                    path = HDFS_READER_PATH_PREFIX +  names[0] + HIVE_CREATE_DB_SUFFIX +"/" +names[1] +"/dt="+  DataxJobConfigConstant.DATAX_SPECIFIED_PRE_DATE_ESCAPE +"/*";
+                    path = HDFS_READER_PATH_PREFIX +  names[0] + HIVE_CREATE_DB_SUFFIX +"/" +names[1] +"/dt="+  FlinkerJobConfigConstant.DATAX_SPECIFIED_PRE_DATE_ESCAPE +"/*";
                 } else {
                     if(timing.isOpen() && INCREMENT.equals(timing.getType())) {
-                        path = HDFS_READER_PATH_PREFIX + names[0] + HIVE_CREATE_DB_SUFFIX +"/"+ names[1] +"/dt="+ DataxJobConfigConstant.DATAX_PRE_DATE_ESCAPE +"/*";
+                        path = HDFS_READER_PATH_PREFIX + names[0] + HIVE_CREATE_DB_SUFFIX +"/"+ names[1] +"/dt="+ FlinkerJobConfigConstant.DATAX_PRE_DATE_ESCAPE +"/*";
                     } else {
                         path = HDFS_READER_PATH_PREFIX + names[0] + HIVE_CREATE_DB_SUFFIX +"/"+ names[1] +"/*";
                     }
@@ -113,14 +113,14 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
             if(srcExtendJson.get("path") == null) {
                 srcExtendJson.put("path", path);
             }
-            String reader = loadJobConfig(DataxJobConfigConstant.HDFS_READER);
-            json = reader.replaceAll(DataxJobConfigConstant.TABLE, mediaName);
-            json = json.replaceAll(DataxJobConfigConstant.PATH, path);
+            String reader = loadJobConfig(FlinkerJobConfigConstant.HDFS_READER);
+            json = reader.replaceAll(FlinkerJobConfigConstant.TABLE, mediaName);
+            json = json.replaceAll(FlinkerJobConfigConstant.PATH, path);
             if (StringUtils.isNotBlank(url)) {
-                json = json.replaceAll(DataxJobConfigConstant.HDFSURL, url);
+                json = json.replaceAll(FlinkerJobConfigConstant.HDFSURL, url);
             }
             if (StringUtils.isNotBlank(columns)) {
-                //json = json.replaceAll(DataxJobConfigConstant.COLUMN, columns);
+                //json = json.replaceAll(FlinkerJobConfigConstant.COLUMN, columns);
                 json = replaceColumns(json,columns);
             }
             json = processExtendReaderJson(parameter,json,srcExtendJson);
@@ -154,7 +154,7 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
             if (MediaSourceType.HBASE == srcInfo.getParameterObj().getMediaSourceType()) {
                 columns = buildColumnFamily( target.getColumn() );
                 if(timing.isOpen()) {
-                    path = "/user/hbase/" + mediaName +"/"+ DataxJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                    path = "/user/hbase/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
                 } else {
                     path = "/user/hbasehistory/" + mediaName +"/"+ formatDateString;
                 }
@@ -165,7 +165,7 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
                 String schema = srcInfo.getParameterObj().getNamespace();
                 mediaName = filterMultiTables(mediaName);
                 if(timing.isOpen()) {
-                    path = "/user/mysql/" + schema + "/" + mediaName +"/"+ DataxJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                    path = "/user/mysql/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
                 } else {
                     path = "/user/mysqlhistory/" + schema + "/" + mediaName +"/"+ formatDateString;
                 }
@@ -177,9 +177,9 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
                 String schema = srcInfo.getParameterObj().getNamespace();
                 if(timing.isOpen()) {
                     if( isTimeMode ) {
-                        path = "/user/sqlserver/" + schema + "/" + mediaName +"/"+ DataxJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE +"-"+ DataxJobConfigConstant.DATAX_CURRENT_TIME_ESCAPE;;
+                        path = "/user/sqlserver/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE +"-"+ FlinkerJobConfigConstant.DATAX_CURRENT_TIME_ESCAPE;;
                     } else {
-                        path = "/user/sqlserver/" + schema + "/" + mediaName +"/"+ DataxJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                        path = "/user/sqlserver/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
                     }
                 } else {
                     path = "/user/sqlserverhistory/" + schema + "/" + mediaName +"/"+ formatDateString;
@@ -191,9 +191,9 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
                 String schema = srcInfo.getParameterObj().getNamespace();
                 if(timing.isOpen()) {
                     if( isTimeMode ) {
-                        path = "/user/hana/" + schema + "/" + mediaName +"/"+ DataxJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE +"-"+ DataxJobConfigConstant.DATAX_CURRENT_TIME_ESCAPE;;
+                        path = "/user/hana/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE +"-"+ FlinkerJobConfigConstant.DATAX_CURRENT_TIME_ESCAPE;;
                     } else {
-                        path = "/user/hana/" + schema + "/" + mediaName +"/"+ DataxJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                        path = "/user/hana/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
                     }
                 } else {
                     path = "/user/hanahistory/" + schema + "/" + mediaName +"/"+ formatDateString;
@@ -205,9 +205,9 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
                 String schema = srcInfo.getParameterObj().getNamespace();
                 if(timing.isOpen()) {
                     if( isTimeMode ) {
-                        path = "/user/oracle/" + schema + "/" + mediaName +"/"+ DataxJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE +"-"+ DataxJobConfigConstant.DATAX_CURRENT_TIME_ESCAPE;;
+                        path = "/user/oracle/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE +"-"+ FlinkerJobConfigConstant.DATAX_CURRENT_TIME_ESCAPE;;
                     } else {
-                        path = "/user/oracle/" + schema + "/" + mediaName +"/"+ DataxJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                        path = "/user/oracle/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
                     }
                 } else {
                     path = "/user/oraclehistory/" + schema + "/" + mediaName +"/"+ formatDateString;
@@ -218,14 +218,14 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
 
             }
 
-            String writer = loadJobConfig(DataxJobConfigConstant.HDFS_WRITER);
-            json = writer.replaceAll(DataxJobConfigConstant.TABLE, mediaName);
-            json = json.replaceAll(DataxJobConfigConstant.PATH, path);
+            String writer = loadJobConfig(FlinkerJobConfigConstant.HDFS_WRITER);
+            json = writer.replaceAll(FlinkerJobConfigConstant.TABLE, mediaName);
+            json = json.replaceAll(FlinkerJobConfigConstant.PATH, path);
             if (StringUtils.isNotBlank(url)) {
-                json = json.replaceAll(DataxJobConfigConstant.HDFSURL, url);
+                json = json.replaceAll(FlinkerJobConfigConstant.HDFSURL, url);
             }
     if (StringUtils.isNotBlank(columns)) {
-        //json = json.replaceAll(DataxJobConfigConstant.COLUMN, columns);
+        //json = json.replaceAll(FlinkerJobConfigConstant.COLUMN, columns);
         json = replaceColumns(json,columns);
     }
     json = processExtendWriterJson(parameter,json,destExtendJson);
@@ -363,7 +363,7 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
         if (MediaSourceType.HBASE == srcInfo.getParameterObj().getMediaSourceType()) {
             columns = buildColumnFamily( target.getColumn() );
             if(timing.isOpen()) {
-                path = "/user/hbase/" + mediaName +"/"+ DataxJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                path = "/user/hbase/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
             } else {
                 path = "/user/hbasehistory/" + mediaName +"/"+ formatDateString;
             }
@@ -371,7 +371,7 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
             RdbMediaSrcParameter  rdbParameter = (RdbMediaSrcParameter)srcInfo.getParameterObj();
             String schema = srcInfo.getParameterObj().getNamespace();
             if(timing.isOpen()) {
-                path = "/user/mysql/" + schema + "/" + mediaName +"/"+ DataxJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                path = "/user/mysql/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
             } else {
                 path = "/user/mysqlhistory/" + schema + "/" + mediaName +"/"+ formatDateString;
             }
@@ -380,7 +380,7 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
             RdbMediaSrcParameter  rdbParameter = (RdbMediaSrcParameter)srcInfo.getParameterObj();
             String schema = srcInfo.getParameterObj().getNamespace();
             if(timing.isOpen()) {
-                path = "/user/sqlserver/" + schema + "/" + mediaName +"/"+ DataxJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                path = "/user/sqlserver/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
             } else {
                 path = "/user/sqlserverhistory/" + schema + "/" + mediaName +"/"+ formatDateString;
             }
@@ -390,7 +390,7 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
             String schema = srcInfo.getParameterObj().getNamespace();
             if(timing.isOpen()) {
                 if(timing.isOpen()) {
-                    path = "/user/oracle/" + schema + "/" + mediaName +"/"+ DataxJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                    path = "/user/oracle/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
                 } else {
                     path = "/user/oraclehistory/" + schema + "/" + mediaName +"/"+ formatDateString;
                 }

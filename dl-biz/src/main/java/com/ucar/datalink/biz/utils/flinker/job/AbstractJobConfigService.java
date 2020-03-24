@@ -1,6 +1,6 @@
 package com.ucar.datalink.biz.utils.flinker.job;
 
-import com.ucar.datalink.biz.utils.DataxJobConfigConstant;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobConfigConstant;
 import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.biz.utils.DataLinkFactory;
@@ -130,10 +130,10 @@ public abstract class AbstractJobConfigService {
 
     public String replaceColumns(String content, String replaceStr) {
         try {
-            return content.replaceAll(DataxJobConfigConstant.COLUMN, replaceStr);
+            return content.replaceAll(FlinkerJobConfigConstant.COLUMN, replaceStr);
         } catch(Exception e) {
             LOGGER.error(e.getMessage(),e);
-            return content.replaceAll(DataxJobConfigConstant.COLUMN, Matcher.quoteReplacement(replaceStr));
+            return content.replaceAll(FlinkerJobConfigConstant.COLUMN, Matcher.quoteReplacement(replaceStr));
         }
     }
 

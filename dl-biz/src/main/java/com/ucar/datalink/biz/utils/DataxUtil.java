@@ -5,6 +5,7 @@ import com.ucar.datalink.biz.dal.MediaSourceDAO;
 import com.ucar.datalink.biz.meta.MetaManager;
 import com.ucar.datalink.biz.meta.MetaMapping;
 import com.ucar.datalink.biz.service.JobService;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobConfigConstant;
 import com.ucar.datalink.biz.utils.flinker.job.JobConfigBuilder;
 import com.ucar.datalink.common.errors.DynamicParamException;
 import com.ucar.datalink.common.utils.DLConfig;
@@ -281,13 +282,13 @@ public class DataxUtil {
         }
 
         String json = info.getJob_content();
-        if(json.contains(DataxJobConfigConstant.DATAX_CURRENT_DATE_DOLLAR_PREFIX)) {
-            String fillData = parameter.get(DataxJobConfigConstant.DATAX_FILL_DATA);
-            map.put( DataxJobConfigConstant.DATAX_CURRENT_DATE, fillData );
+        if(json.contains(FlinkerJobConfigConstant.DATAX_CURRENT_DATE_DOLLAR_PREFIX)) {
+            String fillData = parameter.get(FlinkerJobConfigConstant.DATAX_FILL_DATA);
+            map.put( FlinkerJobConfigConstant.DATAX_CURRENT_DATE, fillData );
         }
-        if(json.contains(DataxJobConfigConstant.DATAX_PRE_DATE_DOLLAR_PREFIX)) {
-            String fillData = parameter.get(DataxJobConfigConstant.DATAX_FILL_DATA);
-            map.put( DataxJobConfigConstant.DATAX_PRE_DATE, fillData);
+        if(json.contains(FlinkerJobConfigConstant.DATAX_PRE_DATE_DOLLAR_PREFIX)) {
+            String fillData = parameter.get(FlinkerJobConfigConstant.DATAX_FILL_DATA);
+            map.put( FlinkerJobConfigConstant.DATAX_PRE_DATE, fillData);
         }
         return map;
     }
@@ -312,30 +313,30 @@ public class DataxUtil {
         }
         String json = info.getJob_content();
         SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
-        if(json.contains(DataxJobConfigConstant.DATAX_CURRENT_DATE_DOLLAR_PREFIX)) {
+        if(json.contains(FlinkerJobConfigConstant.DATAX_CURRENT_DATE_DOLLAR_PREFIX)) {
             //查询当前日期
             logger.debug("[DataxUtil] add DATAX_CURRENT_DATE");
-            String httpParameter = parameter.get( DataxJobConfigConstant.HTTP_PARAMETER_DATE );
+            String httpParameter = parameter.get( FlinkerJobConfigConstant.HTTP_PARAMETER_DATE );
             if(httpParameter != null) {
-                map.put( DataxJobConfigConstant.DATAX_CURRENT_DATE, httpParameter );
+                map.put( FlinkerJobConfigConstant.DATAX_CURRENT_DATE, httpParameter );
             } else {
                 Date d = new Date();
                 String currentDateString = sdf.format(d);
-                map.put( DataxJobConfigConstant.DATAX_CURRENT_DATE, currentDateString );
+                map.put( FlinkerJobConfigConstant.DATAX_CURRENT_DATE, currentDateString );
             }
         }
 
-        if(json.contains(DataxJobConfigConstant.DATAX_PRE_DATE_DOLLAR_PREFIX)) {
+        if(json.contains(FlinkerJobConfigConstant.DATAX_PRE_DATE_DOLLAR_PREFIX)) {
             //替换前一天日期
             logger.debug("[DataxUtil] add DATAX_PRE_DATE");
-            String httpParameter = parameter.get( DataxJobConfigConstant.HTTP_PARAMETER_DATE );
+            String httpParameter = parameter.get( FlinkerJobConfigConstant.HTTP_PARAMETER_DATE );
             if(httpParameter != null) {
                 try {
                     Date currentDate = sdf.parse(httpParameter);
                     long preDayTime = currentDate.getTime() - ONE_DAY_TIME_BY_MILLISECOND;
                     Date preDay = new Date(preDayTime);
                     String preDayStr = sdf.format(preDay);
-                    map.put( DataxJobConfigConstant.DATAX_PRE_DATE, preDayStr);
+                    map.put( FlinkerJobConfigConstant.DATAX_PRE_DATE, preDayStr);
                 } catch (ParseException e) {
                     logger.error(e.getMessage(),e);
                     throw new DynamicParamException(e.getMessage());
@@ -345,12 +346,12 @@ public class DataxUtil {
                 long lastTime = d.getTime() - ONE_DAY_TIME_BY_MILLISECOND;
                 Date pre = new Date( lastTime );
                 String preDateString = sdf.format(pre);
-                map.put( DataxJobConfigConstant.DATAX_PRE_DATE, preDateString);
+                map.put( FlinkerJobConfigConstant.DATAX_PRE_DATE, preDateString);
             }
 
         }
 
-        if(json.contains(DataxJobConfigConstant.DATAX_LAST_EXECUTE_TIME_DOLLAR_PREFIX)) {
+        if(json.contains(FlinkerJobConfigConstant.DATAX_LAST_EXECUTE_TIME_DOLLAR_PREFIX)) {
             //替换上一次实行时间
             //根据job_id 去运行历史表里面查询 desc 创建时间
             logger.debug("[DataxUtil] add DATAX_LAST_EXECUTE_TIME");
@@ -358,7 +359,7 @@ public class DataxUtil {
             JobExecutionInfo executionInfo = getLastSuccessExecuteJobExecutionInfo(info.getId());
             if(executionInfo == null) {
                 if(info.isTiming_yn() && JobConfigInfo.TIMING_TRANSFER_TYPE_INCREMENT.equals(info.getTiming_transfer_type()) ) {
-                    String httpParameterLastExecuteTime = parameter.get(DataxJobConfigConstant.HTTP_PARAMETER_LAST_EXECUTE_TIME);
+                    String httpParameterLastExecuteTime = parameter.get(FlinkerJobConfigConstant.HTTP_PARAMETER_LAST_EXECUTE_TIME);
                     if(StringUtils.isBlank(httpParameterLastExecuteTime)) {
                         //如果这个值为空，即用户没有手动传入这个值，使用一个默认值
                         httpParameterLastExecuteTime = "1970-01-01 01:01:01";
@@ -373,7 +374,7 @@ public class DataxUtil {
                         throw new DynamicParamException(e.getMessage());
                     }
                     String lastTime = lastExecuteFormat.format(d);
-                    map.put( DataxJobConfigConstant.DATAX_LAST_EXECUTE_TIME, "'"+ lastTime +"'");
+                    map.put( FlinkerJobConfigConstant.DATAX_LAST_EXECUTE_TIME, "'"+ lastTime +"'");
                 }
                 else {
                     //如果此任务不是定时任务，或者不是增量任务，则抛错
@@ -382,25 +383,25 @@ public class DataxUtil {
             } else {
                 Timestamp ts = executionInfo.getStart_time();
                 String lastTime = lastExecuteFormat.format(new Date(ts.getTime()));
-                map.put( DataxJobConfigConstant.DATAX_LAST_EXECUTE_TIME, "'"+ lastTime +"'");
+                map.put( FlinkerJobConfigConstant.DATAX_LAST_EXECUTE_TIME, "'"+ lastTime +"'");
             }
         }
 
 
-        if(json.contains(DataxJobConfigConstant.DATAX_CURRENT_TIME_DOLLAR_PREFIX)) {
+        if(json.contains(FlinkerJobConfigConstant.DATAX_CURRENT_TIME_DOLLAR_PREFIX)) {
             logger.debug("[DataxUtil] add DATAX_CURRENT_TIME");
-            String httpParameter = parameter.get( DataxJobConfigConstant.HTTP_PARAMETER_TIME );
+            String httpParameter = parameter.get( FlinkerJobConfigConstant.HTTP_PARAMETER_TIME );
             if(httpParameter != null) {
-                map.put(DataxJobConfigConstant.DATAX_CURRENT_TIME, httpParameter);
+                map.put(FlinkerJobConfigConstant.DATAX_CURRENT_TIME, httpParameter);
             } else {
                 Date d = new Date();
                 SimpleDateFormat format = new SimpleDateFormat(TIME_FORMAT);
                 String currentTimeString = format.format(d) + "00";
-                map.put(DataxJobConfigConstant.DATAX_CURRENT_TIME, currentTimeString);
+                map.put(FlinkerJobConfigConstant.DATAX_CURRENT_TIME, currentTimeString);
             }
         }
 
-        if(json.contains(DataxJobConfigConstant.DATAX_SPECIFIED_PRE_DATE_DOLLAR_PREFIX)) {
+        if(json.contains(FlinkerJobConfigConstant.DATAX_SPECIFIED_PRE_DATE_DOLLAR_PREFIX)) {
             logger.debug("[DataxUtil] add DATAX_SPECIFIED_PRE_DATE");
             String preDateNum = JobConfigBuilder.getHDFSSpecifiedPreDate(json);
             if( StringUtils.isBlank(preDateNum) ) {
@@ -414,7 +415,7 @@ public class DataxUtil {
                 no.set(Calendar.DATE, no.get(Calendar.DATE) - day);
                 Date d2 = no.getTime();
                 String d2Str = sdf.format(d2);
-                map.put(DataxJobConfigConstant.DATAX_SPECIFIED_PRE_DATE, d2Str);
+                map.put(FlinkerJobConfigConstant.DATAX_SPECIFIED_PRE_DATE, d2Str);
             }
         }
         return map;
@@ -425,7 +426,7 @@ public class DataxUtil {
     public static String preDateInitial(JobConfigInfo info) {
         String json = info.getJob_content();
         try {
-            if(json.contains(DataxJobConfigConstant.DATAX_PRE_DATE_DOLLAR_PREFIX)) {
+            if(json.contains(FlinkerJobConfigConstant.DATAX_PRE_DATE_DOLLAR_PREFIX)) {
                 //如果上一次没有执行记录，就把 pre_data 这个路径给去掉，执行一次全量操作
                 JobExecutionInfo executionInfo = getLastSuccessExecuteJobExecutionInfo(info.getId());
                 if(executionInfo != null) {
@@ -434,7 +435,7 @@ public class DataxUtil {
                 }
                 else {
                     //去掉pre_data
-                    json = json.replace(DataxJobConfigConstant.DATAX_PRE_DATA_PATH,"");
+                    json = json.replace(FlinkerJobConfigConstant.DATAX_PRE_DATA_PATH,"");
                 }
             }
         }catch(Exception e) {

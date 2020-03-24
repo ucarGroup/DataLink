@@ -1,4 +1,7 @@
-package com.ucar.datalink.biz.utils;
+package com.ucar.datalink.biz.utils.flinker;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -11,12 +14,7 @@ import java.util.List;
  */
 public class GetBetweenDate {
 
-    public static void main(String[] args) {
-        List<String> list = getBetweenDate("2019-01-28","2019-02-28");
-        for(String date:list){
-            System.out.println(date);
-        }
-    }
+    private static final Logger logger = LoggerFactory.getLogger(GetBetweenDate.class);
 
     /**
      * 返回begin到end之间的日期
@@ -43,7 +41,7 @@ public class GetBetweenDate {
                 }
             }
         }catch (Exception e) {
-            e.printStackTrace();
+            logger.error("get between date error", e);
         }
 
         return betweenList;

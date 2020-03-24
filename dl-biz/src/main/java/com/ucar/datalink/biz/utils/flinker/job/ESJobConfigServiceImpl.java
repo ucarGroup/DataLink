@@ -3,7 +3,7 @@ package com.ucar.datalink.biz.utils.flinker.job;
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.meta.ElasticSearchUtil;
 import com.ucar.datalink.biz.meta.MetaMapping;
-import com.ucar.datalink.biz.utils.DataxJobConfigConstant;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobConfigConstant;
 import com.ucar.datalink.biz.utils.flinker.module.ElasticSearchJobExtendProperty;
 import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
 import com.ucar.datalink.common.utils.DLConfig;
@@ -44,35 +44,35 @@ public class ESJobConfigServiceImpl extends AbstractJobConfigService{
         String json = "";
         try{
             String columns = buildColumnParm( metas );
-            String reader = loadJobConfig(DataxJobConfigConstant.ES_READER);
+            String reader = loadJobConfig(FlinkerJobConfigConstant.ES_READER);
             if(StringUtils.isNotBlank(columns)){
-                //json = writer.replaceAll(DataxJobConfigConstant.COLUMN, columns);
+                //json = writer.replaceAll(FlinkerJobConfigConstant.COLUMN, columns);
                 json = replaceColumns(reader,columns);
             } else {
                 json = replaceColumns(reader,"");
             }
             if(StringUtils.isNotBlank(hosts)){
-                json = json.replaceAll(DataxJobConfigConstant.HOSTS, hosts);
+                json = json.replaceAll(FlinkerJobConfigConstant.HOSTS, hosts);
             }
             if(StringUtils.isNotBlank(password)){
-                json = json.replaceAll(DataxJobConfigConstant.PASSWORD, password);
+                json = json.replaceAll(FlinkerJobConfigConstant.PASSWORD, password);
             }
             if(StringUtils.isNotBlank(userName)){
-                json = json.replaceAll(DataxJobConfigConstant.USERNAME, userName);
+                json = json.replaceAll(FlinkerJobConfigConstant.USERNAME, userName);
             }
             if(StringUtils.isNotBlank(mediaName)){
-                json = json.replaceAll(DataxJobConfigConstant.TABLE, mediaName);
+                json = json.replaceAll(FlinkerJobConfigConstant.TABLE, mediaName);
                 String[] arr = mediaName.split("\\.");
                 if(arr!=null && arr.length==2) {
-                    json = json.replaceAll(DataxJobConfigConstant.ES_INDEX, arr[0]);
-                    json = json.replaceAll(DataxJobConfigConstant.ES_TYPE, arr[1]);
+                    json = json.replaceAll(FlinkerJobConfigConstant.ES_INDEX, arr[0]);
+                    json = json.replaceAll(FlinkerJobConfigConstant.ES_TYPE, arr[1]);
                 } else {
-                    json = json.replaceAll(DataxJobConfigConstant.ES_INDEX, mediaName);
-                    json = json.replaceAll(DataxJobConfigConstant.ES_TYPE, mediaName);
+                    json = json.replaceAll(FlinkerJobConfigConstant.ES_INDEX, mediaName);
+                    json = json.replaceAll(FlinkerJobConfigConstant.ES_TYPE, mediaName);
                 }
             }
-            json = json.replaceAll("\""+DataxJobConfigConstant.HTTP_PORT+"\"", String.valueOf(httpPort));
-            json = json.replaceAll("\""+DataxJobConfigConstant.TCP_PORT+"\"", String.valueOf(tcpPort));
+            json = json.replaceAll("\""+ FlinkerJobConfigConstant.HTTP_PORT+"\"", String.valueOf(httpPort));
+            json = json.replaceAll("\""+ FlinkerJobConfigConstant.TCP_PORT+"\"", String.valueOf(tcpPort));
             json = processReaderExtendJson(json,srcExtendJson);
         }catch (Exception e){
             LOGGER.error("es createReaderJson error ",e);
@@ -97,22 +97,22 @@ public class ESJobConfigServiceImpl extends AbstractJobConfigService{
         try{
             MediaMeta target = changeNameToAlias( MetaMapping.transformToES(srcMediaMeta) );
             String columns = buildColumnParm( target.getColumn() );
-            String writer = loadJobConfig(DataxJobConfigConstant.ES_WRITER);
+            String writer = loadJobConfig(FlinkerJobConfigConstant.ES_WRITER);
             if(StringUtils.isNotBlank(columns)){
-                //json = writer.replaceAll(DataxJobConfigConstant.COLUMN, columns);
+                //json = writer.replaceAll(FlinkerJobConfigConstant.COLUMN, columns);
                 json = replaceColumns(writer,columns);
             } else {
-                json = writer.replaceAll(DataxJobConfigConstant.COLUMN, "");
+                json = writer.replaceAll(FlinkerJobConfigConstant.COLUMN, "");
             }
 
             if(StringUtils.isNotBlank(hosts)){
-                json = json.replaceAll(DataxJobConfigConstant.HOSTS, hosts);
+                json = json.replaceAll(FlinkerJobConfigConstant.HOSTS, hosts);
             }
             if(StringUtils.isNotBlank(password)){
-                json = json.replaceAll(DataxJobConfigConstant.PASSWORD, password);
+                json = json.replaceAll(FlinkerJobConfigConstant.PASSWORD, password);
             }
             if(StringUtils.isNotBlank(userName)){
-                json = json.replaceAll(DataxJobConfigConstant.USERNAME, userName);
+                json = json.replaceAll(FlinkerJobConfigConstant.USERNAME, userName);
             }
             String type = "";
             if(StringUtils.isNotBlank(mediaName)){
@@ -121,23 +121,23 @@ public class ESJobConfigServiceImpl extends AbstractJobConfigService{
                     type = parseType(mediaName);
                     //如果源端是 关系型数据库，则 ES的 index为namespace，type为表名
                     if(srcInfo.getParameterObj().getMediaSourceType()==MediaSourceType.MYSQL || srcInfo.getParameterObj().getMediaSourceType()==MediaSourceType.SQLSERVER) {
-                        json = json.replaceAll(DataxJobConfigConstant.ES_INDEX, mediaName);
-                        json = json.replaceAll(DataxJobConfigConstant.ES_TYPE, type);
-                        json = json.replaceAll(DataxJobConfigConstant.TABLE, mediaName);
+                        json = json.replaceAll(FlinkerJobConfigConstant.ES_INDEX, mediaName);
+                        json = json.replaceAll(FlinkerJobConfigConstant.ES_TYPE, type);
+                        json = json.replaceAll(FlinkerJobConfigConstant.TABLE, mediaName);
                     }
                     else {
-                        json = json.replaceAll(DataxJobConfigConstant.TABLE, mediaName);
+                        json = json.replaceAll(FlinkerJobConfigConstant.TABLE, mediaName);
                         //String[] names = mediaName.split("\\.");
-                        json = json.replaceAll(DataxJobConfigConstant.ES_INDEX, mediaName);
-                        json = json.replaceAll(DataxJobConfigConstant.ES_TYPE, type);
+                        json = json.replaceAll(FlinkerJobConfigConstant.ES_INDEX, mediaName);
+                        json = json.replaceAll(FlinkerJobConfigConstant.ES_TYPE, type);
                     }
                 } catch(Exception e) {
-                    json = json.replaceAll(DataxJobConfigConstant.ES_INDEX, mediaName);
-                    json = json.replaceAll(DataxJobConfigConstant.ES_TYPE, type);
+                    json = json.replaceAll(FlinkerJobConfigConstant.ES_INDEX, mediaName);
+                    json = json.replaceAll(FlinkerJobConfigConstant.ES_TYPE, type);
                 }
             }
-            json = json.replaceAll("\""+DataxJobConfigConstant.HTTP_PORT+"\"", String.valueOf(httpPort));
-            json = json.replaceAll("\""+DataxJobConfigConstant.TCP_PORT+"\"", String.valueOf(tcpPort));
+            json = json.replaceAll("\""+ FlinkerJobConfigConstant.HTTP_PORT+"\"", String.valueOf(httpPort));
+            json = json.replaceAll("\""+ FlinkerJobConfigConstant.TCP_PORT+"\"", String.valueOf(tcpPort));
             json = processIsPrefixTable(json,srcInfo,info,orginalMediaName);
 
             //es routing支持

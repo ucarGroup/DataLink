@@ -15,7 +15,6 @@ import java.util.UUID;
  */
 public class EntityCronUtil {
 
-
     private static Logger logger = LoggerFactory.getLogger(EntityCronUtil.class);
 
     private static final String SUCCESS = "SUCCESS";
@@ -62,8 +61,6 @@ public class EntityCronUtil {
             QuartzManager.getInstance().deleteMaxTimeJob(job);
         }
     }
-
-
 
     public static JobScheduleInfo assembleDefaultScheduleInfo(long jobConfigId) {
         JobScheduleInfo scheduleInfo = new JobScheduleInfo();

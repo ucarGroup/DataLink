@@ -1,9 +1,9 @@
-package com.ucar.datalink.biz.utils;
+package com.ucar.datalink.biz.utils.flinker;
 
 /**
  * Created by user on 2017/7/19.
  */
-public class DataxJobConfigConstant {
+public class FlinkerJobConfigConstant {
 
 
     public static final String COLUMN = "\"@column\"";
@@ -56,9 +56,6 @@ public class DataxJobConfigConstant {
 
     public static final String HANA_READER = "biz/jobjson/hanareader.json";
 
-
-
-
     public static final String DB_PORT = "dbPort";
 
     public static final String DB_TYPE = "dbType";
@@ -104,7 +101,6 @@ public class DataxJobConfigConstant {
     public static final String ORACLE_URL = "jdbc:oracle:thin:@//{0}:{1}/{2}";
 
     public static final String HANA_URL = "jdbc:sap://{0}:{1}/{2}";
-
 
     public static final String HTTP_PORT = "@httpPort";
 

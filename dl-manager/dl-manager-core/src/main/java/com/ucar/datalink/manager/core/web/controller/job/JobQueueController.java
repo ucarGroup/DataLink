@@ -4,7 +4,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.ucar.datalink.biz.service.JobQueueService;
 import com.ucar.datalink.biz.service.JobService;
-import com.ucar.datalink.biz.utils.JobQueueScanUtil;
+import com.ucar.datalink.biz.utils.flinker.JobQueueScanUtil;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.domain.job.*;
 import com.ucar.datalink.manager.core.web.annotation.AuthIgnore;

@@ -26,14 +26,9 @@ public class EntityCronTask implements Job{
 
     private static final Logger logger = LoggerFactory.getLogger(EntityCronTask.class);
 
-
-    //@Autowired
     JobService jobService;
 
-    //@Autowired
-    //@Qualifier("dynamic")
     JobControlService jobControlService;
-
 
     public EntityCronTask() {
         jobService = DataLinkFactory.getObject(JobService.class);

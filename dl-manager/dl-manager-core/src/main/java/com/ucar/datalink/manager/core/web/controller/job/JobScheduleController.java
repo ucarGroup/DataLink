@@ -6,10 +6,10 @@ import com.ucar.datalink.biz.service.JobControlService;
 import com.ucar.datalink.biz.service.JobScheduleService;
 import com.ucar.datalink.biz.service.JobService;
 import com.ucar.datalink.biz.service.MediaSourceService;
-import com.ucar.datalink.biz.utils.DataxJobConfigConstant;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobConfigConstant;
 import com.ucar.datalink.biz.utils.DataxUtil;
-import com.ucar.datalink.biz.utils.DateExpressionEngine;
-import com.ucar.datalink.biz.utils.GetBetweenDate;
+import com.ucar.datalink.biz.utils.flinker.DateExpressionEngine;
+import com.ucar.datalink.biz.utils.flinker.GetBetweenDate;
 import com.ucar.datalink.common.errors.ValidationException;
 import com.ucar.datalink.domain.job.JobCommand;
 import com.ucar.datalink.domain.job.JobConfigInfo;
@@ -513,7 +513,7 @@ public class JobScheduleController {
                     command.setJobId(new Long(id));
                     command.setJobName(name);
                     command.setType(JobCommand.Type.Start);
-                    map.put(DataxJobConfigConstant.DATAX_FILL_DATA, fillDataStr);
+                    map.put(FlinkerJobConfigConstant.DATAX_FILL_DATA, fillDataStr);
                     Map<String, String> dyncParaMap =  DataxUtil.replaceDyncParaTofillDate(info, map);
                     if (dyncParaMap != null && dyncParaMap.size() > 0) {
                         command.setDynamicParam(true);

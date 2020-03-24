@@ -1,7 +1,6 @@
 package com.ucar.datalink.manager.core.flinker.cron.entity;
 
 import com.ucar.datalink.biz.service.JobService;
-import com.ucar.datalink.biz.utils.ConfigReadUtil;
 import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.domain.job.JobExecutionInfo;
 import com.ucar.datalink.domain.job.JobExecutionState;
@@ -17,9 +16,6 @@ import org.slf4j.LoggerFactory;
 public class EntityCronCheck implements Job {
 
     private static final Logger logger = LoggerFactory.getLogger(EntityCronCheck.class);
-
-    private static final String REST_URL_PREFIX = ConfigReadUtil.getString("datax.rest.url.prefix");
-    private static final String URL = REST_URL_PREFIX +"/jobService/state?EXECUTE_ID={0}&JOB_ID_SIGNAL={1}";
 
     private JobService jobService = DataLinkFactory.getObject(JobService.class);
 

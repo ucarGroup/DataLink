@@ -1,20 +1,12 @@
 package com.ucar.datalink.flinker.plugin.writer.hdfswriter;
 
+import com.google.common.collect.Sets;
 import com.ucar.datalink.flinker.api.element.Record;
 import com.ucar.datalink.flinker.api.exception.DataXException;
 import com.ucar.datalink.flinker.api.plugin.RecordReceiver;
 import com.ucar.datalink.flinker.api.spi.Writer;
 import com.ucar.datalink.flinker.api.util.Configuration;
 import com.ucar.datalink.flinker.api.util.ErrorRecord;
-import com.ucar.datalink.flinker.core.admin.bean.JobConfigBean;
-import com.ucar.datalink.flinker.core.admin.bean.UserBean;
-import com.ucar.datalink.flinker.core.admin.mail.MailInfo;
-import com.ucar.datalink.flinker.core.admin.mail.MailUtils;
-import com.ucar.datalink.flinker.core.admin.record.JobConfigDbUtils;
-import com.ucar.datalink.flinker.core.admin.record.JobExecution;
-import com.ucar.datalink.flinker.core.admin.record.JobExecutionRecorder;
-import com.ucar.datalink.flinker.core.admin.record.UserDbUtils;
-import com.google.common.collect.Sets;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -70,60 +62,6 @@ public class HdfsWriter extends Writer {
 		public void postHandler(Configuration jobConfiguration){
 
 		}
-
-		private MailInfo assembleMailInfo() {
-			try {
-				List<UserBean> list = UserDbUtils.readUserBeans();
-				List<String> users = new ArrayList<String>();
-				for(UserBean b : list) {
-					if(null!=b.getUcarEmail() && !"".equals(b.getUcarEmail())) {
-						String email = b.getUcarEmail()+"@ucarinc.com";
-						users.add(email);
-					}
-					else if(null!=b.getZucheEmail() && !"".equals(b.getZucheEmail())) {
-						String email = b.getZucheEmail()+"@zuche.com";
-						users.add(email);
-					}
-					else {
-						continue;
-					}
-				}
-				JobExecution execution = JobExecutionRecorder.getInstance().getJobExecution();
-				if(execution == null) {
-					return new MailInfo();
-				}
-				JobConfigBean jobConfig = JobConfigDbUtils.readConfig(execution.getJobId());
-				//如果是定时任务则返回一个空的MailInfo，后续什么都不执行
-				if(jobConfig.isTiming_yn()) {
-					return new MailInfo();
-				}
-				String jobName = jobConfig.getJob_name();
-				String path = this.writerSliceConfig.getString(Key.PATH);
-
-				StringBuilder sb = new StringBuilder();
-				sb.append("HDFS 执行结果 : "+execution.getState().name()+"   <br/>");
-				sb.append("<table border='1'>");
-				sb.append("<tr><td>job 名称</td><td>读出的记录数</td><td>平均流量</td>");
-				sb.append("<td>path</td></tr>");
-				sb.append("<tr><td>").append(jobName).append("</td>");
-				sb.append("<td>").append(execution.getTotalRecord()).append("</td>");
-				sb.append("<td>").append(execution.getByteSpeedPerSecond()+"/s").append("</td>");
-				sb.append("<td>").append(path).append("</td").append("</tr>");
-				sb.append("</table>");
-
-
-				MailInfo info = new MailInfo();
-				info.setSubject("HDFS写入完成 "+execution.getState().name()+"  "+jobName);
-				info.setMailContent(sb.toString());
-				info.setRecipient(users);
-				return info;
-			} catch (Exception e) {
-				LOG.error(e.getMessage(),e);
-				ErrorRecord.addError(e);
-				return new MailInfo();
-			}
-		}
-
 
 		private void validateParameter() {
 			this.defaultFS = this.writerSliceConfig.getNecessaryValue(Key.DEFAULT_FS,
@@ -332,14 +270,6 @@ public class HdfsWriter extends Writer {
 			}
 
 			hdfsHelper.renameFile(mergedTmpFiles, mergedEndFiles);
-
-			MailInfo info = assembleMailInfo();
-			if(info.getRecipient()==null || info.getRecipient().size()==0) {
-				return;
-			}
-			MailUtils.sendMail(info);
-			LOG.info("[HdfsWriter] send mail ok");
-			LOG.info(info.toString());
 		}
 
 		@Override

@@ -1,7 +1,7 @@
 package com.ucar.datalink.biz.utils.flinker.job;
 
 import com.ucar.datalink.biz.meta.MetaMapping;
-import com.ucar.datalink.biz.utils.DataxJobConfigConstant;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobConfigConstant;
 import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.parameter.MediaSrcParameter;
@@ -60,10 +60,10 @@ public class KuduJobConfigServiceImpl extends AbstractJobConfigService{
             columns = columns.substring(1,columns.length() - 1);
             String database2Table = String.format("%s.%s",database,mediaName);
 
-            String writer = loadJobConfig(DataxJobConfigConstant.KUDU_WRITER);
-            writer = writer.replace(DataxJobConfigConstant.KUDU_MASTER_ADDRESSES,masterDddresses);
-            writer = writer.replace(DataxJobConfigConstant.KUDU_TABLE,database2Table);
-            writer = writer.replace(DataxJobConfigConstant.KUDU_COLUMN,columns);
+            String writer = loadJobConfig(FlinkerJobConfigConstant.KUDU_WRITER);
+            writer = writer.replace(FlinkerJobConfigConstant.KUDU_MASTER_ADDRESSES,masterDddresses);
+            writer = writer.replace(FlinkerJobConfigConstant.KUDU_TABLE,database2Table);
+            writer = writer.replace(FlinkerJobConfigConstant.KUDU_COLUMN,columns);
             json = writer;
 
         }catch (Exception e){

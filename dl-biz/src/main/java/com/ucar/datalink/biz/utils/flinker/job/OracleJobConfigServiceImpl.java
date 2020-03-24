@@ -1,7 +1,7 @@
 package com.ucar.datalink.biz.utils.flinker.job;
 
 import com.ucar.datalink.biz.meta.MetaMapping;
-import com.ucar.datalink.biz.utils.DataxJobConfigConstant;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobConfigConstant;
 import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.parameter.MediaSrcParameter;
@@ -46,10 +46,10 @@ public class OracleJobConfigServiceImpl extends AbstractJobConfigService{
 
         String json = "";
         try{
-            String etlUrl = MessageFormat.format(DataxJobConfigConstant.ORACLE_URL, etlHost, port, schema);
-            String url = MessageFormat.format(DataxJobConfigConstant.ORACLE_URL, ip, port, schema);
+            String etlUrl = MessageFormat.format(FlinkerJobConfigConstant.ORACLE_URL, etlHost, port, schema);
+            String url = MessageFormat.format(FlinkerJobConfigConstant.ORACLE_URL, ip, port, schema);
             String columns = buildColumnParm( metas );
-            String reader = loadJobConfig(DataxJobConfigConstant.ORACLE_READER);
+            String reader = loadJobConfig(FlinkerJobConfigConstant.ORACLE_READER);
             json = replace(reader,etlUrl,username,password,columns);
             json = replaceSingleTable(json,mediaName,info);
             //json = createSharingStrateg(dataxJobConfig,json);
@@ -74,9 +74,9 @@ public class OracleJobConfigServiceImpl extends AbstractJobConfigService{
         String json = "";
         try{
             MediaMeta target = changeNameToAlias( MetaMapping.transformToRDBMS(srcMediaMeta) );
-            String url = MessageFormat.format(DataxJobConfigConstant.ORACLE_URL, ip, port, schema);
+            String url = MessageFormat.format(FlinkerJobConfigConstant.ORACLE_URL, ip, port, schema);
             String columns = buildColumnParm( target.getColumn() );
-            String reader = loadJobConfig(DataxJobConfigConstant.ORACLE_WRITER);
+            String reader = loadJobConfig(FlinkerJobConfigConstant.ORACLE_WRITER);
             json = replace(reader,url,username,password,columns);
             json = replaceSingleTable(json, parseMediaName(mediaName),info );
         }catch (Exception e){
@@ -97,20 +97,20 @@ public class OracleJobConfigServiceImpl extends AbstractJobConfigService{
 
     private String replace(String json,String url,String userName,String passWord,String column){
         if(StringUtils.isNotBlank(url)){
-            json = json.replaceAll(DataxJobConfigConstant.JDBCURL, url);
+            json = json.replaceAll(FlinkerJobConfigConstant.JDBCURL, url);
         }
         if(StringUtils.isNotBlank(userName)){
-            json = json.replaceAll(DataxJobConfigConstant.USERNAME,userName);
+            json = json.replaceAll(FlinkerJobConfigConstant.USERNAME,userName);
         }
         if(StringUtils.isNotBlank(passWord)){
-            json = json.replaceAll(DataxJobConfigConstant.PASSWORD,passWord);
+            json = json.replaceAll(FlinkerJobConfigConstant.PASSWORD,passWord);
         }
         if(StringUtils.isNotBlank(column)){
-            //json = json.replaceAll(DataxJobConfigConstant.COLUMN,column);
+            //json = json.replaceAll(FlinkerJobConfigConstant.COLUMN,column);
             json = replaceColumns(json,column);
         }
-        if(json.contains(DataxJobConfigConstant.COLUMN)) {
-            json.replaceAll(DataxJobConfigConstant.COLUMN,"");
+        if(json.contains(FlinkerJobConfigConstant.COLUMN)) {
+            json.replaceAll(FlinkerJobConfigConstant.COLUMN,"");
         }
         return json;
     }
@@ -120,7 +120,7 @@ public class OracleJobConfigServiceImpl extends AbstractJobConfigService{
             String nameSpace = info.getParameterObj().getNamespace();
             String infoName = info.getName();
             String dbName = infoName.replace(nameSpace+"#","");
-            json = json.replaceAll(DataxJobConfigConstant.TABLE,dbName+"."+name);
+            json = json.replaceAll(FlinkerJobConfigConstant.TABLE,dbName+"."+name);
         }
         return json;
     }
@@ -133,13 +133,13 @@ public class OracleJobConfigServiceImpl extends AbstractJobConfigService{
     private String processSplitPrimaryKey(List<ColumnMeta> list, String json) {
         for(ColumnMeta cm : list) {
             if(cm.isPrimaryKey()) {
-                json = json.replaceAll(DataxJobConfigConstant.RMDBS_SPLIT_PK,cm.getName());
+                json = json.replaceAll(FlinkerJobConfigConstant.RMDBS_SPLIT_PK,cm.getName());
                 break;
             }
         }
         //如果当前表没有配置主键信息则将 splitPk这个字段设置为空字符串
-        if( json.contains(DataxJobConfigConstant.RMDBS_SPLIT_PK) ) {
-            json = json.replaceAll(DataxJobConfigConstant.RMDBS_SPLIT_PK,"");
+        if( json.contains(FlinkerJobConfigConstant.RMDBS_SPLIT_PK) ) {
+            json = json.replaceAll(FlinkerJobConfigConstant.RMDBS_SPLIT_PK,"");
         }
         return json;
     }

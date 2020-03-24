@@ -34,7 +34,6 @@ public class EntityQuartzJob extends QuartzJob {
         this.md5 = md5;
     }
 
-
     public Integer getRetryNumber() {
         return retryNumber;
     }
