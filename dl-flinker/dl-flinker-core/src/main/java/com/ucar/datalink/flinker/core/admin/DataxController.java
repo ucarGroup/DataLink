@@ -1,7 +1,9 @@
 package com.ucar.datalink.flinker.core.admin;
 
 import com.ucar.datalink.common.zookeeper.DLinkZkPathDef;
-import com.ucar.datalink.flinker.api.zookeeper.ZkClientx;
+import com.ucar.datalink.common.zookeeper.DLinkZkUtils;
+import com.ucar.datalink.common.zookeeper.ZkClientX;
+import com.ucar.datalink.common.zookeeper.ZkConfig;
 import com.ucar.datalink.flinker.core.admin.rest.RestServer;
 import com.ucar.datalink.flinker.core.admin.util.DataSourceController;
 import org.apache.commons.lang.StringUtils;
@@ -18,7 +20,7 @@ public class DataxController {
 
 	private JobRunningController jobRunningController;
 	private JobConfigController jobConfigController;
-	private ZkClientx zkClient;
+	private ZkClientX zkClient;
 
 	/**
 	 * 内嵌jetty的rest服务，通过rest接口来控制dataX的启动和关闭
@@ -27,7 +29,8 @@ public class DataxController {
 
 	public DataxController(final Properties properties) {
 		final String zkServers = getProperty(properties, AdminConstants.DATAX_ZKSERVERS);
-		this.zkClient = ZkClientx.getZkClient(zkServers);
+		DLinkZkUtils zkUtils = DLinkZkUtils.init(new ZkConfig(zkServers, 10000, 10000),"/datalink");
+		this.zkClient = zkUtils.zkClient();
 		this.zkClient.createPersistent(DLinkZkPathDef.FlinkerWorkerRoot, true);
 		this.zkClient.createPersistent(DLinkZkPathDef.FlinkerJobsRoot, true);
 		this.zkClient.createPersistent(DLinkZkPathDef.FlinkerMonitorRoot, true);
@@ -35,7 +38,7 @@ public class DataxController {
 		this.jobConfigController = new JobConfigController(zkClient);
 		this.server = new RestServer(jobRunningController, zkClient, properties);
 		ChannelBase.setZkClient(zkClient);
-		DataSourceController.getInstance().initialize(properties,ZkClientx.getZkClientForDatalink(zkServers));
+		DataSourceController.getInstance().initialize(properties, zkClient);
 	}
 
 	public void start() {

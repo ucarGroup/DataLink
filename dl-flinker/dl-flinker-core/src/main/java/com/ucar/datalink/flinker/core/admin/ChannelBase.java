@@ -1,12 +1,12 @@
 package com.ucar.datalink.flinker.core.admin;
 
+import com.ucar.datalink.common.zookeeper.ZkClientX;
 import com.ucar.datalink.flinker.api.element.Record;
 import com.ucar.datalink.flinker.api.util.Configuration;
-import com.ucar.datalink.flinker.api.zookeeper.ZkClientx;
+import com.ucar.datalink.flinker.core.statistics.communication.Communication;
 import com.ucar.datalink.flinker.core.statistics.communication.CommunicationTool;
 import com.ucar.datalink.flinker.core.transport.record.TerminateRecord;
 import com.ucar.datalink.flinker.core.util.container.CoreConstant;
-import com.ucar.datalink.flinker.core.statistics.communication.Communication;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,7 @@ public abstract class ChannelBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(ChannelBase.class);
 
-    protected static ZkClientx zkClient;
+    protected static ZkClientX zkClient;
 
     protected static volatile int byteSpeedByZk;
 
@@ -89,7 +89,7 @@ public abstract class ChannelBase {
         this.configuration = configuration;
     }
 
-    public static void setZkClient(ZkClientx zkClient) {
+    public static void setZkClient(ZkClientX zkClient) {
         ChannelBase.zkClient = zkClient;
     }
 

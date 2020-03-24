@@ -1,7 +1,7 @@
 package com.ucar.datalink.flinker.core.admin.rest;
 
 
-import com.ucar.datalink.flinker.api.zookeeper.ZkClientx;
+import com.ucar.datalink.common.zookeeper.ZkClientX;
 import com.ucar.datalink.flinker.core.admin.AdminConstants;
 import com.ucar.datalink.flinker.core.admin.JobRunningController;
 import org.apache.commons.lang.StringUtils;
@@ -18,6 +18,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import javax.servlet.DispatcherType;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
@@ -71,12 +72,12 @@ public class RestServer {
 
     private JobRunningController jobRunningController;
 
-    private ZkClientx zkClient;
+    private ZkClientX zkClient;
 
     /**
      * Create a REST server for this keeper using the specified configs.
      */
-    public RestServer(JobRunningController jobRunningController, ZkClientx zkClient,Properties properties) {
+    public RestServer(JobRunningController jobRunningController, ZkClientX zkClient,Properties properties) {
 
         // To make the advertised port available immediately, we need to do some configuration here
         String hostname = System.getProperty(REST_HOST_NAME_CONFIG,"");

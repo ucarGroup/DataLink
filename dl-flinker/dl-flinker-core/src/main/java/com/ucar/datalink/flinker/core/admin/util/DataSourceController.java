@@ -1,6 +1,6 @@
 package com.ucar.datalink.flinker.core.admin.util;
 
-import com.ucar.datalink.flinker.api.zookeeper.ZkClientx;
+import com.ucar.datalink.common.zookeeper.ZkClientX;
 import com.ucar.datalink.flinker.core.admin.AdminConstants;
 import com.ucar.datalink.flinker.core.admin.record.Encryption;
 import org.slf4j.LoggerFactory;
@@ -16,7 +16,7 @@ public final class DataSourceController {
 
     private static final DataSourceController INSTANCE = new DataSourceController();
 
-    private ZkClientx zkClient;
+    private ZkClientX zkClient;
 
     private String address;
     private Integer port;
@@ -28,7 +28,7 @@ public final class DataSourceController {
 
     }
 
-    public void initialize(Properties properties, ZkClientx zkClient) {
+    public void initialize(Properties properties, ZkClientX zkClient) {
         address = properties.getProperty(AdminConstants.DATAX_DB_ADDRESS);
         port = Integer.valueOf(properties.getProperty(AdminConstants.DATAX_DB_PORT));
         schema = properties.getProperty(AdminConstants.DATAX_DB_SCHEMA);

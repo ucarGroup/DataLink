@@ -1,8 +1,8 @@
 package com.ucar.datalink.flinker.core.admin;
 
 import com.ucar.datalink.common.zookeeper.DLinkZkPathDef;
+import com.ucar.datalink.common.zookeeper.ZkClientX;
 import com.ucar.datalink.flinker.api.util.HostUtils;
-import com.ucar.datalink.flinker.api.zookeeper.ZkClientx;
 import org.I0Itec.zkclient.IZkChildListener;
 import org.I0Itec.zkclient.IZkDataListener;
 import org.slf4j.Logger;
@@ -20,13 +20,13 @@ import java.util.Set;
 public class JobConfigController {
 	private static Logger logger = LoggerFactory.getLogger(JobConfigController.class);
 
-	private ZkClientx zkClient;
+	private ZkClientX zkClient;
 	private IZkChildListener configNodeListener;
 	private IZkDataListener configDataListener;
 	private Set<String> localJobNames;
 	private JobFileManager jobFileManager;
 
-	public JobConfigController(ZkClientx zkClient) {
+	public JobConfigController(ZkClientX zkClient) {
 		this.configNodeListener = new IZkChildListener() {
 			@Override
 			public void handleChildChange(String parentPath, List<String> currentChilds) throws Exception {

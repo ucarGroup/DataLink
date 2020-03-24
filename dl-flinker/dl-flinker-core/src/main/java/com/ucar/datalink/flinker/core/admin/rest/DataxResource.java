@@ -2,9 +2,9 @@ package com.ucar.datalink.flinker.core.admin.rest;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.common.zookeeper.DLinkZkPathDef;
+import com.ucar.datalink.common.zookeeper.ZkClientX;
 import com.ucar.datalink.domain.job.FlinkerMachineInfo;
 import com.ucar.datalink.flinker.api.util.HostUtils;
-import com.ucar.datalink.flinker.api.zookeeper.ZkClientx;
 import com.ucar.datalink.flinker.core.admin.Command;
 import com.ucar.datalink.flinker.core.admin.DataxMachineUtil;
 import com.ucar.datalink.flinker.core.admin.JobRunningController;
@@ -33,7 +33,7 @@ public class DataxResource {
 
     private static JobRunningController jobRunningController;
 
-    private static ZkClientx zkClient;
+    private static ZkClientX zkClient;
 
     private static final String COMMAND_ERROR_MESSAGE = "{\"msg\":\"command invalid\"}";
 
@@ -44,7 +44,7 @@ public class DataxResource {
         DataxResource.jobRunningController = jobRunningController;
     }
 
-    public static void setZkClient(ZkClientx zkClient) {
+    public static void setZkClient(ZkClientX zkClient) {
         DataxResource.zkClient = zkClient;
     }
 

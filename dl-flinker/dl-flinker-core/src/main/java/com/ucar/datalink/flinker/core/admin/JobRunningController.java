@@ -2,9 +2,9 @@ package com.ucar.datalink.flinker.core.admin;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.common.zookeeper.DLinkZkPathDef;
+import com.ucar.datalink.common.zookeeper.ZkClientX;
 import com.ucar.datalink.flinker.api.util.GsonUtil;
 import com.ucar.datalink.flinker.api.util.HostUtils;
-import com.ucar.datalink.flinker.api.zookeeper.ZkClientx;
 import com.ucar.datalink.flinker.core.RunningData;
 import com.ucar.datalink.flinker.core.admin.bean.FlowControlData;
 import com.ucar.datalink.flinker.core.admin.record.JobExecution;
@@ -37,12 +37,12 @@ import java.util.Map;
 public class JobRunningController {
 	private static Logger logger = LoggerFactory.getLogger(JobRunningController.class);
 
-	private ZkClientx zkClient;
+	private ZkClientX zkClient;
 	private IZkDataListener configDataListener;
 	private IZkStateListener zkStateListener;
 	private IZkDataListener monitorConfigDataLister;
 
-	public JobRunningController(final ZkClientx zkClient) {
+	public JobRunningController(final ZkClientX zkClient) {
 		this.configDataListener = new IZkDataListener() {
 			public void handleDataChange(String dataPath, Object data) throws Exception {
 				final Command command = JSONObject.parseObject(new String((byte[]) data), Command.class);
