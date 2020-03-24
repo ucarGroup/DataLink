@@ -26,7 +26,7 @@
         <fileSet>
             <directory>target/</directory>
             <includes>
-                <include>dl-flinker-oraclereader-1.0.0-beta.jar</include>
+                <include>dl-flinker-oraclereader-1.0.2-beta.jar</include>
             </includes>
             <outputDirectory>plugin/reader/oraclereader</outputDirectory>
         </fileSet>

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>dl-worker</artifactId>
         <groupId>com.ucar.datalink</groupId>
-        <version>1.0.0-beta</version>
+        <version>1.0.2-beta</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -18,7 +18,7 @@
         <dependency>
             <groupId>com.ucar.datalink</groupId>
             <artifactId>dl-worker-api</artifactId>
-            <version>1.0.0-beta</version>
+            <version>1.0.2-beta</version>
         </dependency>
 
         <dependency>

@@ -5,7 +5,7 @@
     <artifactId>datalink</artifactId>
     <packaging>pom</packaging>
     <name>datalink</name>
-    <version>1.0.0-beta</version>
+    <version>1.0.2-beta</version>
     <inceptionYear>2016</inceptionYear>
     <url>https://github.com/ucarGroup/DataLink</url>
 

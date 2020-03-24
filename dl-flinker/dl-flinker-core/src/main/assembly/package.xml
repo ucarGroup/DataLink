@@ -41,7 +41,7 @@
         <fileSet>
             <directory>target/</directory>
             <includes>
-                <include>dl-flinker-core-1.0.0-beta.jar</include>
+                <include>dl-flinker-core-1.0.2-beta.jar</include>
             </includes>
             <outputDirectory>/lib</outputDirectory>
         </fileSet>
