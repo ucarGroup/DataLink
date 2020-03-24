@@ -2,8 +2,9 @@ package com.ucar.datalink.flinker.core;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.common.zookeeper.DLinkZkPathDef;
+import com.ucar.datalink.common.zookeeper.DLinkZkUtils;
+import com.ucar.datalink.common.zookeeper.ZkClientX;
 import com.ucar.datalink.flinker.api.util.HostUtils;
-import com.ucar.datalink.flinker.api.zookeeper.ZkClientx;
 import com.ucar.datalink.flinker.core.admin.AdminConstants;
 import com.ucar.datalink.flinker.core.admin.ProcessUtils;
 import com.ucar.datalink.flinker.core.admin.except.ZookeeperNodeExistsException;
@@ -20,7 +21,7 @@ import java.util.Properties;
 
 public class RunningDataManager {
 	private static Logger logger = LoggerFactory.getLogger(RunningDataManager.class);
-	private static ZkClientx zkClient;
+	private static ZkClientX zkClient;
 	private static IZkDataListener configDataListener;
 	private static volatile RunningData runningData;
 	private static String zkPath;
@@ -33,7 +34,7 @@ public class RunningDataManager {
 			String zkServers = StringUtils.trim(properties.getProperty(StringUtils.trim(AdminConstants.DATAX_ZKSERVERS)));
 
 			if (StringUtils.isNotEmpty(zkServers)) {
-				zkClient = ZkClientx.getZkClient(zkServers);
+				zkClient = DLinkZkUtils.get().zkClient();
 				configDataListener = new IZkDataListener() {
 
 					public void handleDataChange(String dataPath, Object data) throws Exception {
