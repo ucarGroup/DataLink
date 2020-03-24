@@ -414,7 +414,7 @@ public class JobRunQueueController {
         //如果是获取所有类型，或者是获取RUNNING类型，则需要检查当前任务状态
         //如果任务状态是RUNNING，但是在zookeeper中已经不存在了，则废弃这个任务
 //        if(isCheckAbandoned) {
-//            Set<String> tasks = DataxUtil.getDataxRunningTask();
+//            Set<String> tasks = FlinkerJobUtil.getDataxRunningTask();
 //            for(JobExecutionView view : jobView) {
 //                if(JobExecutionState.RUNNING.equals(view.getState()) && !tasks.contains(view.getJob_name()) ) {
 //                    view.setAbandonedValue(1);

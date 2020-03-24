@@ -11,7 +11,7 @@ import com.ucar.datalink.biz.meta.MetaMapping;
 import com.ucar.datalink.biz.service.*;
 import com.ucar.datalink.biz.utils.AuditLogOperType;
 import com.ucar.datalink.biz.utils.AuditLogUtils;
-import com.ucar.datalink.biz.utils.DataxUtil;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobUtil;
 import com.ucar.datalink.biz.utils.flinker.check.SyncCheckUtil;
 import com.ucar.datalink.biz.utils.flinker.job.JobConfigBuilder;
 import com.ucar.datalink.biz.utils.flinker.job.JobContentParseUtil;
@@ -323,7 +323,7 @@ public class JobConfigController {
     public List<String> getWorks() {
         List<String> works = new ArrayList<>();
         try {
-            List<String> list = DataxUtil.getDataxMachineAddress();
+            List<String> list = FlinkerJobUtil.getDataxMachineAddress();
             if (list == null || list.size() == 0) {
                 throw new RuntimeException("list is emtpy");
             }
@@ -643,7 +643,7 @@ public class JobConfigController {
             //启动
             for (String jobId : jobIdArr) {
                 JobConfigInfo info = jobService.getJobConfigById(Long.parseLong(jobId));
-                Map<String, String> map = DataxUtil.replaceDynamicParameter(info, new HashMap<String, String>());
+                Map<String, String> map = FlinkerJobUtil.replaceDynamicParameter(info, new HashMap<String, String>());
 
                 JobCommand command = new JobCommand();
                 command.setJobId(new Long(jobId));
@@ -742,7 +742,7 @@ public class JobConfigController {
                     JobConfigInfo configInfo = null;
                     for (HBaseRange r : ranges) {
                         String json = JobConfigBuilder.replaceJsonResult(MediaSourceType.HBASE, info, job_content, r);
-                        json = DataxUtil.formatJson(json);
+                        json = FlinkerJobUtil.formatJson(json);
                         configInfo = new JobConfigInfo();
                         configInfo.setJob_content(JobConfigBuilder.decryptPassword(json));
                         configInfo.setJob_media_name(view.getJob_media_name());
@@ -761,7 +761,7 @@ public class JobConfigController {
                         }
                     }
                     createAndSend(configInfo);
-                    paths.add(DataxUtil.parseHDFSWritePath(configInfo));
+                    paths.add(FlinkerJobUtil.parseHDFSWritePath(configInfo));
                 }
                 //如果没有设置hbase count
                 else {
@@ -783,7 +783,7 @@ public class JobConfigController {
                     } else {
                         createAndSend(info);
                     }
-                    paths.add(DataxUtil.parseHDFSWritePath(info));
+                    paths.add(FlinkerJobUtil.parseHDFSWritePath(info));
                 }
             } else if(view.getDestType().toUpperCase().equals(MediaSourceType.ELASTICSEARCH.name()))  {
                 List<MediaSourceInfo> list = Lists.newArrayList(mediaSourceService.getById(new Long(destID)));
@@ -834,7 +834,7 @@ public class JobConfigController {
                 } else {
                     createAndSend(info);
                 }
-                paths.add(DataxUtil.parseHDFSWritePath(info));
+                paths.add(FlinkerJobUtil.parseHDFSWritePath(info));
             }
             return "success";
         } catch (Exception e) {
@@ -901,7 +901,7 @@ public class JobConfigController {
                 else {
                     jobContent = JobConfigBuilder.buildJson(srcInfo, destInfo, property, srcName, srcColumns, destName, targetColumns, mode);
                 }
-                jobContent = DataxUtil.formatJson(jobContent);
+                jobContent = FlinkerJobUtil.formatJson(jobContent);
                 JobConfigInfo info = new JobConfigInfo();
                 info.setJob_content(jobContent);
                 info.setJob_media_name(dest_names[i]);
@@ -938,7 +938,7 @@ public class JobConfigController {
                         createSchedule(info);
                     }
 
-                    paths.add(DataxUtil.parseHDFSWritePath(info));
+                    paths.add(FlinkerJobUtil.parseHDFSWritePath(info));
                 } else {
                     if(destInfo.getType()==MediaSourceType.ELASTICSEARCH) {
                         List<MediaSourceInfo> mediaSourceInfos = Lists.newArrayList(mediaSourceService.getById(Long.parseLong(destID)));
@@ -957,7 +957,7 @@ public class JobConfigController {
                     } else {
                         createAndSend(info);
                     }
-                    paths.add(DataxUtil.parseHDFSWritePath(info));
+                    paths.add(FlinkerJobUtil.parseHDFSWritePath(info));
                 }
             }
             String[] arr = request.getParameterValues("sourceTableName");
@@ -1215,7 +1215,7 @@ public class JobConfigController {
                 view.setStartValue(1);
             }
             try {
-                String json = DataxUtil.formatJson(i.getOriginal_configuration());
+                String json = FlinkerJobUtil.formatJson(i.getOriginal_configuration());
                 view.setOriginal_configuration(json);
             }catch(Exception e) {
                 view.setOriginal_configuration(i.getOriginal_configuration());
@@ -1231,7 +1231,7 @@ public class JobConfigController {
         //如果是获取所有类型，或者是获取RUNNING类型，则需要检查当前任务状态
         //如果任务状态是RUNNING，但是在zookeeper中已经不存在了，则废弃这个任务
         if (isCheckAbandoned) {
-            Set<String> tasks = DataxUtil.getDataxRunningTask();
+            Set<String> tasks = FlinkerJobUtil.getDataxRunningTask();
             for (JobExecutionView view : jobView) {
                 if (JobExecutionState.RUNNING.equals(view.getState()) && !tasks.contains(view.getJob_name())) {
                     view.setAbandonedValue(1);

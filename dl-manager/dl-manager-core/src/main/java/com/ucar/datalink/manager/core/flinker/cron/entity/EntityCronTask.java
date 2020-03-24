@@ -5,7 +5,7 @@ import com.ucar.datalink.biz.service.JobControlService;
 import com.ucar.datalink.biz.service.JobService;
 import com.ucar.datalink.biz.service.impl.JobServiceDynamicArgs;
 import com.ucar.datalink.biz.utils.DataLinkFactory;
-import com.ucar.datalink.biz.utils.DataxUtil;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobUtil;
 import com.ucar.datalink.domain.job.JobCommand;
 import com.ucar.datalink.domain.job.JobConfigInfo;
 import com.ucar.datalink.domain.job.TimingParameter;
@@ -46,14 +46,14 @@ public class EntityCronTask implements Job{
             JobConfigInfo jobConfigInfo = jobService.getJobConfigById(Long.parseLong(jobConfigId));
             String jobName = jobConfigInfo.getJob_name();
 
-            if (DataxUtil.isJobRunning(job_name)) {
+            if (FlinkerJobUtil.isJobRunning(job_name)) {
                 //如果当前这个job还没执行完，就给调用方返回一个 Long.MIN_VALUE，做一个特殊标志
                 //待调用方下次再调用 doStart()
                 logger.warn("[EntityCronTask]current job not end " + job_name);
                 return;
             }
 
-            Map<String, String> map = DataxUtil.replaceDynamicParameter(jobConfigInfo, new HashMap<String,String>());
+            Map<String, String> map = FlinkerJobUtil.replaceDynamicParameter(jobConfigInfo, new HashMap<String, String>());
             logger.info("[EntityCronTask]dynamic parameter -> " + map.toString());
             JobCommand command = new JobCommand();
             command.setJobId(new Long(jobConfigInfo.getId()));

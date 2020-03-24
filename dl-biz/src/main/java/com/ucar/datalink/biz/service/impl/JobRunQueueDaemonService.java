@@ -2,7 +2,7 @@ package com.ucar.datalink.biz.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.service.*;
-import com.ucar.datalink.biz.utils.DataxUtil;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobUtil;
 import com.ucar.datalink.domain.job.*;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -182,13 +182,13 @@ public class JobRunQueueDaemonService extends JobDaemonService {
             JobConfigInfo info = jobService.getJobConfigById(jobConfigId);
             logger.info("[JobRunQueueListener]scheduleJob JobConfigInfo -> " + info.toString());
             String job_name = info.getJob_name();
-            if (DataxUtil.isJobRunning(job_name)) {
+            if (FlinkerJobUtil.isJobRunning(job_name)) {
                 //根据id查询 job_execution表，返回最近的一条记录
                 JobExecutionInfo jei = jobService.getJustJobExecutionByConfigId(jobConfigId);
                 return jei.getId();
             }
             String job_content = info.getJob_content();
-            Map<String, String> map = DataxUtil.replaceDynamicParameter(info, new HashMap<String, String>());
+            Map<String, String> map = FlinkerJobUtil.replaceDynamicParameter(info, new HashMap<String, String>());
             JobCommand command = new JobCommand();
             command.setJobId(new Long(jobConfigId));
             command.setJobName(job_name);

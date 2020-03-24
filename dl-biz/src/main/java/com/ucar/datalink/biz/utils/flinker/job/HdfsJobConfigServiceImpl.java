@@ -2,7 +2,6 @@ package com.ucar.datalink.biz.utils.flinker.job;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.meta.MetaMapping;
-import com.ucar.datalink.biz.utils.ConfigReadUtil;
 import com.ucar.datalink.biz.utils.flinker.FlinkerJobConfigConstant;
 import com.ucar.datalink.biz.utils.flinker.module.HDFSJobExtendProperty;
 import com.ucar.datalink.biz.utils.flinker.module.JobExtendProperty;
@@ -20,6 +19,7 @@ import com.ucar.datalink.domain.meta.MediaMeta;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -28,15 +28,11 @@ import java.util.*;
 /**
  * Created by user on 2017/7/19.
  */
-
 public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HdfsJobConfigServiceImpl.class);
 
-    private static final String HDFS_READER_PATH_PREFIX = ConfigReadUtil.getString("datax.hdfs.read.prefix.path");
-
     private static final String HIVE_CREATE_DB_SUFFIX = ".db";
-
 
     private static final String DFS_NAMESERVICES_UNDERLINE = "dfs_nameservices";
     private static final String DFS_NAMESERVICES_DOT = "dfs.nameservices";
@@ -58,6 +54,9 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
     private static final String FULL = JobConfigInfo.TIMING_TRANSFER_TYPE_FULL;
 
     private static final String INCREMENT = JobConfigInfo.TIMING_TRANSFER_TYPE_INCREMENT;
+
+    @Value("${biz.flinker.hdfs.read.prefix.path}")
+    private String hdfsReadPrefix;
 
     @Override
     public String createReaderJson(MediaSourceInfo info, List<ColumnMeta> metas, JobExtendProperty property, String mediaName) {
@@ -89,22 +88,22 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
             }
             if(names[0].equals("default")) {
                 if( isContainSpecifiedPreDate(srcExtendJson) ) {
-                    path = HDFS_READER_PATH_PREFIX +  names[1] +"/dt="+  FlinkerJobConfigConstant.DATAX_SPECIFIED_PRE_DATE_ESCAPE +"/*";
+                    path = hdfsReadPrefix +  names[1] +"/dt="+  FlinkerJobConfigConstant.DATAX_SPECIFIED_PRE_DATE_ESCAPE +"/*";
                 } else {
                     if(timing.isOpen() && INCREMENT.equals(timing.getType())) {
-                        path = HDFS_READER_PATH_PREFIX +  names[1] +"/dt="+  FlinkerJobConfigConstant.DATAX_PRE_DATE_ESCAPE +"/*";
+                        path = hdfsReadPrefix +  names[1] +"/dt="+  FlinkerJobConfigConstant.DATAX_PRE_DATE_ESCAPE +"/*";
                     } else {
-                        path = HDFS_READER_PATH_PREFIX +  names[1] +"/*";
+                        path = hdfsReadPrefix +  names[1] +"/*";
                     }
                 }
             } else {
                 if( isContainSpecifiedPreDate(srcExtendJson) ) {
-                    path = HDFS_READER_PATH_PREFIX +  names[0] + HIVE_CREATE_DB_SUFFIX +"/" +names[1] +"/dt="+  FlinkerJobConfigConstant.DATAX_SPECIFIED_PRE_DATE_ESCAPE +"/*";
+                    path = hdfsReadPrefix +  names[0] + HIVE_CREATE_DB_SUFFIX +"/" +names[1] +"/dt="+  FlinkerJobConfigConstant.DATAX_SPECIFIED_PRE_DATE_ESCAPE +"/*";
                 } else {
                     if(timing.isOpen() && INCREMENT.equals(timing.getType())) {
-                        path = HDFS_READER_PATH_PREFIX + names[0] + HIVE_CREATE_DB_SUFFIX +"/"+ names[1] +"/dt="+ FlinkerJobConfigConstant.DATAX_PRE_DATE_ESCAPE +"/*";
+                        path = hdfsReadPrefix + names[0] + HIVE_CREATE_DB_SUFFIX +"/"+ names[1] +"/dt="+ FlinkerJobConfigConstant.DATAX_PRE_DATE_ESCAPE +"/*";
                     } else {
-                        path = HDFS_READER_PATH_PREFIX + names[0] + HIVE_CREATE_DB_SUFFIX +"/"+ names[1] +"/*";
+                        path = hdfsReadPrefix + names[0] + HIVE_CREATE_DB_SUFFIX +"/"+ names[1] +"/*";
                     }
                 }
 
@@ -120,7 +119,6 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
                 json = json.replaceAll(FlinkerJobConfigConstant.HDFSURL, url);
             }
             if (StringUtils.isNotBlank(columns)) {
-                //json = json.replaceAll(FlinkerJobConfigConstant.COLUMN, columns);
                 json = replaceColumns(json,columns);
             }
             json = processExtendReaderJson(parameter,json,srcExtendJson);
@@ -135,9 +133,9 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
     @Override
     public String createWriterJson(MediaSourceInfo srcInfo, MediaSourceInfo info, MediaMeta srcMediaMeta, JobExtendProperty property, String mediaName) {
         checkType(info.getParameterObj());
-        HDFSMediaSrcParameter parameter = (HDFSMediaSrcParameter)info.getParameterObj();
+        HDFSMediaSrcParameter parameter = (HDFSMediaSrcParameter) info.getParameterObj();
         String url = parameter.getNameServices();
-        Map<String,String> destExtendJson = property.getWriter();
+        Map<String, String> destExtendJson = property.getWriter();
         String extendJson = JSONObject.toJSONString(destExtendJson);
         HDFSJobExtendProperty jobExtend = JSONObject.parseObject(extendJson, HDFSJobExtendProperty.class);
         boolean isTimeMode = Boolean.parseBoolean(jobExtend.getHdfsPathType());
@@ -145,76 +143,72 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
 
         String json = "";
         try {
-            MediaMeta target = changeNameToAlias( MetaMapping.transformToHDFS(srcMediaMeta) );
+            MediaMeta target = changeNameToAlias(MetaMapping.transformToHDFS(srcMediaMeta));
             String columns = buildColumnByWrite(target.getColumn());
             String path = "";
             mediaName = parseMediaName(mediaName);
             SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
             String formatDateString = sdf.format(new Date());
             if (MediaSourceType.HBASE == srcInfo.getParameterObj().getMediaSourceType()) {
-                columns = buildColumnFamily( target.getColumn() );
-                if(timing.isOpen()) {
-                    path = "/user/hbase/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                columns = buildColumnFamily(target.getColumn());
+                if (timing.isOpen()) {
+                    path = "/user/hbase/" + mediaName + "/" + FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
                 } else {
-                    path = "/user/hbasehistory/" + mediaName +"/"+ formatDateString;
+                    path = "/user/hbasehistory/" + mediaName + "/" + formatDateString;
                 }
-            }
-
-            else if (MediaSourceType.MYSQL == srcInfo.getParameterObj().getMediaSourceType()) {
-                RdbMediaSrcParameter  rdbParameter = (RdbMediaSrcParameter)srcInfo.getParameterObj();
+            } else if (MediaSourceType.MYSQL == srcInfo.getParameterObj().getMediaSourceType()) {
+                RdbMediaSrcParameter rdbParameter = (RdbMediaSrcParameter) srcInfo.getParameterObj();
                 String schema = srcInfo.getParameterObj().getNamespace();
                 mediaName = filterMultiTables(mediaName);
-                if(timing.isOpen()) {
-                    path = "/user/mysql/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                if (timing.isOpen()) {
+                    path = "/user/mysql/" + schema + "/" + mediaName + "/" + FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
                 } else {
-                    path = "/user/mysqlhistory/" + schema + "/" + mediaName +"/"+ formatDateString;
+                    path = "/user/mysqlhistory/" + schema + "/" + mediaName + "/" + formatDateString;
                 }
                 columns = buildColumnByWrite(target.getColumn());
-            }
-
-            else if (MediaSourceType.SQLSERVER == srcInfo.getParameterObj().getMediaSourceType()) {
-                RdbMediaSrcParameter  rdbParameter = (RdbMediaSrcParameter)srcInfo.getParameterObj();
+            } else if (MediaSourceType.SQLSERVER == srcInfo.getParameterObj().getMediaSourceType()) {
+                RdbMediaSrcParameter rdbParameter = (RdbMediaSrcParameter) srcInfo.getParameterObj();
                 String schema = srcInfo.getParameterObj().getNamespace();
-                if(timing.isOpen()) {
-                    if( isTimeMode ) {
-                        path = "/user/sqlserver/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE +"-"+ FlinkerJobConfigConstant.DATAX_CURRENT_TIME_ESCAPE;;
+                if (timing.isOpen()) {
+                    if (isTimeMode) {
+                        path = "/user/sqlserver/" + schema + "/" + mediaName + "/" + FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE + "-" + FlinkerJobConfigConstant.DATAX_CURRENT_TIME_ESCAPE;
+                        ;
                     } else {
-                        path = "/user/sqlserver/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                        path = "/user/sqlserver/" + schema + "/" + mediaName + "/" + FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
                     }
                 } else {
-                    path = "/user/sqlserverhistory/" + schema + "/" + mediaName +"/"+ formatDateString;
+                    path = "/user/sqlserverhistory/" + schema + "/" + mediaName + "/" + formatDateString;
                 }
                 columns = buildColumnByWrite(target.getColumn());
-            }
-            else if(MediaSourceType.HANA == srcInfo.getParameterObj().getMediaSourceType()) {
-                RdbMediaSrcParameter  rdbParameter = (RdbMediaSrcParameter)srcInfo.getParameterObj();
+            } else if (MediaSourceType.HANA == srcInfo.getParameterObj().getMediaSourceType()) {
+                RdbMediaSrcParameter rdbParameter = (RdbMediaSrcParameter) srcInfo.getParameterObj();
                 String schema = srcInfo.getParameterObj().getNamespace();
-                if(timing.isOpen()) {
-                    if( isTimeMode ) {
-                        path = "/user/hana/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE +"-"+ FlinkerJobConfigConstant.DATAX_CURRENT_TIME_ESCAPE;;
+                if (timing.isOpen()) {
+                    if (isTimeMode) {
+                        path = "/user/hana/" + schema + "/" + mediaName + "/" + FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE + "-" + FlinkerJobConfigConstant.DATAX_CURRENT_TIME_ESCAPE;
+                        ;
                     } else {
-                        path = "/user/hana/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                        path = "/user/hana/" + schema + "/" + mediaName + "/" + FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
                     }
                 } else {
-                    path = "/user/hanahistory/" + schema + "/" + mediaName +"/"+ formatDateString;
+                    path = "/user/hanahistory/" + schema + "/" + mediaName + "/" + formatDateString;
                 }
                 columns = buildColumnByWrite(target.getColumn());
-            }
-            else if(MediaSourceType.ORACLE == srcInfo.getParameterObj().getMediaSourceType()) {
-                RdbMediaSrcParameter  rdbParameter = (RdbMediaSrcParameter)srcInfo.getParameterObj();
+            } else if (MediaSourceType.ORACLE == srcInfo.getParameterObj().getMediaSourceType()) {
+                RdbMediaSrcParameter rdbParameter = (RdbMediaSrcParameter) srcInfo.getParameterObj();
                 String schema = srcInfo.getParameterObj().getNamespace();
-                if(timing.isOpen()) {
-                    if( isTimeMode ) {
-                        path = "/user/oracle/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE +"-"+ FlinkerJobConfigConstant.DATAX_CURRENT_TIME_ESCAPE;;
+                if (timing.isOpen()) {
+                    if (isTimeMode) {
+                        path = "/user/oracle/" + schema + "/" + mediaName + "/" + FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE + "-" + FlinkerJobConfigConstant.DATAX_CURRENT_TIME_ESCAPE;
+                        ;
                     } else {
-                        path = "/user/oracle/" + schema + "/" + mediaName +"/"+ FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
+                        path = "/user/oracle/" + schema + "/" + mediaName + "/" + FlinkerJobConfigConstant.DATAX_CURRENT_DATE_ESCAPE;
                     }
                 } else {
-                    path = "/user/oraclehistory/" + schema + "/" + mediaName +"/"+ formatDateString;
+                    path = "/user/oraclehistory/" + schema + "/" + mediaName + "/" + formatDateString;
                 }
                 columns = buildColumnByWrite(target.getColumn());
-            }
-            else{
+            } else {
 
             }
 
@@ -224,17 +218,16 @@ public class HdfsJobConfigServiceImpl extends AbstractJobConfigService {
             if (StringUtils.isNotBlank(url)) {
                 json = json.replaceAll(FlinkerJobConfigConstant.HDFSURL, url);
             }
-    if (StringUtils.isNotBlank(columns)) {
-        //json = json.replaceAll(FlinkerJobConfigConstant.COLUMN, columns);
-        json = replaceColumns(json,columns);
-    }
-    json = processExtendWriterJson(parameter,json,destExtendJson);
-} catch (Exception e) {
+            if (StringUtils.isNotBlank(columns)) {
+                json = replaceColumns(json, columns);
+            }
+            json = processExtendWriterJson(parameter, json, destExtendJson);
+        } catch (Exception e) {
             e.printStackTrace();
-        LOGGER.error("hdfs createWriterJson error ", e);
+            LOGGER.error("hdfs createWriterJson error ", e);
         }
         return json;
-        }
+    }
 
     private boolean isContainSpecifiedPreDate(Map<String,String> srcExtendJson ) {
         String extendJson = JSONObject.toJSONString(srcExtendJson);

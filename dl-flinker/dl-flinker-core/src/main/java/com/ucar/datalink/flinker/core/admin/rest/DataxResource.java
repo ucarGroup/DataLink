@@ -53,7 +53,6 @@ public class DataxResource {
     @Path("/start")
     public Response start(String command) {
         try {
-            //DataSourceController.getInstance().canStartDataxWithExcept();
             Command comm = JSONObject.parseObject(command,Command.class);
             LOG.info("[DataxResource]create job executeion "+comm);
             long id = createJobExecution(comm);
@@ -158,7 +157,7 @@ public class DataxResource {
 
 
     interface Executor {
-        public void execute(int id);
+        void execute(int id);
     }
 
 

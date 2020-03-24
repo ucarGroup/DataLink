@@ -7,7 +7,6 @@ import com.ucar.datalink.biz.service.JobService;
 import com.ucar.datalink.biz.service.MailService;
 import com.ucar.datalink.biz.service.impl.JobServiceDynamicArgs;
 import com.ucar.datalink.biz.utils.DataLinkFactory;
-import com.ucar.datalink.biz.utils.DataxUtil;
 import com.ucar.datalink.domain.job.*;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -138,7 +137,7 @@ public class JobQueueScanUtil {
         String job_content = info.getJob_content();
         Map<String,String> jsonToMap = new HashMap<>();
 
-        Map<String, String> map = DataxUtil.replaceDynamicParameter(info, jsonToMap);
+        Map<String, String> map = FlinkerJobUtil.replaceDynamicParameter(info, jsonToMap);
         //logger.info("[JobServiceController]dynamic parameter -> " + map.toString());
         JobCommand command = new JobCommand();
         command.setJobId(info.getId());

@@ -99,7 +99,6 @@ public class RestServer {
     public void start() {
             log.info("Starting REST server");
             ResourceConfig resourceConfig = new ResourceConfig();
-//        resourceConfig.register(new FastJsonProvider());
             resourceConfig.register(DataxResource.class);
 
             ServletContainer servletContainer = new ServletContainer(resourceConfig);

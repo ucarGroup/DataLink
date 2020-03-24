@@ -3,7 +3,7 @@ package com.ucar.datalink.biz.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.service.JobControlService;
 import com.ucar.datalink.biz.service.JobService;
-import com.ucar.datalink.biz.utils.DataxUtil;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobUtil;
 import com.ucar.datalink.biz.utils.URLConnectionUtil;
 import com.ucar.datalink.domain.job.JobCommand;
 import com.ucar.datalink.domain.job.JobConfigInfo;
@@ -35,7 +35,7 @@ public class JobServiceDynamicArgs implements JobControlService {
     public String start(JobCommand command, Object additional) {
         String workerAddress = (String)additional;
         if(StringUtils.isBlank(workerAddress)) {
-            workerAddress = DataxUtil.dynamicChoosenDataxMacheine();
+            workerAddress = FlinkerJobUtil.dynamicChoosenDataxMacheine();
         }
         if(StringUtils.isBlank(workerAddress)) {
             throw new RuntimeException("work address is emtpy");
@@ -45,7 +45,7 @@ public class JobServiceDynamicArgs implements JobControlService {
         String json = JSONObject.toJSONString(command);
         logger.info("[JobServiceDynamicArgs]worker address="+workerAddress);
         logger.info("[JobServiceDynamicArgs]json content="+json);
-        String address = DataxUtil.startURL(workerAddress);
+        String address = FlinkerJobUtil.startURL(workerAddress);
         Timestamp start_time = new Timestamp(new Date().getTime());
         String result = URLConnectionUtil.retryPOST(address, json);
         if (result != null && result.contains("failure")) {

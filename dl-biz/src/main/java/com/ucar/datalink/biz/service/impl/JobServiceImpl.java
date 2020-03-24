@@ -3,7 +3,7 @@ package com.ucar.datalink.biz.service.impl;
 import com.ucar.datalink.biz.dal.JobDAO;
 import com.ucar.datalink.biz.service.JobService;
 import com.ucar.datalink.biz.service.MediaSourceService;
-import com.ucar.datalink.biz.utils.DataxUtil;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobUtil;
 import com.ucar.datalink.biz.utils.flinker.job.JobConfigBuilder;
 import com.ucar.datalink.domain.job.JobConfigInfo;
 import com.ucar.datalink.domain.job.JobExecutionInfo;
@@ -99,7 +99,7 @@ public class JobServiceImpl implements JobService {
             MediaSourceInfo destInfo = mediaSourceService.getById(destID);
             if(info.isTiming_yn()) {
                 String json = JobConfigBuilder.reload(info, srcInfo, destInfo);
-                json = DataxUtil.formatJson(json);
+                json = FlinkerJobUtil.formatJson(json);
                 info.setJob_content(json);
                 jobDAO.updateJobConfigContent(info);
             }

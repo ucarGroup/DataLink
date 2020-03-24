@@ -1,31 +1,26 @@
-package com.ucar.datalink.biz.utils;
+package com.ucar.datalink.biz.utils.flinker;
 
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.dal.MediaSourceDAO;
-import com.ucar.datalink.biz.meta.MetaManager;
-import com.ucar.datalink.biz.meta.MetaMapping;
 import com.ucar.datalink.biz.service.JobService;
-import com.ucar.datalink.biz.utils.flinker.FlinkerJobConfigConstant;
+import com.ucar.datalink.biz.utils.DataLinkFactory;
+import com.ucar.datalink.biz.utils.URLConnectionUtil;
 import com.ucar.datalink.biz.utils.flinker.job.JobConfigBuilder;
 import com.ucar.datalink.common.errors.DynamicParamException;
 import com.ucar.datalink.common.utils.DLConfig;
+import com.ucar.datalink.common.zookeeper.DLinkZkPathDef;
+import com.ucar.datalink.common.zookeeper.DLinkZkUtils;
 import com.ucar.datalink.domain.job.FlinkerMachineInfo;
 import com.ucar.datalink.domain.job.JobConfigInfo;
 import com.ucar.datalink.domain.job.JobExecutionInfo;
 import com.ucar.datalink.domain.job.JobRunningData;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
 import com.ucar.datalink.domain.media.MediaSourceType;
-import com.ucar.datalink.domain.meta.ColumnMeta;
-import com.ucar.datalink.domain.meta.MediaMeta;
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.exception.ZkMarshallingError;
-import org.I0Itec.zkclient.serialize.ZkSerializer;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -34,19 +29,9 @@ import java.util.*;
 /**
  * Created by lubiao on 2017/8/17.
  */
-public class DataxUtil {
+public class FlinkerJobUtil {
 
-    private static final Logger logger = LoggerFactory.getLogger(DataxUtil.class);
-
-    /**
-     * datax 在zookeeper上注册的机器ip
-     */
-    private static final String DATAX_ADMIN_WORKERS_PATH = "/datax/admin/workers";
-
-    /**
-     * datax 在zookeeper上运行的任务
-     */
-    private static final String DATAX_ADMIN_JOBS_RUNNING = "/datax/admin/jobs/running";
+    private static final Logger logger = LoggerFactory.getLogger(FlinkerJobUtil.class);
 
     /**
      * 启动datax进程的rest url
@@ -68,13 +53,11 @@ public class DataxUtil {
      */
     private static final String MACHINE_STATE = "/admin/state";
 
-
     private static final String DATE_FORMAT = "yyyy-MM-dd";
 
     private static final String TIME_FORMAT = "HH-";
 
     private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
-
 
     /**
      * datax启动的rest服务的默认端口
@@ -85,34 +68,6 @@ public class DataxUtil {
      * 一天的总时间（毫秒）
      */
     private static final long ONE_DAY_TIME_BY_MILLISECOND = 24 * 3600 * 1000;
-
-    private static ZkClient client;
-
-    static {
-        String servers = ConfigReadUtil.getString("datax.zookeeper.servers");
-        int sessionTimeout = ConfigReadUtil.getInt("datax.zookeeper.session.timeout.ms");
-        int connectTimeout = ConfigReadUtil.getInt("datax.zookeeper.connection.timeout.ms");
-        client = new ZkClient(servers, sessionTimeout, connectTimeout);
-        client.setZkSerializer(new ZkSerializer(){
-            @Override
-            public byte[] serialize(Object data) throws ZkMarshallingError {
-                try {
-                    return ((String) data).getBytes("utf-8");
-                } catch (final UnsupportedEncodingException e) {
-                    throw new ZkMarshallingError(e);
-                }
-            }
-
-            @Override
-            public Object deserialize(byte[] bytes) throws ZkMarshallingError {
-                try {
-                    return new String(bytes, "utf-8");
-                } catch (final UnsupportedEncodingException e) {
-                    throw new ZkMarshallingError(e);
-                }
-            }
-        });
-    }
 
 
     /**
@@ -136,35 +91,8 @@ public class DataxUtil {
      * @return
      */
     public static List<String> getDataxMachineAddress() {
-        List<String> list = client.getChildren(DATAX_ADMIN_WORKERS_PATH);
+        List<String> list = DLinkZkUtils.get().zkClient().getChildren(DLinkZkPathDef.FlinkerWorkerRoot);
         return list;
-    }
-
-    /**
-     * 随机获取一个datax机器的地址  ip和port组成的地址
-     * @return
-     */
-    public static String getWorkAddressByRandom() {
-        List<String> list = getDataxMachineAddress();
-        Random rand = new Random();
-        if(list==null || list.size()==0) {
-            throw new RuntimeException("list is emtpy");
-        }
-        int index = Math.abs( rand.nextInt(list.size()) );
-        String ip = list.get(index);
-        String address_and_port = "http://"+ ip +":"+ DATAX_DEFAULT_REST_PORT;
-        return address_and_port;
-    }
-
-
-    /**
-     * 根据ip地址加上默认端口，拼接一个地址
-     * @param ip
-     * @return
-     */
-    public static String assembleAddress(String ip) {
-        String address_and_port = "http://"+ ip +":"+ DATAX_DEFAULT_REST_PORT;
-        return address_and_port;
     }
 
     /**
@@ -173,7 +101,7 @@ public class DataxUtil {
      * @return
      */
     public static String startURL(String ip) {
-        return "http://"+ ip +":"+DATAX_DEFAULT_REST_PORT + START;
+        return "http://"+ ip +":"+ DATAX_DEFAULT_REST_PORT + START;
     }
 
     /**
@@ -182,7 +110,7 @@ public class DataxUtil {
      * @return
      */
     public static String stopURL(String ip) {
-        return "http://"+ ip +":"+DATAX_DEFAULT_REST_PORT + STOP;
+        return "http://"+ ip +":"+ DATAX_DEFAULT_REST_PORT + STOP;
     }
 
     /**
@@ -191,32 +119,7 @@ public class DataxUtil {
      * @return
      */
     public static String forceStopURL(String ip) {
-        return "http://"+ ip +":"+DATAX_DEFAULT_REST_PORT + FORCE_STOP;
-    }
-
-
-    /**
-     * 获取一个启动datax服务的url，url中的datax机器ip是随机获取的
-     * @return
-     */
-    public static String startURL() {
-        return getWorkAddressByRandom() + START;
-    }
-
-    /**
-     * 获取一个关闭datax服务的url，url中的datax机器ip是随机获取的
-     * @return
-     */
-    public static String stopURL() {
-        return getWorkAddressByRandom() + STOP;
-    }
-
-    /**
-     * 获取一个强制关闭datax服务的url，url中的datax机器ip是随机获取的
-     * @return
-     */
-    public static String forceStopURL() {
-        return getWorkAddressByRandom() + FORCE_STOP;
+        return "http://"+ ip +":"+ DATAX_DEFAULT_REST_PORT + FORCE_STOP;
     }
 
 
@@ -225,7 +128,7 @@ public class DataxUtil {
      * @return
      */
     public static Set<String> getDataxRunningTask() {
-        List<String> list = client.getChildren(DATAX_ADMIN_JOBS_RUNNING);
+        List<String> list = DLinkZkUtils.get().zkClient().getChildren(DLinkZkPathDef.FlinkerRunningRoot);
         if(list == null) {
             return new HashSet<>();
         }
@@ -240,7 +143,7 @@ public class DataxUtil {
      */
     public static JobRunningData getRunningData(String job_name) {
         try {
-            String data = client.readData(DATAX_ADMIN_JOBS_RUNNING +"/"+ job_name, true);
+            String data = DLinkZkUtils.get().zkClient().readData(DLinkZkPathDef.FlinkerRunningRoot + "/" + job_name, true);
             if(data != null) {
                 return JSONObject.parseObject(data, JobRunningData.class);
             }
@@ -260,7 +163,7 @@ public class DataxUtil {
      */
     public static boolean isJobRunning(String job_name) {
         try {
-            Object data = client.readData(DATAX_ADMIN_JOBS_RUNNING +"/"+ job_name, true);
+            Object data = DLinkZkUtils.get().zkClient().readData(DLinkZkPathDef.FlinkerRunningRoot + "/" + job_name, true);
             if(data != null) {
                 return true;
             }
@@ -315,7 +218,7 @@ public class DataxUtil {
         SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
         if(json.contains(FlinkerJobConfigConstant.DATAX_CURRENT_DATE_DOLLAR_PREFIX)) {
             //查询当前日期
-            logger.debug("[DataxUtil] add DATAX_CURRENT_DATE");
+            logger.debug("[FlinkerJobUtil] add DATAX_CURRENT_DATE");
             String httpParameter = parameter.get( FlinkerJobConfigConstant.HTTP_PARAMETER_DATE );
             if(httpParameter != null) {
                 map.put( FlinkerJobConfigConstant.DATAX_CURRENT_DATE, httpParameter );
@@ -328,7 +231,7 @@ public class DataxUtil {
 
         if(json.contains(FlinkerJobConfigConstant.DATAX_PRE_DATE_DOLLAR_PREFIX)) {
             //替换前一天日期
-            logger.debug("[DataxUtil] add DATAX_PRE_DATE");
+            logger.debug("[FlinkerJobUtil] add DATAX_PRE_DATE");
             String httpParameter = parameter.get( FlinkerJobConfigConstant.HTTP_PARAMETER_DATE );
             if(httpParameter != null) {
                 try {
@@ -354,7 +257,7 @@ public class DataxUtil {
         if(json.contains(FlinkerJobConfigConstant.DATAX_LAST_EXECUTE_TIME_DOLLAR_PREFIX)) {
             //替换上一次实行时间
             //根据job_id 去运行历史表里面查询 desc 创建时间
-            logger.debug("[DataxUtil] add DATAX_LAST_EXECUTE_TIME");
+            logger.debug("[FlinkerJobUtil] add DATAX_LAST_EXECUTE_TIME");
             SimpleDateFormat lastExecuteFormat = new SimpleDateFormat(DATE_TIME_FORMAT);
             JobExecutionInfo executionInfo = getLastSuccessExecuteJobExecutionInfo(info.getId());
             if(executionInfo == null) {
@@ -389,7 +292,7 @@ public class DataxUtil {
 
 
         if(json.contains(FlinkerJobConfigConstant.DATAX_CURRENT_TIME_DOLLAR_PREFIX)) {
-            logger.debug("[DataxUtil] add DATAX_CURRENT_TIME");
+            logger.debug("[FlinkerJobUtil] add DATAX_CURRENT_TIME");
             String httpParameter = parameter.get( FlinkerJobConfigConstant.HTTP_PARAMETER_TIME );
             if(httpParameter != null) {
                 map.put(FlinkerJobConfigConstant.DATAX_CURRENT_TIME, httpParameter);
@@ -402,7 +305,7 @@ public class DataxUtil {
         }
 
         if(json.contains(FlinkerJobConfigConstant.DATAX_SPECIFIED_PRE_DATE_DOLLAR_PREFIX)) {
-            logger.debug("[DataxUtil] add DATAX_SPECIFIED_PRE_DATE");
+            logger.debug("[FlinkerJobUtil] add DATAX_SPECIFIED_PRE_DATE");
             String preDateNum = JobConfigBuilder.getHDFSSpecifiedPreDate(json);
             if( StringUtils.isBlank(preDateNum) ) {
                 logger.error("preDateNum is empty");
@@ -421,29 +324,6 @@ public class DataxUtil {
         return map;
 
     }
-
-
-    public static String preDateInitial(JobConfigInfo info) {
-        String json = info.getJob_content();
-        try {
-            if(json.contains(FlinkerJobConfigConstant.DATAX_PRE_DATE_DOLLAR_PREFIX)) {
-                //如果上一次没有执行记录，就把 pre_data 这个路径给去掉，执行一次全量操作
-                JobExecutionInfo executionInfo = getLastSuccessExecuteJobExecutionInfo(info.getId());
-                if(executionInfo != null) {
-                    //有上一次的运行记录，继续保留pre_data，不做处理
-                    return json;
-                }
-                else {
-                    //去掉pre_data
-                    json = json.replace(FlinkerJobConfigConstant.DATAX_PRE_DATA_PATH,"");
-                }
-            }
-        }catch(Exception e) {
-            logger.warn(e.getMessage(),e);
-        }
-        return json;
-    }
-
 
     /**
      * 根据ip拼接一个获取datax机器运行状态的url
@@ -502,157 +382,6 @@ public class DataxUtil {
         return iteratorAddress;
     }
 
-
-    public static String assembleMailInfo(MediaSourceInfo srcInfo, MediaSourceInfo destInfo, String names, List<String> paths) throws Exception {
-        StringBuffer buf = new StringBuffer();
-        buf.append("hi:").append("<br>").append("<br>");
-        String env = ConfigReadUtil.getString("datax.env");
-        buf.append("&nbsp &nbsp &nbsp").append("当前环境 : ").append(env).append("<br/>");
-        buf.append("&nbsp &nbsp &nbsp").append("您有个数据同步任务").append("从").append(srcInfo.getName()).append("(").append(srcInfo.getParameterObj().getMediaSourceType().name()).append(")  ")
-                .append("同步到").append(destInfo.getName()).append("(").append(destInfo.getParameterObj().getMediaSourceType().name()).append(")  ").append(",请查看").append("<br>");
-
-        //增加hdfs写入路径信息
-        String hdfsInfo = assembleHDFSPathInfo(srcInfo,destInfo,names,paths);
-        if(StringUtils.isNotBlank(hdfsInfo)) {
-            buf.append(hdfsInfo);
-        }
-        if (StringUtils.isNotBlank(names)) {
-            String[] tables = names.split(",");
-            for (String t : tables) {
-                buf.append("").append("<br>");
-                buf.append("表名称:").append(t).append("<br>");
-                List<ColumnMeta> columns = MetaManager.getColumns(srcInfo, t);
-                buf.append(assembleTableInfo(columns, srcInfo, destInfo));
-                buf.append("</table>");
-                buf.append("<br/><br/>");
-                buf.append("<hr/>");
-            }//end for
-        }
-        return buf.toString();
-    }
-
-    private static String assembleHDFSPathInfo(MediaSourceInfo srcInfo, MediaSourceInfo destInfo, String names, List<String> paths) {
-        if(destInfo.getType() != MediaSourceType.HDFS) {
-            return "<br/>";
-        }
-        if (StringUtils.isNotBlank(names)) {
-            StringBuilder sb = new StringBuilder();
-            String[] tables = names.split(",");
-            if(tables.length>0) {
-                sb.append("HDFS写入的路径如下：<br/>");
-            }
-            for(String p : paths) {
-                if(StringUtils.isNotBlank(p)) {
-                    sb.append(p).append("<br/>");
-                }
-            }
-            return sb.toString();
-        }
-        return null;
-    }
-
-
-    private static String assembleTableInfo(List<ColumnMeta> columns, MediaSourceInfo info, MediaSourceInfo destInfo) {
-        boolean needTransform = false;
-        StringBuilder buf = new StringBuilder();
-        if (MediaSourceType.HBASE == info.getType()) {
-            if (MediaSourceType.ELASTICSEARCH == destInfo.getType() || MediaSourceType.HDFS == destInfo.getType() || MediaSourceType.POSTGRESQL == destInfo.getType()) {
-                buf.append("<table border='1'>").append("<tr><td>列族名称</td><td>字段名称</td><td>转换后的类型</td></tr>");
-                needTransform = true;
-            } else {
-                buf.append("<table border='1'>").append("<tr><td>列族名称</td><td>字段名称</td></tr>");
-            }
-
-        } else if (MediaSourceType.MYSQL == info.getType() || MediaSourceType.SQLSERVER == info.getType() || MediaSourceType.POSTGRESQL == info.getType()) {
-            if (MediaSourceType.ELASTICSEARCH == destInfo.getType() || MediaSourceType.HDFS == destInfo.getType()) {
-                buf.append("<table border='1'>").append("<tr><td>字段名称</td><td>字段类型</td><td>字段长度</td><td>字段精度</td><td>字段描述</td><td>转换后的类型</td></tr>");
-                needTransform = true;
-            } else {
-                buf.append("<table border='1'>").append("<tr><td>字段名称</td><td>字段类型</td><td>字段长度</td><td>字段精度</td><td>字段描述</td></tr>");
-            }
-        } else {
-            if (info.getType() != destInfo.getType() && (MediaSourceType.ELASTICSEARCH == info.getType() || MediaSourceType.HDFS == info.getType())) {
-                buf.append("<table border='1'>").append("<tr><td>字段名称</td><td>字段类型</td><td>字段描述</td><td>转换后的类型</td></tr>");
-                needTransform = true;
-            } else {
-                buf.append("<table border='1'>").append("<tr><td>字段名称</td><td>字段类型</td><td>字段描述</td></tr>");
-            }
-        }
-
-        MediaMeta target = new MediaMeta();
-        if (needTransform) {
-            MediaMeta mm = new MediaMeta();
-            mm.setColumn(columns);
-            mm.setName(info.getName());
-            mm.setNameSpace(info.getParameterObj().getNamespace());
-            mm.setDbType(info.getType());
-            if (destInfo.getType() == MediaSourceType.ELASTICSEARCH) {
-                target = MetaMapping.transformToES(mm);
-            } else if (destInfo.getType() == MediaSourceType.HBASE) {
-                target = MetaMapping.transformToHBase(mm);
-            } else if (destInfo.getType() == MediaSourceType.HDFS) {
-                target = MetaMapping.transformToHDFS(mm);
-            } else if (destInfo.getType() == MediaSourceType.MYSQL || destInfo.getType() == MediaSourceType.SQLSERVER || destInfo.getType() == MediaSourceType.POSTGRESQL) {
-                target = MetaMapping.transformToRDBMS(mm);
-            }
-        }
-
-        Map<String, ColumnMeta> map = new HashMap<>();
-        if (target.getColumn() != null) {
-            List<ColumnMeta> targetColumns = target.getColumn();
-            for (ColumnMeta cm : targetColumns) {
-                map.put(cm.getName(), cm);
-            }
-        }
-
-        if (columns != null && columns.size() > 0) {
-            for (ColumnMeta cm : columns) {
-                ColumnMeta targetColumn = map.get(cm.getName());
-                if (targetColumn == null) {
-                    targetColumn = new ColumnMeta();
-                    targetColumn.setType("");
-                }
-                if (MediaSourceType.HBASE == info.getType()) {
-                    if (MediaSourceType.ELASTICSEARCH == destInfo.getType() || MediaSourceType.HDFS == destInfo.getType() || MediaSourceType.POSTGRESQL == destInfo.getType()) {
-                        buf.append("<tr><td>").append(cm.getColumnFamily()).append("</td>").append("<td>").append(cm.getName()).append("</td>").append("<td>").append(targetColumn.getType()).append("</td></tr>");
-                    } else {
-                        buf.append("<tr><td>").append(cm.getColumnFamily()).append("</td>").append("<td>").append(cm.getName()).append("</td></tr>");
-                    }
-                } else if (MediaSourceType.MYSQL == info.getType() || MediaSourceType.SQLSERVER == info.getType() || MediaSourceType.POSTGRESQL == info.getType()) {
-                    //如果目标端是HDFS或者ES，则把转换后的类型也显示出来
-                    if (MediaSourceType.ELASTICSEARCH == destInfo.getType() || MediaSourceType.HDFS == destInfo.getType()) {
-                        String columnDesc = "";
-                        if (StringUtils.isNotBlank(cm.getColumnDesc())) {
-                            columnDesc = cm.getColumnDesc();
-                        }
-                        buf.append("<tr><td>").append(cm.getName()).append("</td>").append("<td>").append(cm.getType()).append("</td>");
-                        buf.append("<td>").append(cm.getLength()).append("</td>").append("<td>").append(cm.getDecimalDigits()).append("</td>").append("<td>").append(columnDesc).append("</td>").
-                                append("<td>").append(targetColumn.getType()).append("</td></tr>");
-                    } else {
-                        String columnDesc = "";
-                        if (StringUtils.isNotBlank(cm.getColumnDesc())) {
-                            columnDesc = cm.getColumnDesc();
-                        }
-                        buf.append("<tr><td>").append(cm.getName()).append("</td>").append("<td>").append(cm.getType()).append("</td>");
-                        buf.append("<td>").append(cm.getLength()).append("</td>").append("<td>").append(cm.getDecimalDigits()).append("</td>").append("<td>").append(columnDesc).append("</td></tr>");
-                    }
-                } else {
-                    String columnDesc = "";
-                    if (StringUtils.isNotBlank(cm.getColumnDesc())) {
-                        columnDesc = cm.getColumnDesc();
-                    }
-                    if (info.getType() != destInfo.getType() && (MediaSourceType.ELASTICSEARCH == info.getType() || MediaSourceType.HDFS == info.getType())) {
-                        buf.append("<tr><td>").append(cm.getName()).append("</td>").append("<td>").append(cm.getType()).append("</td>").append("<td>").append(columnDesc).append("</td>").
-                                append("<td>").append(targetColumn.getType()).append("</td></tr>");
-                    } else {
-                        buf.append("<tr><td>").append(cm.getName()).append("</td>").append("<td>").append(cm.getType()).append("</td>").append("<td>").append(columnDesc).append("</td></tr>");
-                    }
-                }
-            }
-        }
-        return buf.toString();
-    }
-
     public static String parseHDFSWritePath(JobConfigInfo info) {
         MediaSourceInfo targetMediaSourceInfo = getMediaSourceInfo( info.getJob_target_media_source_id() );
         if(targetMediaSourceInfo.getType() != MediaSourceType.HDFS) {
@@ -672,19 +401,6 @@ public class DataxUtil {
             return "";
         }
     }
-
-    public static String randomString(int len) {
-        len = 10;
-        String chars = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";    /****默认去掉了容易混淆的字符oOLl,9gq,Vv,Uu,I1****/
-        int maxPos = chars.length();
-        String pwd = "";
-        for (int i = 0; i < len; i++) {
-            pwd += chars.charAt((int) Math.floor(Math.random() * maxPos));
-        }
-        return pwd;
-    }
-
-
 
     public static String repeat(String s, int count) {
         StringBuilder sb = new StringBuilder();
@@ -757,15 +473,4 @@ public class DataxUtil {
         }
         return targetJson;
     }
-
-
-
-    public static void main(String[] args) {
-        Date d = new Date();
-        SimpleDateFormat format = new SimpleDateFormat(TIME_FORMAT);
-        String currentTimeString = format.format(d) +"-00";
-        System.out.println(currentTimeString);
-    }
-
-
 }

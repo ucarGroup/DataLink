@@ -7,7 +7,7 @@ import com.ucar.datalink.biz.service.JobScheduleService;
 import com.ucar.datalink.biz.service.JobService;
 import com.ucar.datalink.biz.service.MediaSourceService;
 import com.ucar.datalink.biz.utils.flinker.FlinkerJobConfigConstant;
-import com.ucar.datalink.biz.utils.DataxUtil;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobUtil;
 import com.ucar.datalink.biz.utils.flinker.DateExpressionEngine;
 import com.ucar.datalink.biz.utils.flinker.GetBetweenDate;
 import com.ucar.datalink.common.errors.ValidationException;
@@ -440,7 +440,7 @@ public class JobScheduleController {
         }
 
         try {
-            if (DataxUtil.isJobRunning(name)) {
+            if (FlinkerJobUtil.isJobRunning(name)) {
                 logger.info("[JobSechduleController]current job not end " + name);
                 return "job still running";
             }
@@ -514,7 +514,7 @@ public class JobScheduleController {
                     command.setJobName(name);
                     command.setType(JobCommand.Type.Start);
                     map.put(FlinkerJobConfigConstant.DATAX_FILL_DATA, fillDataStr);
-                    Map<String, String> dyncParaMap =  DataxUtil.replaceDyncParaTofillDate(info, map);
+                    Map<String, String> dyncParaMap =  FlinkerJobUtil.replaceDyncParaTofillDate(info, map);
                     if (dyncParaMap != null && dyncParaMap.size() > 0) {
                         command.setDynamicParam(true);
                         command.setMapParam(dyncParaMap);

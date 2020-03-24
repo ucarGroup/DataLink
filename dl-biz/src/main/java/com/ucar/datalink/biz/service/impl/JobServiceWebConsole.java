@@ -3,7 +3,7 @@ package com.ucar.datalink.biz.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.ucar.datalink.biz.service.JobControlService;
 import com.ucar.datalink.biz.service.JobService;
-import com.ucar.datalink.biz.utils.DataxUtil;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobUtil;
 import com.ucar.datalink.biz.utils.URLConnectionUtil;
 import com.ucar.datalink.domain.job.JobCommand;
 import com.ucar.datalink.domain.job.JobExecutionInfo;
@@ -36,11 +36,11 @@ public class JobServiceWebConsole implements JobControlService {
             String worker = (String)additional;
             String json = JSONObject.toJSONString(command);
             if("-1".equals(worker)) {
-                worker = DataxUtil.dynamicChoosenDataxMacheine();
+                worker = FlinkerJobUtil.dynamicChoosenDataxMacheine();
             }
 
             //发送一个HTTP请求到 DataX服务器
-            String address = DataxUtil.startURL(worker);
+            String address = FlinkerJobUtil.startURL(worker);
             result = URLConnectionUtil.retryPOST(address, json);
             if (result != null && result.contains("msg")) {
                 return "failure";

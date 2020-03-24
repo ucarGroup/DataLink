@@ -5,7 +5,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.ucar.datalink.biz.service.JobService;
 import com.ucar.datalink.biz.service.MediaSourceService;
-import com.ucar.datalink.biz.utils.DataxUtil;
+import com.ucar.datalink.biz.utils.flinker.FlinkerJobUtil;
 import com.ucar.datalink.biz.utils.URLConnectionUtil;
 import com.ucar.datalink.domain.job.*;
 import com.ucar.datalink.domain.media.MediaSourceInfo;
@@ -277,7 +277,7 @@ public class JobExecutionController {
                view.setStartValue(1);
             }
             try {
-                String json = DataxUtil.formatJson(i.getOriginal_configuration());
+                String json = FlinkerJobUtil.formatJson(i.getOriginal_configuration());
                 view.setOriginal_configuration(json);
             } catch(Exception e) {
                 view.setOriginal_configuration(i.getOriginal_configuration());
@@ -294,7 +294,7 @@ public class JobExecutionController {
         //如果是获取所有类型，或者是获取RUNNING类型，则需要检查当前任务状态
         //如果任务状态是RUNNING，但是在zookeeper中已经不存在了，则废弃这个任务
         if(isCheckAbandoned) {
-            Set<String> tasks = DataxUtil.getDataxRunningTask();
+            Set<String> tasks = FlinkerJobUtil.getDataxRunningTask();
             for(JobExecutionView view : jobView) {
                 if(JobExecutionState.RUNNING.equals(view.getState()) && !tasks.contains(view.getJob_name()) ) {
                     view.setAbandonedValue(1);
@@ -340,7 +340,7 @@ public class JobExecutionController {
         }
         String json = JSONObject.toJSONString(command);
         //发送一个HTTP请求到 DataX服务器
-        String address = DataxUtil.startURL(worker);
+        String address = FlinkerJobUtil.startURL(worker);
         String result = URLConnectionUtil.retryPOST(address,json);
         if(result!=null && result.contains("success")) {
             return "success";
@@ -359,7 +359,7 @@ public class JobExecutionController {
             logger.warn("id or job_name is null");
             return "fail";
         }
-        JobRunningData data = DataxUtil.getRunningData(jobName);
+        JobRunningData data = FlinkerJobUtil.getRunningData(jobName);
         if(StringUtils.isBlank(data.getIp())) {
             logger.warn("cannot found ip, current job maybe stop "+jobName);
             return "fail";
@@ -372,7 +372,7 @@ public class JobExecutionController {
         command.setType(JobCommand.Type.Stop);
         String json = JSONObject.toJSONString(command);
         //发送一个HTTP请求到 DataX服务器
-        String address = DataxUtil.stopURL(data.getIp());
+        String address = FlinkerJobUtil.stopURL(data.getIp());
         String result = URLConnectionUtil.retryPOST(address, json);
         if(result!=null && result.contains("success")) {
             return "success";
@@ -390,7 +390,7 @@ public class JobExecutionController {
             logger.warn("id or job_name is null");
             return "fail";
         }
-        JobRunningData data = DataxUtil.getRunningData(jobName);
+        JobRunningData data = FlinkerJobUtil.getRunningData(jobName);
         if(StringUtils.isBlank(data.getIp())) {
             logger.warn("cannot found ip, current job maybe stop "+jobName);
             return "fail";
@@ -405,7 +405,7 @@ public class JobExecutionController {
         command.setForceStop(true);
         String json = JSONObject.toJSONString(command);
         //发送一个HTTP请求到 DataX服务器
-        String address = DataxUtil.forceStopURL(data.getIp());
+        String address = FlinkerJobUtil.forceStopURL(data.getIp());
         String result = URLConnectionUtil.retryPOST(address, json);
 
         int count = 0;
@@ -414,7 +414,7 @@ public class JobExecutionController {
             if (count > 10) {
                 throw new RuntimeException("job关闭失败");
             }
-            if (DataxUtil.isJobRunning( info.getJob_name()) ) {
+            if (FlinkerJobUtil.isJobRunning(info.getJob_name()) ) {
                 try {
                     Thread.sleep(1000);
                     count++;
@@ -469,7 +469,7 @@ public class JobExecutionController {
         JobExecutionInfo info = jobService.getJobExecutionById(Long.parseLong(id));
         String json = info.getOriginal_configuration();
         try {
-            json = DataxUtil.formatJson(json);
+            json = FlinkerJobUtil.formatJson(json);
         }catch(Exception e) {}
         return json;
     }
