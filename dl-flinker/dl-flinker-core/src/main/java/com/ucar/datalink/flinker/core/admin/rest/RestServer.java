@@ -2,7 +2,9 @@ package com.ucar.datalink.flinker.core.admin.rest;
 
 
 import com.ucar.datalink.flinker.api.zookeeper.ZkClientx;
+import com.ucar.datalink.flinker.core.admin.AdminConstants;
 import com.ucar.datalink.flinker.core.admin.JobRunningController;
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
@@ -22,6 +24,7 @@ import java.net.URI;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Embedded server for the REST API that provides the control plane for Datalink workers.
@@ -36,10 +39,6 @@ public class RestServer {
      */
     public static final String REST_HOST_NAME_CONFIG = "rest.host.name";
 
-    /**
-     * Port for the REST API to listen on.
-     */
-    public static final String REST_PORT_CONFIG = "rest.port";
     public static final int REST_PORT_DEFAULT = 8083;
 
     /**
@@ -77,11 +76,17 @@ public class RestServer {
     /**
      * Create a REST server for this keeper using the specified configs.
      */
-    public RestServer(JobRunningController jobRunningController, ZkClientx zkClient) {
+    public RestServer(JobRunningController jobRunningController, ZkClientx zkClient,Properties properties) {
 
         // To make the advertised port available immediately, we need to do some configuration here
         String hostname = System.getProperty(REST_HOST_NAME_CONFIG,"");
-        Integer port = Integer.getInteger(REST_PORT_CONFIG, REST_PORT_DEFAULT);
+        String portConfig = properties.getProperty(AdminConstants.DATAX_REST_SERVER_PORT);
+        Integer port = null;
+        if(StringUtils.isNotBlank(portConfig)){
+            port = Integer.parseInt(portConfig);
+        }else {
+            port = REST_PORT_DEFAULT;
+        }
 
         jettyServer = new Server();
         ServerConnector connector = new ServerConnector(jettyServer);

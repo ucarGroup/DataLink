@@ -14,4 +14,5 @@ public class AdminConstants {
 	public static final String DATAX_DB_SCHEMA = ROOT + ".schema";
 	public static final String DATAX_DB_USERNAME = ROOT + ".dbconfig.username";
 	public static final String DATAX_DB_PASSWORD = ROOT + ".dbconfig.password";
+	public static final String DATAX_REST_SERVER_PORT = ROOT + ".rest.server.port";
 }

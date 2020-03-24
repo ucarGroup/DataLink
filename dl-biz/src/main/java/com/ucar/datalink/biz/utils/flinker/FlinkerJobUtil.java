@@ -61,8 +61,9 @@ public class FlinkerJobUtil {
 
     /**
      * datax启动的rest服务的默认端口
+     * 當前版本暫時不支持動態修改端口
      */
-    private static final String DATAX_DEFAULT_REST_PORT = "8083";
+    private static final String DATAX_DEFAULT_REST_PORT = "8085";
 
     /**
      * 一天的总时间（毫秒）
@@ -72,7 +73,7 @@ public class FlinkerJobUtil {
 
     /**
      * 根据job配置的id，获取最近一次执行的历史信息，相关查询的sql如下
-     *       SELECT * FROM `t_datax_job_execution` WHERE job_id=#{0} ORDER BY start_time DESC LIMIT 1;
+     *       SELECT * FROM `t_dl_flinker_job_execution` WHERE job_id=#{0} ORDER BY start_time DESC LIMIT 1;
      * @param id
      * @return
      */
