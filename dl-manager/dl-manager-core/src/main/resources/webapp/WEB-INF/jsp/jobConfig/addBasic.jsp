@@ -15,19 +15,6 @@
                 <div class="tabbable">
                     <div class="tab-content" style="border: 0px">
                         <div class="form-group">
-                            <label class="col-sm-3 control-label no-padding-right" for="form-add-sync-mode">同步模式</label>
-                            <div class="col-sm-8">
-                                <select multiple=""
-                                        class="form-add-sync-mode col-sm-5"
-                                        data-placeholder="Click to Choose..." id="form-add-sync-mode"
-                                        style="width:350px;height:35px">
-                                    <option grade="1" value="true" selected>机房内同步</option>
-                                    <option grade="2" value="false" >跨机房同步</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
                             <label class="col-sm-3 control-label no-padding-right" for="form-add-src-type">源库类型</label>
                             <div class="col-sm-8">
                                 <select multiple=""
@@ -168,13 +155,6 @@
 
     var emtpy_json = JSON.parse("{}");
 
-
-    $('.form-add-sync-mode').css('min-width', '100%').select2({
-        allowClear: false,
-        maximumSelectionLength: 1,
-        width: '50%'
-    });
-
     $('.form-add-src-type').css('min-width', '100%').select2({
         allowClear: false,
         maximumSelectionLength: 1,
@@ -204,43 +184,6 @@
         maximumSelectionLength: 32,
         multiple: true,
         width: '50%'
-    });
-
-
-    $('#form-add-sync-mode').change(function() {
-        var name = $('#form-add-sync-mode').val();
-        if(name==null || name=="") {
-            //$('#form-add-src-type').innerHTML = "";
-            //$('#form-add-src-type').html('');
-            $(".form-add-src-type").val('').select2({allowClear: false, maximumSelectionLength: 1, width: '50%'});
-
-            $('#form-add-src-name').innerHTML = "";
-            $('#form-add-src-name').html('');
-            $(".form-add-src-name").val('').select2({allowClear: false, maximumSelectionLength: 1, width: '50%'});
-
-            $('#form-add-dest-type').innerHTML = "";
-            $('#form-add-dest-type').html('');
-            $(".form-add-dest-type").val('').select2({allowClear: false, maximumSelectionLength: 1, width: '50%'});
-
-            $('#form-add-dest-name').innerHTML = "";
-            $('#form-add-dest-name').html('');
-            $(".form-add-dest-name").val('').select2({allowClear: false, maximumSelectionLength: 1, width: '50%'});
-
-            $('#form-add-media-name').innerHTML = "";
-            $('#form-add-media-name').html('');
-            $(".form-add-media-name").val('').select2({allowClear: false, maximumSelectionLength: 1, width: '50%'});
-            add_editor.set(emtpy_json);
-            document.getElementById("form-add-job_name").value = "";
-
-            document.getElementById("es_reader").style.display = "none";
-            document.getElementById("hbase_reader").style.display = "none";
-            document.getElementById("hdfs_reader").style.display = "none";
-            document.getElementById("mysql_reader").style.display = "none";
-            document.getElementById("sqlserver_reader").style.display = "none";
-            document.getElementById("postgresql_reader").style.display = "none";
-            document.getElementById("sddl_reader").style.display = "none";
-            return;
-        }
     });
 
     $('#form-add-src-type').change(function(){
@@ -419,51 +362,25 @@
             document.getElementById("oracle_reader").style.display = "";
         }
 
-
-        var syncMode = $('#form-add-sync-mode').val();
-        if(syncMode=="true") {
-            $.ajax({
-                type: "post",
-                url: "${basePath}/jobConfig/dbTypeChangeInDataCenter?name="+type_name,
-                async: true,
-                dataType: "json",
-                success: function (result) {
-                    if (result != null && result != '') {
-                        var value = "";
-                        for(i=0;i<result.num.length;i++) {
-                            var option = "<option value=" +"'"+ result.num[i] +"'" +">"+ result.val[i] +"</option>";
-                            value += option;
-                        }
-                        document.getElementById("form-add-src-name").innerHTML = value;
+        $.ajax({
+            type: "post",
+            url: "${basePath}/jobConfig/dbTypeChangeInDataCenter?name="+type_name,
+            async: true,
+            dataType: "json",
+            success: function (result) {
+                if (result != null && result != '') {
+                    var value = "";
+                    for(i=0;i<result.num.length;i++) {
+                        var option = "<option value=" +"'"+ result.num[i] +"'" +">"+ result.val[i] +"</option>";
+                        value += option;
                     }
-                    else {
-                        alert(result);
-                    }
+                    document.getElementById("form-add-src-name").innerHTML = value;
                 }
-            });
-        } else {
-            $.ajax({
-                type: "post",
-                url: "${basePath}/jobConfig/crossDataCenter?name="+type_name,
-                async: true,
-                dataType: "json",
-                success: function (result) {
-                    if (result != null && result != '') {
-                        var value = "";
-                        for(i=0;i<result.num.length;i++) {
-                            var option = "<option value=" +"'"+ result.num[i] +"'" +">"+ result.val[i] +"</option>";
-                            value += option;
-                        }
-                        document.getElementById("form-add-src-name").innerHTML = value;
-                    }
-                    else {
-                        alert(result);
-                    }
+                else {
+                    alert(result);
                 }
-            });
-        }
-
-
+            }
+        });
     });
 
 
@@ -498,7 +415,6 @@
         });
 
     });
-
 
     $('#form-add-dest-type').change(function(){
         var type_name = $('#form-add-dest-type').val();
@@ -599,15 +515,6 @@
             //document.getElementById("sddl_writer").style.display = "none";
             document.getElementById("oracle_writer").style.display = "none";
         }
-//        else if(type_name == "SDDL") {
-//            document.getElementById("es_writer").style.display = "none";
-//            document.getElementById("hbase_writer").style.display = "none";
-//            document.getElementById("hdfs_writer").style.display = "none";
-//            document.getElementById("mysql_writer").style.display = "none";
-//            document.getElementById("sqlserver_writer").style.display = "none";
-//            document.getElementById("postgresql_writer").style.display = "none";
-//            document.getElementById("sddl_writer").style.display = "";
-//        }
         else if(type_name == "Oracle"){
             document.getElementById("es_writer").style.display = "none";
             document.getElementById("hbase_writer").style.display = "none";
@@ -619,52 +526,27 @@
             document.getElementById("oracle_writer").style.display = "";
         }
 
-        //alert("dest type change!");
-        var syncMode = $('#form-add-sync-mode').val();
-        if(syncMode=="true") {
-            $.ajax({
-                type: "post",
-                url: "${basePath}/jobConfig/dbTypeChangeInDataCenter?name="+type_name,
-                async: true,
-                dataType: "json",
-                success: function (result) {
-                    if (result != null && result != '') {
-                        var value = "";
-                        for(i=0;i<result.num.length;i++) {
-                            var option = "<option value=" +"'"+ result.num[i] +"'" +">"+ result.val[i] +"</option>";
-                            value += option;
-                        }
-                        document.getElementById("form-add-dest-name").innerHTML = value;
+        $.ajax({
+            type: "post",
+            url: "${basePath}/jobConfig/dbTypeChangeInDataCenter?name="+type_name,
+            async: true,
+            dataType: "json",
+            success: function (result) {
+                if (result != null && result != '') {
+                    var value = "";
+                    for(i=0;i<result.num.length;i++) {
+                        var option = "<option value=" +"'"+ result.num[i] +"'" +">"+ result.val[i] +"</option>";
+                        value += option;
                     }
-                    else {
-                        alert(result);
-                    }
+                    document.getElementById("form-add-dest-name").innerHTML = value;
                 }
-            });
-        } else {
-            $.ajax({
-                type: "post",
-                url: "${basePath}/jobConfig/crossDataCenter?name="+type_name,
-                async: true,
-                dataType: "json",
-                success: function (result) {
-                    if (result != null && result != '') {
-                        var value = "";
-                        for(i=0;i<result.num.length;i++) {
-                            var option = "<option value=" +"'"+ result.num[i] +"'" +">"+ result.val[i] +"</option>";
-                            value += option;
-                        }
-                        document.getElementById("form-add-dest-name").innerHTML = value;
-                    }
-                    else {
-                        alert(result);
-                    }
+                else {
+                    alert(result);
                 }
-            });
-        }
+            }
+        });
 
     });
-
 
     $('#form-add-dest-name').change(function(){
         //reloadJson();
@@ -740,10 +622,6 @@
             }
         });
     }
-
-//    $('#delTable').click(function () {
-//        $(this).parent().parent().remove();
-//    });
 
 
     function refresh() {

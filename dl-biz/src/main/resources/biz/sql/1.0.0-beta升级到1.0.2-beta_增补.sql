@@ -169,3 +169,5 @@ insert into t_dl_menu (code,name,parent_code,type,url,icon,create_time,modify_ti
 insert into t_dl_menu (code,name,parent_code,type,url,icon,create_time,modify_time ) values('005003010','启动或关闭Job','005003000','ACTION','/jobRunQueue/doUpdateState','',now(),now() );
 insert into t_dl_menu (code,name,parent_code,type,url,icon,create_time,modify_time ) values('005003011','开启或关闭Job队列','005003000','ACTION','/jobRunQueue/doOpenOrCloseQueue','',now(),now());
 insert into t_dl_menu (code,name,parent_code,type,url,icon,create_time,modify_time ) values('005003012','再次执行Job','005003000','ACTION','/jobRunQueue/doUpdateJobRunQueueById','',now(),now());
+
+update t_dl_menu set name = '数据补录' where code = '004010400';

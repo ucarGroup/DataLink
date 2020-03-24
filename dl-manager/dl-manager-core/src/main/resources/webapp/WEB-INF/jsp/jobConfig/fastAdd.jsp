@@ -40,19 +40,6 @@
                                     </select>
                                 </div>
                             </div>
-
-                            <div class="col-sm-4 form-group">
-                                <label class="col-sm-3 control-label no-padding-right" for="form-add-sync-mode">同步模式</label>
-                                <div class="col-sm-9">
-                                    <select multiple=""
-                                            class="form-add-sync-mode col-sm-5"
-                                            data-placeholder="Click to Choose..." id="form-add-sync-mode"
-                                            style="width:350px;height:35px">
-                                        <option grade="1" value="true" selected>机房内同步</option>
-                                        <option grade="2" value="false" >跨机房同步</option>
-                                    </select>
-                                </div>
-                            </div>
                         </div>
 
                         <div class="col-sm-12">
@@ -315,12 +302,6 @@
 
     }
 
-    $('.form-add-sync-mode').css('min-width', '100%').select2({
-        allowClear: false,
-        maximumSelectionLength: 1,
-        width: '50%'
-    });
-
     $('.form-add-src-type').css('min-width', '100%').select2({
         allowClear: false,
         maximumSelectionLength: 1,
@@ -359,36 +340,6 @@
         allowClear: false,
         width: '100%'
     });
-
-
-    $('#form-add-sync-mode').change(function() {
-        var name = $('#form-add-sync-mode').val();
-        if(name==null || name=="") {
-            $(".form-add-src-type").val('').select2({allowClear: false, maximumSelectionLength: 1, width: '100%'});
-
-            $('#form-add-src-name').innerHTML = "";
-            $('#form-add-src-name').html('');
-            $(".form-add-src-name").val('').select2({allowClear: false, maximumSelectionLength: 1, width: '100%'});
-
-            $('#form-add-dest-type').innerHTML = "";
-            $('#form-add-dest-type').html('');
-            $(".form-add-dest-type").val('').select2({allowClear: false, maximumSelectionLength: 1, width: '100%'});
-
-            $('#form-add-dest-name').innerHTML = "";
-            $('#form-add-dest-name').html('');
-            $(".form-add-dest-name").val('').select2({allowClear: false, maximumSelectionLength: 1, width: '100%'});
-
-            $('#form-add-media-name').innerHTML = "";
-            $('#form-add-media-name').html('');
-            $(".form-add-media-name").val('').select2({allowClear: false, maximumSelectionLength: 1, width: '100%'});
-
-            $(".form-add-timing-yn").val('').select2({allowClear: false, maximumSelectionLength: 1, width: '100%'});
-            document.getElementById("form-add-schedule-yn_div").style.display = "none";
-            document.getElementById("copyTableName").innerHTML = "";
-            return;
-        }
-    });
-
 
     $('#form-add-src-type').change(function(){
         var type_name = $('#form-add-src-type').val();
@@ -442,51 +393,26 @@
             //
         }
 
-        var syncMode = $('#form-add-sync-mode').val();
-        if(syncMode=="true") {
-            $.ajax({
-                type: "post",
-                url: "${basePath}/jobConfig/dbTypeChange?name="+type_name,
-                async: true,
-                dataType: "json",
-                success: function (result) {
-                    if (result != null && result != '') {
-                        var value = "";
-                        for(i=0;i<result.num.length;i++) {
-                            var option = "<option value=" +"'"+ result.num[i] +"'" +">"+ result.val[i] +"</option>";
-                            value += option;
-                        }
-                        document.getElementById("form-add-src-name").innerHTML = value;
+        $.ajax({
+            type: "post",
+            url: "${basePath}/jobConfig/dbTypeChange?name="+type_name,
+            async: true,
+            dataType: "json",
+            success: function (result) {
+                if (result != null && result != '') {
+                    var value = "";
+                    for(i=0;i<result.num.length;i++) {
+                        var option = "<option value=" +"'"+ result.num[i] +"'" +">"+ result.val[i] +"</option>";
+                        value += option;
                     }
-                    else {
-                        alert(result);
-                    }
+                    document.getElementById("form-add-src-name").innerHTML = value;
                 }
-            });
-        } else {
-            $.ajax({
-                type: "post",
-                url: "${basePath}/jobConfig/crossDataCenter?name="+type_name,
-                async: true,
-                dataType: "json",
-                success: function (result) {
-                    if (result != null && result != '') {
-                        var value = "";
-                        for(i=0;i<result.num.length;i++) {
-                            var option = "<option value=" +"'"+ result.num[i] +"'" +">"+ result.val[i] +"</option>";
-                            value += option;
-                        }
-                        document.getElementById("form-add-src-name").innerHTML = value;
-                    }
-                    else {
-                        alert(result);
-                    }
+                else {
+                    alert(result);
                 }
-            });
-        }
-
+            }
+        });
     });
-
 
     $('#form-add-dest-type').change(function(){
         var type_name = $('#form-add-dest-type').val();
@@ -501,48 +427,25 @@
             document.getElementById("form-add-es-colum-join-div").style.display = "";
         }
 
-        var syncMode = $('#form-add-sync-mode').val();
-        if(syncMode=="true") {
-            $.ajax({
-                type: "post",
-                url: "${basePath}/jobConfig/dbTypeChange?name="+type_name,
-                async: true,
-                dataType: "json",
-                success: function (result) {
-                    if (result != null && result != '') {
-                        var value = "";
-                        for(i=0;i<result.num.length;i++) {
-                            var option = "<option value=" +"'"+ result.num[i] +"'" +">"+ result.val[i] +"</option>";
-                            value += option;
-                        }
-                        document.getElementById("form-add-dest-name").innerHTML = value;
+        $.ajax({
+            type: "post",
+            url: "${basePath}/jobConfig/dbTypeChange?name="+type_name,
+            async: true,
+            dataType: "json",
+            success: function (result) {
+                if (result != null && result != '') {
+                    var value = "";
+                    for(i=0;i<result.num.length;i++) {
+                        var option = "<option value=" +"'"+ result.num[i] +"'" +">"+ result.val[i] +"</option>";
+                        value += option;
                     }
-                    else {
-                        alert(result);
-                    }
+                    document.getElementById("form-add-dest-name").innerHTML = value;
                 }
-            });
-        } else {
-            $.ajax({
-                type: "post",
-                url: "${basePath}/jobConfig/crossDataCenter?name="+type_name,
-                async: true,
-                dataType: "json",
-                success: function (result) {
-                    if (result != null && result != '') {
-                        var value = "";
-                        for(i=0;i<result.num.length;i++) {
-                            var option = "<option value=" +"'"+ result.num[i] +"'" +">"+ result.val[i] +"</option>";
-                            value += option;
-                        }
-                        document.getElementById("form-add-dest-name").innerHTML = value;
-                    }
-                    else {
-                        alert(result);
-                    }
+                else {
+                    alert(result);
                 }
-            });
-        }
+            }
+        });
 
     });
 

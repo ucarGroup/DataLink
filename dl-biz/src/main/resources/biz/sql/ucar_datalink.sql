@@ -1294,7 +1294,7 @@ INSERT INTO t_dl_menu (CODE, NAME, parent_code, type, url, icon, create_time, mo
 INSERT INTO t_dl_menu (CODE, NAME, parent_code, type, url, icon, create_time, modify_time) VALUES
   ('008002000', '审计日志', '007000000', 'LEAF', '/auditLog/auditLogList', '', now(), now());
 INSERT INTO t_dl_menu (code, name, parent_code, type, url, icon, create_time, modify_time) VALUES
-  ('004010400', '跳转数据补录列表页面', '004010000', 'LEAF', '/decorate/toList', '', now(), now());
+  ('004010400', '数据补录', '004010000', 'LEAF', '/decorate/toList', '', now(), now());
 INSERT INTO t_dl_menu (code, name, parent_code, type, url, icon, create_time, modify_time) VALUES
   ('004010401', '跳转数据补录新增页面', '004010400', 'LEAF', '/decorate/toAddDecorate', '', now(), now());
 INSERT INTO t_dl_menu (code, name, parent_code, type, url, icon, create_time, modify_time) VALUES

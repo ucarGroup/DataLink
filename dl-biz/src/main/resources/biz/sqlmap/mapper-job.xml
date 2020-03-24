@@ -197,8 +197,6 @@
         SELECT
         j.*
         FROM t_dl_flinker_job_config j
-        LEFT JOIN t_data_sync_apply s ON j.apply_id = s.id
-        LEFT JOIN t_dl_user u ON s.apply_user_id = u.id
         WHERE j.is_delete=0
         <if test="isTiming == 0">
             AND (j.timing_yn=0 OR j.timing_yn=1)
@@ -212,9 +210,6 @@
 
         <if test="jobName != null">
             AND j.job_name LIKE CONCAT('%',#{jobName},'%')
-        </if>
-        <if test="applyUserId > 0">
-            AND u.id=#{applyUserId}
         </if>
         <if test="jobName == null">
             <if test="applyID > 0">
