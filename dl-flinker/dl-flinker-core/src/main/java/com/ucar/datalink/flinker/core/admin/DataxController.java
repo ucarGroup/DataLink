@@ -33,7 +33,7 @@ public class DataxController {
 		this.zkClient.createPersistent(DLinkZkPathDef.FlinkerMonitorRoot, true);
 		this.jobRunningController = new JobRunningController(zkClient);
 		this.jobConfigController = new JobConfigController(zkClient);
-		this.server = new RestServer(jobRunningController, zkClient);
+		this.server = new RestServer(jobRunningController, zkClient, properties);
 		ChannelBase.setZkClient(zkClient);
 		DataSourceController.getInstance().initialize(properties,ZkClientx.getZkClientForDatalink(zkServers));
 	}

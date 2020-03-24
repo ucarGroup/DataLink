@@ -81,7 +81,7 @@ public class RestServer {
         // To make the advertised port available immediately, we need to do some configuration here
         String hostname = System.getProperty(REST_HOST_NAME_CONFIG,"");
         String portConfig = properties.getProperty(AdminConstants.DATAX_REST_SERVER_PORT);
-        Integer port = null;
+        Integer port;
         if(StringUtils.isNotBlank(portConfig)){
             port = Integer.parseInt(portConfig);
         }else {
