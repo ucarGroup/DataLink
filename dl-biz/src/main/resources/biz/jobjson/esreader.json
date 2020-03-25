@@ -8,7 +8,7 @@
   "core": {
     "transport": {
       "channel": {
-        "class": "com.alibaba.datax.core.transport.channel.memory.MemoryChannel",
+        "class": "com.ucar.datalink.flinker.core.transport.channel.memory.MemoryChannel",
         "speed": {
           "byte": 104857600,
           "record": 200
@@ -18,7 +18,7 @@
         "byteCapacity": 67108864
       },
       "exchanger": {
-        "class": "com.alibaba.datax.core.plugin.BufferedRecordExchanger",
+        "class": "com.ucar.datalink.flinker.core.transport.exchanger.BufferedRecordExchangerr",
         "bufferSize": 128
       }
     }
