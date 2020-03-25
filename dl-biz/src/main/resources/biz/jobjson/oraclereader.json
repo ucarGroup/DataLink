@@ -18,7 +18,7 @@
         "byteCapacity": 67108864
       },
       "exchanger": {
-        "class": "com.ucar.datalink.flinker.core.transport.exchanger.BufferedRecordExchangerr",
+        "class": "com.ucar.datalink.flinker.core.transport.exchanger.BufferedRecordExchanger",
         "bufferSize": 128
       }
     }
