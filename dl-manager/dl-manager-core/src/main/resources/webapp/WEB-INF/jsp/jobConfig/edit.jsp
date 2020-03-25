@@ -75,86 +75,20 @@
                     </div>
                 </div>
 
-<!--
+                <div class="clearfix form-actions">
+                    <div class="col-md-offset-5 col-md-7">
+                        <button class="btn btn-info" type="button" onclick="edit();">
+                            <i class="ace-icon fa fa-check bigger-110"></i>
+                            修改
+                        </button>
 
-                <div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-schedule_yn">是否开启schedule？</label>
-                    <div class="col-sm-9">
-                        ‍‍<select id="form-update-schedule_yn" style="width:350px;height:35px" class="chosen-select col-sm-5"
-                                  onchange="changeSchedule_yn(this.value)">
-                        <option grade="0" value="false" selected>否</option>
-                        <option grade="1" value="true" >是</option>
-                    </select>
+                        &nbsp; &nbsp; &nbsp;
+                        <button class="btn" type="reset" onclick="back2Main();">
+                            返回
+                            <i class="ace-icon fa fa-undo bigger-110"></i>
+                        </button>
                     </div>
                 </div>
-
-                <div class="form-group" id="form-update-scheudle-cron" style="display: none;">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-scheudle-cron">cron表达式</label>
-                    <div class="col-sm-9">
-                        <input type="text" id="form-update-scheudle-cron_id" name="form-update-scheudle-cron" value="* * * * *" onblur="reloadJson()"
-                               class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50" />
-                    </div>
-                </div>
-
-
-                <div class="form-group" id="form-update-schedule-isretry" style="display: none;">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-schedule-isretry">是否重试</label>
-                    <div class="col-sm-9">
-                        <select id="form-update-schedule-isretry_id" style="width:350px;height:35px" class="chosen-select col-sm-5" onblur="reloadJson()" >
-                            <option grade="0" value="false" selected>否</option>
-                            <option grade="1" value="true" >是</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group" id="form-update-schedule-maxretry" style="display: none;">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-schedule-maxretry">每次重试间隔(秒)</label>
-                    <div class="col-sm-9">
-                        <input type="text" id="form-update-schedule-maxretry_id" name="form-update-schedule-maxretry" value="600" onblur="reloadJson()"
-                               class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50" />
-                    </div>
-                </div>
-
-                <div class="form-group" id="form-update-schedule_retry_interval" style="display: none;">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-schedule_retry_interval">最大重试次数</label>
-                    <div class="col-sm-9">
-                        <input type="text" id="form-update-schedule_retry_interval_id" name="" value="2" onblur="reloadJson()"
-                               class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50" />
-                    </div>
-                </div>
-
-                <div class="form-group" id="form-update-schedule_maxRuntime" style="display: none;">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-schedule_maxRuntime">最大运行时间</label>
-                    <div class="col-sm-9">
-                        <input type="text" id="form-update-schedule_maxRuntime_id" name="" value="-1" onblur="reloadJson()"
-                               class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50" />
-                    </div>
-                </div>
-
-                <div class="form-group" id="form-update-schedule-onlineState" style="display: none;">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-schedule-onlineState">任务状态</label>
-                    <div class="col-sm-9">
-                        <select id="form-update-schedule-onlineState_id" style="width:350px;height:35px" class="chosen-select col-sm-5" onblur="reloadJson()" >
-                            <option grade="0" value="false" selected>未上线</option>
-                            <option grade="1" value="true" >已上线</option>
-                            <option grade="1" value="true" >已下线</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group" id="form-update-schedule-isSuppend" style="display: none;">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-update-schedule-isSuppend">是否暂停</label>
-                    <div class="col-sm-9">
-                        <select id="form-update-schedule-isSuppend_id" style="width:350px;height:35px" class="chosen-select col-sm-5" onblur="reloadJson()" >
-                            <option grade="0" value="false" selected>否</option>
-                            <option grade="1" value="true" >是</option>
-                        </select>
-                    </div>
-                </div>
--->
-
-
-
 
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" >job内容</label>
