@@ -74,7 +74,9 @@
         paging: true,//是否分页
         "ajax": {
             "url": "${basePath}/user/initUser",
-            "data": function (d) {},
+            "data": function (d) {
+                return JSON.stringify(d);
+            },
             "dataType": 'json',
             "contentType": 'application/json',
             "type": 'POST'
