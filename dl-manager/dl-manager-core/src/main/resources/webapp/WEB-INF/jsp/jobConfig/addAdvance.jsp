@@ -18,7 +18,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-add-adapt-modify">表字段修改自动更新？</label>
+                    <label class="col-sm-3 control-label no-padding-right" for="form-add-adapt-modify">是否自动更新JOB配置</label>
                     <div class="col-sm-9">
                         ‍‍<select id="form-add-adapt-modify" style="width:350px;height:35px" class="chosen-select col-sm-5"
                                   onchange="reloadJson()">

@@ -94,6 +94,20 @@
                             </div>
                         </div>
 
+                        <div class="clearfix form-actions">
+                            <div class="col-md-offset-5 col-md-7">
+                                <button class="btn btn-info" type="button" onclick="add();">
+                                    <i class="ace-icon fa fa-check bigger-110"></i>
+                                    增加
+                                </button>
+
+                                &nbsp; &nbsp; &nbsp;
+                                <button class="btn" type="reset" onclick="back2Main();">
+                                    返回
+                                    <i class="ace-icon fa fa-undo bigger-110"></i>
+                                </button>
+                            </div>
+                        </div>
 
                         <div class="form-group">
                             <label class="col-sm-3 control-label no-padding-right" >job内容</label>

@@ -132,7 +132,7 @@
 
 
                             <div class="form-group col-xs-3">
-                                <label class="col-sm-4 control-label">定时任务？</label>
+                                <label class="col-sm-4 control-label">是否定时任务</label>
                                 <select id="isTiming">
                                     <option selected="selected" value="all">全部</option>
                                     <option value="false">否</option>

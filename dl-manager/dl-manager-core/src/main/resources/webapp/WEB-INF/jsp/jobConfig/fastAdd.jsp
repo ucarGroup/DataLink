@@ -86,7 +86,7 @@
                             </div>
 
                             <div class="col-sm-4 form-group">
-                                <label class="col-sm-4 control-label no-padding-right" for="form-add-timing-yn">定时任务？</label>
+                                <label class="col-sm-4 control-label no-padding-right" for="form-add-timing-yn">是否定时任务</label>
                                 <div class="col-sm-8">
                                     <select multiple=""
                                             class="form-add-timing-yn tag-input-style"
