@@ -19,7 +19,9 @@ DataLink开发时间从2016年12月开始，第一版于2017年5月份上线，�
 https://mp.weixin.qq.com/s/BVuDbS-2Ra5pIJ7oV78FBA <br>
 （神州优车）大数据平台建设经验分享 <br>
 https://www.cnblogs.com/ucarinc/p/12091053.html
-## 工作原理
+## 总体架构
+![总体架构](https://github.com/ucarGroup/DataLink/blob/master/img/0-0.%E5%85%A8%E9%87%8F%26%E5%A2%9E%E9%87%8F%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84.png)
+## 工作原理(增量)
 ![基础架构](https://github.com/ucarGroup/DataLink/blob/master/img/0-0.%E6%9E%B6%E6%9E%84%E5%8E%9F%E7%90%86.png)
 * 典型Master-Slave式系统架构，Manager(Web管理)+Worker(工作节点)<br>
     a. Manager负责worker的负载均衡、集群的配置管理和系统监控<br>
