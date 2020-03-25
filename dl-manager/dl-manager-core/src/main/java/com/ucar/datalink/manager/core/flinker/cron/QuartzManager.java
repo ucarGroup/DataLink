@@ -138,17 +138,6 @@ public class QuartzManager {
      */
     public void initCheckJob(QuartzJob job, Class clazz) {
         try {
-//            int retryInterval = job.getRetryInterval();
-//            int retryNumber = job.getRetryNumber();
-//            Date startAt = new Date(System.currentTimeMillis()+retryInterval);
-//            JobDetail jobDetail = JobBuilder.newJob(clazz).build();
-//            SimpleScheduleBuilder scheduleBuilder = SimpleScheduleBuilder.repeatSecondlyForTotalCount(retryNumber,retryInterval);
-//            SimpleTrigger trigger = (SimpleTrigger) TriggerBuilder.newTrigger()
-//                    .withIdentity(HTTP_CRON_CHECK_PREFIX+job.getJobName(), job.getJobGroup())
-//                    .startAt(startAt)
-//                    .withSchedule(scheduleBuilder)
-//                    .build();
-//            scheduler.scheduleJob(jobDetail, trigger);
             JobDetail jobDetail = JobBuilder.newJob(clazz)
                     .withIdentity(job.getJobName(), job.getJobGroup()).build();
             jobDetail.getJobDataMap().put(job.getJobName(), job);

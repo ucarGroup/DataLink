@@ -2,7 +2,10 @@ package com.ucar.datalink.manager.core.schedule;
 
 import com.ucar.datalink.biz.utils.DataLinkFactory;
 import com.ucar.datalink.common.errors.DatalinkException;
-import org.quartz.*;
+import com.ucar.datalink.manager.core.flinker.cron.QuartzManager;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerFactory;
+import org.quartz.Trigger;
 import org.quartz.impl.JobDetailImpl;
 import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
@@ -28,6 +31,7 @@ class ScheduleService {
             props.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("quartz.properties"));
             this.schedulerFactory = new StdSchedulerFactory(props);
             this.scheduler = schedulerFactory.getScheduler();
+            QuartzManager.getInstance().setScheduler(scheduler);
         } catch (Throwable e) {
             throw new DatalinkException("ScheduleService initial failed!", e);
         }
@@ -41,6 +45,7 @@ class ScheduleService {
                 JobDetailImpl jd = (JobDetailImpl)trigger.getJobDataMap().get(keys[0]);
                 scheduler.addJob(jd,true);
                 scheduler.scheduleJob(trigger);
+                QuartzManager.getInstance().bootstrap();
             }
         } catch (Exception e) {
             throw new DatalinkException("schedule service startup failed.", e);
