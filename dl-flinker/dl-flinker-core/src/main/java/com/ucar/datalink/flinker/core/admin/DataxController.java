@@ -3,7 +3,6 @@ package com.ucar.datalink.flinker.core.admin;
 import com.ucar.datalink.common.zookeeper.DLinkZkPathDef;
 import com.ucar.datalink.common.zookeeper.DLinkZkUtils;
 import com.ucar.datalink.common.zookeeper.ZkClientX;
-import com.ucar.datalink.common.zookeeper.ZkConfig;
 import com.ucar.datalink.flinker.core.admin.rest.RestServer;
 import com.ucar.datalink.flinker.core.admin.util.DataSourceController;
 import org.apache.commons.lang.StringUtils;
@@ -29,7 +28,7 @@ public class DataxController {
 
 	public DataxController(final Properties properties) {
 		final String zkServers = getProperty(properties, AdminConstants.DATAX_ZKSERVERS);
-		DLinkZkUtils zkUtils = DLinkZkUtils.init(new ZkConfig(zkServers, 10000, 10000),"/datalink");
+		DLinkZkUtils zkUtils = DLinkZkUtils.get();
 		this.zkClient = zkUtils.zkClient();
 		this.zkClient.createPersistent(DLinkZkPathDef.FlinkerWorkerRoot, true);
 		this.zkClient.createPersistent(DLinkZkPathDef.FlinkerJobsRoot, true);

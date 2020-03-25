@@ -1,5 +1,7 @@
 package com.ucar.datalink.flinker.core;
 
+import com.ucar.datalink.common.zookeeper.DLinkZkUtils;
+import com.ucar.datalink.common.zookeeper.ZkConfig;
 import com.ucar.datalink.flinker.api.element.ColumnCast;
 import com.ucar.datalink.flinker.api.exception.DataXException;
 import com.ucar.datalink.flinker.api.spi.ErrorCode;
@@ -7,6 +9,7 @@ import com.ucar.datalink.flinker.api.statistics.PerfTrace;
 import com.ucar.datalink.flinker.api.statistics.VMInfo;
 import com.ucar.datalink.flinker.api.util.Configuration;
 import com.ucar.datalink.flinker.api.util.GsonUtil;
+import com.ucar.datalink.flinker.core.admin.AdminConstants;
 import com.ucar.datalink.flinker.core.admin.bean.JobConfigBean;
 import com.ucar.datalink.flinker.core.admin.except.CanIgnoreException;
 import com.ucar.datalink.flinker.core.admin.record.JobConfigDbUtils;
@@ -33,8 +36,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -244,6 +249,11 @@ public class Engine {
 	public static void main(String[] args) throws Exception {
 		int exitCode = 0;
 		try {
+			Properties properties = new Properties();
+			properties.load(new FileInputStream(CoreConstant.DATAX_ADMIN_CONF));
+			final String zkServers = getProperty(properties, AdminConstants.DATAX_ZKSERVERS);
+			DLinkZkUtils.init(new ZkConfig(zkServers, 10000, 10000),"/datalink");
+
 			DataSourceInitController.getInstance().initialize();
 			Engine.entry(args);
 			recordErr(args);
@@ -357,4 +367,7 @@ public class Engine {
 		}
 	}
 
+	private static String getProperty(Properties properties, String key) {
+		return org.apache.commons.lang.StringUtils.trim(properties.getProperty(org.apache.commons.lang.StringUtils.trim(key)));
+	}
 }

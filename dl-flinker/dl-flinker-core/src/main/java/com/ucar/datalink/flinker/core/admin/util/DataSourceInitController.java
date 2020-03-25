@@ -2,7 +2,6 @@ package com.ucar.datalink.flinker.core.admin.util;
 
 import com.ucar.datalink.common.zookeeper.DLinkZkUtils;
 import com.ucar.datalink.common.zookeeper.ZkClientX;
-import com.ucar.datalink.flinker.core.admin.AdminConstants;
 import com.ucar.datalink.flinker.core.util.container.CoreConstant;
 import org.apache.commons.lang.StringUtils;
 
@@ -29,7 +28,6 @@ public final class DataSourceInitController {
         //initialize admin.properties
         Properties properties = new Properties();
         properties.load(new FileInputStream(CoreConstant.DATAX_ADMIN_CONF));
-        final String zkServers = getProperty(properties, AdminConstants.DATAX_ZKSERVERS);
         ZkClientX zkClient = DLinkZkUtils.get().zkClient();
         DataSourceController.getInstance().initialize(properties,zkClient);
     }
