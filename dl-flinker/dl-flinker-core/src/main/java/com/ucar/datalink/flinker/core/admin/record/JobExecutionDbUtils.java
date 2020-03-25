@@ -1,25 +1,13 @@
 package com.ucar.datalink.flinker.core.admin.record;
 
-import java.io.FileInputStream;
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.text.MessageFormat;
-import java.util.Properties;
-
 import com.ucar.datalink.flinker.api.util.Mysql8Utils;
 import com.ucar.datalink.flinker.core.admin.util.DataSourceController;
+import com.ucar.datalink.flinker.core.job.meta.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ucar.datalink.flinker.core.admin.AdminConstants;
-import com.ucar.datalink.flinker.core.job.meta.State;
-import com.ucar.datalink.flinker.core.util.container.CoreConstant;
+import java.sql.*;
+import java.text.MessageFormat;
 /**
  * db工具类
  * 
@@ -28,15 +16,15 @@ import com.ucar.datalink.flinker.core.util.container.CoreConstant;
 public class JobExecutionDbUtils {
 	private static final Logger logger = LoggerFactory.getLogger(JobExecutionDbUtils.class);
 
-	private static final String INSERT_SQL_TEMPLATE = "insert into t_datax_job_execution(job_id,worker_address,start_time,state,pid,exception,job_queue_execution_id,original_configuration )values(?,?,?,?,?,?,?,?)";
+	private static final String INSERT_SQL_TEMPLATE = "insert into t_dl_flinker_job_execution(job_id,worker_address,start_time,state,pid,exception,job_queue_execution_id,original_configuration )values(?,?,?,?,?,?,?,?)";
 
-	private static final String UPDATE_SQL_TEMPLATE = "update t_datax_job_execution " + "set job_id=?," + "worker_address=?," + "start_time=?,"
+	private static final String UPDATE_SQL_TEMPLATE = "update t_dl_flinker_job_execution " + "set job_id=?," + "worker_address=?," + "start_time=?,"
 			+ "end_time=?," + "state=?," + "byte_speed_per_second=?," + "record_speed_per_second=?," + "total_record=?," + "total_error_records=?,"
 			+ "wait_reader_time=?," + "wait_writer_time=?," + "percentage=?," + "exception=?," + "pid=?," +"task_communication_info=?"+ " where id=?";
 
 	private static final String UPDATE_SQL_TIMING_TASK = "update t_timing_task_history set status=?, modify_time=now()   where id=?";
 
-	private static final String QUERY_STATE_SQL_TEMPLATE = "select state from t_datax_job_execution where id=?";
+	private static final String QUERY_STATE_SQL_TEMPLATE = "select state from t_dl_flinker_job_execution where id=?";
 
 
 	/**
@@ -44,20 +32,20 @@ public class JobExecutionDbUtils {
 	 * 但这个 orginal内容是在 第一次插入job execution id之后，运行job之前完成的，所以只能等到job运行的时候再去更新这个字段
 	 * 由于这个字段内容比较多，每次更新job的时候最好就不要更新这个字段了，所以更新的时候加了判断，如果 jobExecution变量关联的 这个
 	 */
-	private static final String UPDATE_ORIGINAL_SQL_TEMPLATE = "update t_datax_job_execution " + "set job_id=?," + "worker_address=?," + "start_time=?,"
+	private static final String UPDATE_ORIGINAL_SQL_TEMPLATE = "update t_dl_flinker_job_execution " + "set job_id=?," + "worker_address=?," + "start_time=?,"
 			+ "end_time=?," + "state=?," + "byte_speed_per_second=?," + "record_speed_per_second=?," + "total_record=?," + "total_error_records=?,"
 			+ "wait_reader_time=?," + "wait_writer_time=?," + "percentage=?," + "exception=?," + "pid=?," +"task_communication_info=?, original_configuration=? where id=?";
 
-	private static final String UPDATE_JOB_EXECUTION_STATE_SQL = "UPDATE t_datax_job_execution SET state=?,start_time=?,end_time=?,exception=? WHERE id=?";
+	private static final String UPDATE_JOB_EXECUTION_STATE_SQL = "UPDATE t_dl_flinker_job_execution SET state=?,start_time=?,end_time=?,exception=? WHERE id=?";
 
 	private static final String UPDATE_STATE_SQL =
-			"UPDATE t_datax_job_execution SET state=?,end_time=?,exception=? WHERE id=?";
+			"UPDATE t_dl_flinker_job_execution SET state=?,end_time=?,exception=? WHERE id=?";
 
 	/**
 	 * 根据id 获取job execution表的所有字段，暂时用不到，先加上
 	 */
 	private static final String SELECT_ALL_FIELD_SQL_TEMPLATE = "SELECT id,job_id,worker_address,pid,start_time,end_time,state,byte_speed_per_second,record_speed_per_second," +
-			"total_error_records,wait_reader_time,wait_writer_time,percentage,exception,job_queue_execution_id,task_communication_info,original_configuration FROM t_datax_job_execution WHERE id=?";
+			"total_error_records,wait_reader_time,wait_writer_time,percentage,exception,job_queue_execution_id,task_communication_info,original_configuration FROM t_dl_flinker_job_execution WHERE id=?";
 
 	private static String address;
 	private static Integer port;

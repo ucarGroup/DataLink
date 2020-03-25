@@ -1,17 +1,13 @@
 package com.ucar.datalink.flinker.core.admin.record;
 
 import com.ucar.datalink.flinker.api.util.Mysql8Utils;
-import com.ucar.datalink.flinker.core.admin.AdminConstants;
 import com.ucar.datalink.flinker.core.admin.bean.JobConfigBean;
 import com.ucar.datalink.flinker.core.admin.util.DataSourceController;
-import com.ucar.datalink.flinker.core.util.container.CoreConstant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
 import java.sql.*;
 import java.text.MessageFormat;
-import java.util.Properties;
 
 /**
  * Created by user on 2017/8/17.
@@ -20,7 +16,7 @@ public class JobConfigDbUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(JobConfigDbUtils.class);
 
-    private static final String QUERY_JOB_CONFIG_SQL = "SELECT * FROM t_datax_job_config WHERE id=";
+    private static final String QUERY_JOB_CONFIG_SQL = "SELECT * FROM t_dl_flinker_job_config WHERE id=";
 
     private static String address;
     private static Integer port;

@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 /**
  * Created by yang.wang09 on 2019-04-02 18:28.
  *
- CREATE TABLE t_datax_job_queue (
+ CREATE TABLE t_dl_flinker_job_queue (
  `id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '表主键',
  `job_name` VARCHAR(255) NOT NULL COMMENT 'job名称',
  `queue_id` BIGINT(20) UNSIGNED NOT NULL COMMENT '关联的队列id',

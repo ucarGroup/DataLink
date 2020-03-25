@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 /**
  * Created by user on 2017/12/26.
  *
- CREATE TABLE `t_datax_job_run_queue` (
+ CREATE TABLE `t_dl_flinker_job_run_queue` (
  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键，自增类型',
  `job_id_list` varchar(2000) NOT NULL COMMENT 'job id列表用逗号分隔',
  `current_process_id` varchar(200) DEFAULT NULL COMMENT '当前正在运行的id列表，[job_id]-[job_execution_id],... 这种格式',
