@@ -10,7 +10,7 @@
             <form id="add_form" class="form-horizontal" role="form">
 
                 <div class="form-group">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-add-timing_yn">是否为服务化job？</label>
+                    <label class="col-sm-3 control-label no-padding-right" for="form-add-timing_yn">是否定时任务</label>
                     <div class="col-sm-9">
                         ‍‍<select id="form-add-timing_yn" style="width:350px;height:35px" class="chosen-select col-sm-5"
                                   onchange="changeTiming_yn(this.value)">

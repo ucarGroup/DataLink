@@ -75,11 +75,6 @@
                     <li>
                         <a data-toggle="tab" href="#timetaskId">定时任务配置</a>
                     </li>
-<!--
-                    <li>
-                        <a data-toggle="tab" href="#scheduleId">schedule配置</a>
-                    </li>
--->
                 </ul>
 
 
@@ -242,19 +237,6 @@
         var json = "srcType="+srcType+"&destType="+destType+"&job_src_media_source_name="+srcID+"&job_target_media_source_name="+destID+
                         "&job_media_name="+names_string+"&job_content="+job_content+"&job_name="+job_name +"&hbase_split_count="+hbase_split_count+
                 "&timing_yn="+timing_yn+"&timing_transfer_type="+timing_type+"&timing_target_worker="+timing_machine+"&timing_parameter="+timing_parameter;
-
-        //alert(json);
-//        var schedule_cron = $('#form-add-scheudle-cron_id').val();
-//        var schedule_is_retry = $('#form-add-schedule-isretry_id').val();
-//        var schedule_max_retry = $('#form-add-schedule-maxretry_id').val();
-//        var schedule_retry_interval = $('#form-add-schedule_retry_interval_id').val();
-//        var schedule_max_runtime = $('#form-add-schedule_maxRuntime_id').val();
-//        var schedule_online_state = $('#form-add-schedule-onlineState_id').val();
-//        var schedule_is_suppend = $('#form-add-schedule-isSuppend_id').val();
-//            json = json +"&schedule_cron="+schedule_cron +"&schedule_is_retry="+schedule_is_retry;
-//            json = json +"&schedule_max_retry="+schedule_max_retry +"&schedule_retry_interval="+schedule_retry_interval;
-//            json = json+"&schedule_max_runtime="+schedule_max_runtime +"&schedule_online_state="+schedule_online_state;
-//            json = json+"&schedule_is_suppend="+schedule_is_suppend;
 
         $.ajax({
             type: "post",

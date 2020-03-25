@@ -131,6 +131,7 @@ public class MonitorController {
                 return "success";
             }
         } catch (Exception e) {
+            logger.error("Monitor Info 添加失败",e);
             return e.getMessage();
         }
         return "fail";

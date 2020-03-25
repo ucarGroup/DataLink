@@ -432,8 +432,6 @@
             document.getElementById("sqlserver_writer").style.display = "none";
             document.getElementById("postgresql_writer").style.display = "none";
             document.getElementById("kudu_writer").style.display = "none";
-            //document.getElementById("sddl_writer").style.display = "none";
-            //document.getElementById("oracle_writer").style.display = "none";
             return;
         }
 

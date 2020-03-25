@@ -92,14 +92,22 @@ public class WorkerSystemStateProbeImpl implements WorkerSystemStateProbe {
         Map<String, Long> outgoingMap = systemSnapshot.getOutgoingNetworkTrafficMap();
         Map<String,String> sysMap = sysPropertiesService.map();
         String netTrafficName = StringUtils.isNotBlank(sysMap.get("net_traffic_name")) ? sysMap.get("net_traffic_name") : "eth0";
-        long incoming = incomingMap.get(netTrafficName);
-        long incomingNetworkTraffic = incoming - lastIncomingNetworkTraffic;
-        lastIncomingNetworkTraffic = incoming;
-        long outgoing = outgoingMap.get(netTrafficName);
-        long outgoingNetworkTraffic = outgoing - lastOutgoingNetworkTraffic;
-        lastOutgoingNetworkTraffic = outgoing;
-        systemStateInfo.setIncomingNetworkTraffic(incomingNetworkTraffic);
-        systemStateInfo.setOutgoingNetworkTraffic(outgoingNetworkTraffic);
+
+        if(!incomingMap.containsKey(netTrafficName) && incomingMap.size()>0){
+            netTrafficName = (String)incomingMap.keySet().toArray()[0];
+        }
+
+        if(incomingMap.size()>0) {
+            long incoming = incomingMap.get(netTrafficName);
+            long incomingNetworkTraffic = incoming - lastIncomingNetworkTraffic;
+            lastIncomingNetworkTraffic = incoming;
+            long outgoing = outgoingMap.get(netTrafficName);
+            long outgoingNetworkTraffic = outgoing - lastOutgoingNetworkTraffic;
+            lastOutgoingNetworkTraffic = outgoing;
+            systemStateInfo.setIncomingNetworkTraffic(incomingNetworkTraffic);
+            systemStateInfo.setOutgoingNetworkTraffic(outgoingNetworkTraffic);
+        }
+
         systemStateInfo.setTcpCurrentEstab(systemSnapshot.getTcpCurrentEstab());
         String clientId = WorkerConfig.current().getString(CommonClientConfigs.CLIENT_ID_CONFIG);
         systemStateInfo.setWorkerId(Long.valueOf(clientId));
