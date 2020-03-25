@@ -129,11 +129,14 @@ public class FlinkerJobUtil {
      * @return
      */
     public static Set<String> getDataxRunningTask() {
-        List<String> list = DLinkZkUtils.get().zkClient().getChildren(DLinkZkPathDef.FlinkerRunningRoot);
-        if(list == null) {
-            return new HashSet<>();
+        if(DLinkZkUtils.get().zkClient().exists(DLinkZkPathDef.FlinkerRunningRoot)) {
+            List<String> list = DLinkZkUtils.get().zkClient().getChildren(DLinkZkPathDef.FlinkerRunningRoot);
+            if (list == null) {
+                return new HashSet<>();
+            }
+            return new HashSet<>(list);
         }
-        return new HashSet<>(list);
+        return new HashSet<>();
     }
 
     /**
