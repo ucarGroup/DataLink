@@ -9,6 +9,8 @@
 
             <form id="add_form" class="form-horizontal" role="form">
 
+                <label class="col-sm-3 control-label no-padding-right" for="form-add-timing_yn">如果是定时任务，除了在此进行配置，还需要在Job配置管理页面，点击每行记录右侧的"增加schedule"按钮，进行附加配置</label>
+
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-timing_yn">是否定时任务</label>
                     <div class="col-sm-9">
@@ -37,24 +39,6 @@
                                class="col-xs-10 col-sm-5" style="width:350px;height:35px" maxlength="50" />
                     </div>
                 </div>
-
-<!--
-                <div class="form-group" id="form-add-timing_time_id" style="display: none;">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-add-timing_type">定时任务时间</label>
-                    <div class="col-sm-9">
-                        <select id="form-add-timing_time" style="width:350px;height:35px" class="chosen-select col-sm-5" >
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group" id="form-add-timing_stat_id" style="display: none;">
-                    <label class="col-sm-3 control-label no-padding-right" for="form-add-timing_type">定时任务状态</label>
-                    <div class="col-sm-9">
-                        <select id="form-add-timing_stat" style="width:350px;height:35px" class="chosen-select col-sm-5" >
-                        </select>
-                    </div>
-                </div>
--->
 
                 <div class="form-group" id="form-add-timing_parameter_id" style="display: none;">
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-timing_type">定时任务参数</label>
