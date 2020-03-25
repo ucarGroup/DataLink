@@ -9,7 +9,9 @@
 
             <form id="add_form" class="form-horizontal" role="form">
 
-                <label class="col-sm-3 control-label no-padding-right" for="form-add-timing_yn">如果是定时任务，除了在此进行配置，还需要在Job配置管理页面，点击每行记录右侧的"增加schedule"按钮，进行附加配置</label>
+                <div class="form-group">
+                    <label class="col-sm-12 control-label no-padding-right" for="form-add-timing_yn">如果是定时任务，除了在此进行配置，还需要在Job配置管理页面，点击每行记录右侧的"增加schedule"按钮，进行附加配置</label>
+                </div>
 
                 <div class="form-group">
                     <label class="col-sm-3 control-label no-padding-right" for="form-add-timing_yn">是否定时任务</label>
